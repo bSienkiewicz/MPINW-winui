@@ -40,11 +40,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
   </ItemGroup>
   <ItemGroup>
-    <Page Update="NavigationRootPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
     <Page Update="Page2.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

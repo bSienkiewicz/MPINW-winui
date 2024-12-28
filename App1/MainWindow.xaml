@@ -6,39 +6,47 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:App1"
     mc:Ignorable="d"
-    Title="MainWindow">
+    Title="MPINW">
+    <Grid>
 
-    <StackPanel>
-        <Grid x:Name="AppTitleBar"  
-      Height="64">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="LeftPaddingColumn" Width="0"/>
-                <ColumnDefinition/>
-                <ColumnDefinition x:Name="RightPaddingColumn" Width="0"/>
-            </Grid.ColumnDefinitions>
-            <Image x:Name="TitleBarIcon" Source="ms-appx:///Assets/StoreLogo.png"
-           Grid.Column="1"
-           HorizontalAlignment="Left"
-           Width="16" Height="16"
-           Margin="8,0,0,0"/>
-            <TextBlock x:Name="TitleBarTextBlock" 
-               Text="App title" 
-               Style="{StaticResource CaptionTextBlockStyle}"
-               Grid.Column="1"
-               VerticalAlignment="Center"
-               Margin="28,0,0,0"/>
+        <Grid
+            x:Name="AppTitleBar"
+            VerticalAlignment="Top"
+            Height="48"
+            Canvas.ZIndex="1"
+            IsHitTestVisible="True">
+            <Image
+                Width="16"
+                Height="16"
+                HorizontalAlignment="Left"
+                Source="/Assets/WindowIcon.ico" />
+            <TextBlock
+                x:Name="AppTitleBarText"
+                Margin="28,0,0,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                TextWrapping="NoWrap" />
         </Grid>
         
-        
         <NavigationView x:Name="NavView" 
-                    SelectionChanged="NavView_SelectionChanged">
-        <NavigationView.MenuItems>
-            <NavigationViewItem Content="Page 1" Icon="Page" Tag="Page1" />
-            <NavigationViewItem Content="Page 2" Icon="Page2" Tag="Page2" />
-        </NavigationView.MenuItems>
-        
-        <!-- Content area for the pages -->
-        <Frame x:Name="ContentFrame" />
-    </NavigationView>
-    </StackPanel>
+                    SelectionChanged="NavView_SelectionChanged" PaneDisplayMode="Left"
+                    DisplayModeChanged="NavigationView_DisplayModeChanged"
+                    ExpandedModeThresholdWidth="1280">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="MPINW Tool" Tag="Page1">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xECAD;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="LSTool" Tag="Page2">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE773;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <!-- Content area for the pages -->
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
 </Window>

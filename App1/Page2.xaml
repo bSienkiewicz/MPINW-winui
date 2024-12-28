@@ -5,8 +5,7 @@
     xmlns:local="using:App1"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    mc:Ignorable="d">
 
     <Grid Padding="20" RowSpacing="10">
 
@@ -16,6 +15,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!--Connection details expander-->
         <Expander x:Name="Expander2" HorizontalAlignment="Stretch" Grid.Row="0">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal">
@@ -31,6 +31,8 @@
                 </Grid>
             </Expander.Content>
         </Expander>
+        
+        <!--TextBox row-->
         <Grid Grid.Row="1" HorizontalAlignment="Stretch" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -39,17 +41,20 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox Header="Location provider ID:" PlaceholderText="30279f10-c43e-4300-8427-5ea5bea53f90" Grid.Column="0" />
+            <TextBox Header="Location provider ID:" PlaceholderText="30279f10-c43e-4300-8427-5ea5bea53f90" Grid.Column="0" Name="ProviderID" />
             <TextBox Header="Country:" PlaceholderText="Name" Grid.Column="1" />
             <TextBox Header="Delivery Point ID:" PlaceholderText="Name" Grid.Column="2" />
-            <Button Name="AcceptButton" Style="{StaticResource AccentButtonStyle}" Grid.Column="3">
+            
+            <!--Search button-->
+            <Button Name="AcceptButton" Style="{StaticResource AccentButtonStyle}" Grid.Column="3" Click="OnFetchDataClicked">
                 <StackPanel>
-                    <SymbolIcon Symbol="Pause"/>
+                    <FontIcon Glyph="&#xE721;" />
                     <TextBlock Text="Search"/>
                 </StackPanel>
             </Button>
         </Grid>
 
+        
         <ScrollViewer Grid.Row="2">
             <StackPanel Spacing="0">
                 <Expander x:Name="Expander3" HorizontalAlignment="Stretch" Grid.Row="0">
@@ -62,86 +67,11 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="Expander4" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xF081;" Margin="16" />
-                            <StackPanel Padding="16">
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14" Margin="0 0 0 6"/>
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
-                <Expander x:Name="Expander5" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xF081;" Margin="16" />
-                            <StackPanel Padding="16">
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14" Margin="0 0 0 6"/>
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
-                <Expander x:Name="Expander6" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xF081;" Margin="16" />
-                            <StackPanel Padding="16">
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14" Margin="0 0 0 6"/>
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
-                <Expander x:Name="Expander7" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xF081;" Margin="16" />
-                            <StackPanel Padding="16">
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14" Margin="0 0 0 6"/>
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
-                <Expander x:Name="Expander8" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xF081;" Margin="16" />
-                            <StackPanel Padding="16">
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14" Margin="0 0 0 6"/>
-                                <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
+
+                <TextBlock Text="{x:Bind ViewModel.ResponseData, Mode=OneWay}" 
+                   TextWrapping="Wrap" 
+                   FontSize="16" 
+                   Margin="20" />
             </StackPanel>
         </ScrollViewer>
     </Grid>
