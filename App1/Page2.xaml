@@ -7,16 +7,40 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <DataTemplate x:Key="LocationServicesTemplate" x:DataType="local:LS">
+            <ItemContainer HorizontalAlignment="Stretch" AutomationProperties.Name="{x:Bind Title}">
+                <Expander x:Name="Expander3" HorizontalAlignment="Stretch" Grid.Row="0">
+                    <Expander.Header>
+                        <TextBlock Text="{x:Bind Title}" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14"/>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <Grid>
+                            <TextBlock Text="{x:Bind Description}"/>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+            </ItemContainer>
+        </DataTemplate>
+
+        <UniformGridLayout x:Key="UniformGridLayout" MinItemWidth="108" MinItemHeight="108"
+                   MinRowSpacing="12" MinColumnSpacing="12"/>
+
+    </Page.Resources>
+
     <Grid Padding="20" RowSpacing="10">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+
         <!--Connection details expander-->
-        <Expander x:Name="Expander2" HorizontalAlignment="Stretch" Grid.Row="0">
+        <Expander x:Name="ExpanderConnection" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch" Grid.Row="0">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal">
                     <FontIcon Glyph="&#xF081;" Margin="16" />
@@ -27,11 +51,16 @@
                 </StackPanel>
             </Expander.Header>
             <Expander.Content>
-                <Grid>
-                </Grid>
+                <StackPanel HorizontalAlignment="Stretch">
+                    <TextBox Header="LS Endpoint:" Text="siemano" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0 0 0 20" Name="Hostname" TextChanged="TextBox_TextChanged"  />
+                    <TextBox Header="Username:" Text="siemano" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0 0 0 20" Name="Username" TextChanged="TextBox_TextChanged"  />
+                    <TextBox Header="Password:" Text="siemano" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0 0 0 20" Name="Password" TextChanged="TextBox_TextChanged"  />
+                </StackPanel>
             </Expander.Content>
         </Expander>
-        
+
+
+
         <!--TextBox row-->
         <Grid Grid.Row="1" HorizontalAlignment="Stretch" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
@@ -41,10 +70,10 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox Header="Location provider ID:" PlaceholderText="30279f10-c43e-4300-8427-5ea5bea53f90" Grid.Column="0" Name="ProviderID" />
+            <TextBox Header="Location provider ID:" PlaceholderText="30279f10-c43e-4300-8427-5ea5bea53f90" Grid.Column="0" Name="ProviderID" Text="13" />
             <TextBox Header="Country:" PlaceholderText="Name" Grid.Column="1" />
             <TextBox Header="Delivery Point ID:" PlaceholderText="Name" Grid.Column="2" />
-            
+
             <!--Search button-->
             <Button Name="AcceptButton" Style="{StaticResource AccentButtonStyle}" Grid.Column="3" Click="OnFetchDataClicked">
                 <StackPanel>
@@ -54,24 +83,12 @@
             </Button>
         </Grid>
 
-        
-        <ScrollViewer Grid.Row="2">
-            <StackPanel Spacing="0">
-                <Expander x:Name="Expander3" HorizontalAlignment="Stretch" Grid.Row="0">
-                    <Expander.Header>
-                        <TextBlock Text="Connection details" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14"/>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <Grid>
-                            <Button Margin="15" Content="This is a Button in the content"/>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
+        <ProgressBar Grid.Row="2" IsIndeterminate="True" ShowPaused="False" ShowError="False" HorizontalAlignment="Stretch" Visibility="{Binding IsFetchingData}" />
 
-                <TextBlock Text="{x:Bind ViewModel.ResponseData, Mode=OneWay}" 
-                   TextWrapping="Wrap" 
-                   FontSize="16" 
-                   Margin="20" />
+        <ScrollViewer Grid.Row="3">
+            <StackPanel Spacing="0">
+                <ItemsView ItemsSource="{x:Bind LocationServices}"
+                    ItemTemplate="{StaticResource LocationServicesTemplate}"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>
