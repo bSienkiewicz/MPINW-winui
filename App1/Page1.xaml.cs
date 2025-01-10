@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -25,50 +26,58 @@ namespace App1
     /// </summary>
     public sealed partial class Page1 : Page
     {
+        private List<RetailersCheck> dynamicCheckBoxes = new();
         public Page1()
         {
             this.InitializeComponent();
-            Items = new ObservableCollection<ExpandItem>();
-            PopulateItems();
+            FetchAndGenerateCheckboxes(new[] { "Option 1", "Option 2", "Option 3", "Option 4", "Option 5 XD" });
         }
 
-        private void PopulateItems()
+        private void FetchAndGenerateCheckboxes(IEnumerable<string> options)
         {
-            Items.Add(new ExpandItem
+            dynamicCheckBoxes.Clear();
+
+            foreach (var option in options)
             {
-                Title = "Item 1",
-                Content = "Item 1 description"
-            });
-            Items.Add(new ExpandItem
-            {
-                Title = "Item 2",
-                Content = "Content 2"
-            });
-            Items.Add(new ExpandItem
-            {
-                Title = "Item 3",
-                Content = "Content 2"
-            });
+                var checkBox = new RetailersCheck
+                {
+                    Content = option
+                };
+
+                dynamicCheckBoxes.Add(checkBox);
+            }
         }
 
-        void Button_Click(object sender, RoutedEventArgs e)
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            Items.Add(new ExpandItem
+            if (sender is CheckBox check)
             {
-                Title = "Item Added",
-                Content = "Content 2"
-            });
+                var item = dynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
+                if (item != null)
+                {
+                    item.IsChecked = true;
+                    Debug.WriteLine($"Checked: {item.Content}");
+                }
+            }
         }
 
-        public ObservableCollection<ExpandItem> Items
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            get; private set;
+            if (sender is CheckBox check)
+            {
+                var item = dynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
+                if (item != null)
+                {
+                    item.IsChecked = false;
+                    Debug.WriteLine($"Unchecked: {item.Content}");
+                }
+            }
         }
     }
 
-    public class ExpandItem
+    public class RetailersCheck
     {
-        public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public bool IsChecked { get; set; } = false;
     }
 }
