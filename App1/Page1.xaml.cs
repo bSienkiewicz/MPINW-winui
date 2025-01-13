@@ -26,16 +26,20 @@ namespace App1
     /// </summary>
     public sealed partial class Page1 : Page
     {
-        private List<RetailersCheck> dynamicCheckBoxes = new();
+        private ObservableCollection<RetailersCheck> RetailerDynamicCheckBoxes = new();
+        private ObservableCollection<RetailerData> retailersData = new();
+        private bool isUpdatingCheckboxes = false;
+
         public Page1()
         {
             this.InitializeComponent();
             FetchAndGenerateCheckboxes(new[] { "Option 1", "Option 2", "Option 3", "Option 4", "Option 5 XD" });
+            UpdateSelectAllState();
         }
 
         private void FetchAndGenerateCheckboxes(IEnumerable<string> options)
         {
-            dynamicCheckBoxes.Clear();
+            RetailerDynamicCheckBoxes.Clear();
 
             foreach (var option in options)
             {
@@ -44,40 +48,145 @@ namespace App1
                     Content = option
                 };
 
-                dynamicCheckBoxes.Add(checkBox);
+                RetailerDynamicCheckBoxes.Add(checkBox);
             }
+            UpdateSelectAllState();
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
+            if (isUpdatingCheckboxes) return;
+
             if (sender is CheckBox check)
             {
-                var item = dynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
+                var item = RetailerDynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
                 if (item != null)
                 {
                     item.IsChecked = true;
-                    Debug.WriteLine($"Checked: {item.Content}");
+                    retailersData.Add(new RetailerData
+                    {
+                        RetailerName = item.Content,
+                        ApiCalls = new List<ApiCall>
+                    {
+                        new ApiCall
+                        {
+                            Timestamp = DateTime.Now,
+                            Endpoint = "https://api.example.com/data",
+                            RequestParameters = "date=2025-01-01",
+                            ResponseData = "{ 'key': 'value' }"
+                        }
+                    }
+                    });
                 }
             }
+            UpdateSelectAllState();
         }
 
         private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (isUpdatingCheckboxes) return;
+
             if (sender is CheckBox check)
             {
-                var item = dynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
+                var item = RetailerDynamicCheckBoxes.FirstOrDefault(c => c.Content == check.Content.ToString());
                 if (item != null)
                 {
                     item.IsChecked = false;
-                    Debug.WriteLine($"Unchecked: {item.Content}");
+                    var retailerToRemove = retailersData.FirstOrDefault(r => r.RetailerName == item.Content);
+                    if (retailerToRemove != null)
+                    {
+                        retailersData.Remove(retailerToRemove);
+                    }
                 }
             }
+            UpdateSelectAllState();
         }
+
+        private void UpdateSelectAllState()
+        {
+            int totalCount = RetailerDynamicCheckBoxes.Count;
+            int checkedCount = RetailerDynamicCheckBoxes.Count(x => x.IsChecked);
+
+            isUpdatingCheckboxes = true;
+            try
+            {
+                if (checkedCount == 0)
+                    OptionsAllCheckBox.IsChecked = false;
+                else if (checkedCount == totalCount)
+                    OptionsAllCheckBox.IsChecked = true;
+                else
+                    OptionsAllCheckBox.IsChecked = null;
+            }
+            finally
+            {
+                isUpdatingCheckboxes = false;
+            }
+        }
+        private void OptionsAllCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (isUpdatingCheckboxes) return;
+
+            isUpdatingCheckboxes = true;
+            try
+            {
+                foreach (var checkbox in RetailerDynamicCheckBoxes)
+                {
+                    checkbox.IsChecked = true;
+                }
+            }
+            finally
+            {
+                isUpdatingCheckboxes = false;
+            }
+            UpdateSelectAllState();
+        }
+
+        private void OptionsAllCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (isUpdatingCheckboxes) return;
+
+            isUpdatingCheckboxes = true;
+            try
+            {
+                foreach (var checkbox in RetailerDynamicCheckBoxes)
+                {
+                    checkbox.IsChecked = false;
+                }
+            }
+            finally
+            {
+                isUpdatingCheckboxes = false;
+            }
+            UpdateSelectAllState();
+        }
+
+        private void RetailerListBox_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is RetailerData retailerData)
+            {
+                content.Text = retailerData.RetailerName;
+            }
+        }
+
     }
 
     public class RetailersCheck
     {
         public string Content { get; set; } = string.Empty;
         public bool IsChecked { get; set; } = false;
+    }
+
+    public class RetailerData
+    {
+        public string RetailerName { get; set; } = string.Empty;
+        public List<ApiCall> ApiCalls { get; set; } = new List<ApiCall>();
+    }
+
+    public class ApiCall
+    {
+        public DateTime Timestamp { get; set; }
+        public string Endpoint { get; set; } = string.Empty; // API endpoint that was called
+        public string RequestParameters { get; set; } = string.Empty; // Any parameters sent
+        public string ResponseData { get; set; } = string.Empty; // JSON or other response
     }
 }
