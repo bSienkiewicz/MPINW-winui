@@ -1,0 +1,71 @@
+<Page
+    x:Class="App1.NRAlerts"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:App1"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <InfoBar
+            Name="infoBar"
+            Grid.Row="0"
+            IsOpen="False"
+            Severity="Error" />
+
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Text="New Relic Alerts Management" />
+
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <ComboBox
+                    x:Name="stacksComboBox"
+                    Width="200"
+                    PlaceholderText="Select a stack..."
+                    SelectionChanged="StackComboBox_SelectionChanged" />
+                <Button x:Name="selectFolderButton" Click="SelectFolderButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE838;" />
+                        <TextBlock Text="Select Repository Folder" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            Grid.Row="2"
+            HorizontalAlignment="Stretch"
+            ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <TextBlock Margin="12" Text="Col1" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <TextBlock Margin="12" Text="Col3" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>
