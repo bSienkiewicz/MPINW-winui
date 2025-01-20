@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:App1"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="using:App1.Helpers"
     mc:Ignorable="d">
 
     <Grid Padding="24">
@@ -52,20 +53,58 @@
         </Grid>
 
         <Grid
-            Grid.Row="2"
-            HorizontalAlignment="Stretch"
-            ColumnSpacing="10">
+    Grid.Row="2"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
+    ColumnSpacing="10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                <TextBlock Margin="12" Text="Col1" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                <TextBlock Margin="12" Text="Col3" />
-            </StackPanel>
+            <!-- Left Column with ScrollView -->
+            <Grid Grid.Column="0" Background="{ThemeResource LayerFillColorDefaultBrush}" Padding="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBox PlaceholderText="Search for an alert"
+                    Name="NRAlertSearch"
+                    TextChanged="NRAlertSearch_TextChanged"
+                    Grid.Row="0"
+                         Margin="0, 0, 0, 15"/>
+                <ScrollView HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1">
+                    <ListView x:Name="AlertsListView" ItemsSource="{x:Bind AlertItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="AlertsListView_SelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="helpers:NrqlAlert">
+                                <StackPanel Margin="10">
+                                    <TextBlock Text="{x:Bind Name}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </ScrollView>
+            </Grid>
+
+            <!-- Right Column -->
+            <ScrollView HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <StackPanel Spacing="10" Padding="10">
+                    <CheckBox IsChecked="{x:Bind SelectedAlert.Enabled, Mode=TwoWay}" Content="Enabled" />
+                    <TextBlock Text="{x:Bind SelectedAlert.Name}" FontSize="18" FontWeight="Bold"/>
+                    <TextBox Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}" Header="Name:" />
+                    <TextBox Text="{x:Bind SelectedAlert.Severity, Mode=TwoWay}" Header="Severity" />
+                    <TextBox Text="{x:Bind SelectedAlert.Description, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="Description:" />
+                    <TextBox Text="{x:Bind SelectedAlert.NrqlQuery, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="NRQL Query:" MinHeight="100" />
+                    <TextBox Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}" Header="Severity" />
+                    <TextBox Text="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}" Header="AggregationMethod" />
+                    <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}" Header="AggregationDelay" />
+                    <TextBox Text="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}" Header="CriticalOperator" />
+                    <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}" Header="CriticalThreshold" />
+                    <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}" Header="CriticalThresholdDuration" />
+                    <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}" Header="CriticalThresholdOccurrences" />
+                </StackPanel>
+            </ScrollView>
         </Grid>
+
     </Grid>
 </Page>

@@ -18,23 +18,44 @@ using Windows.Storage;
 using Windows.Networking;
 using System.Diagnostics;
 using System.Text.Json;
+using App1.Helpers;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace App1
 {
-    public sealed partial class NRAlerts : Page
+    public sealed partial class NRAlerts : Page, INotifyPropertyChanged
     {
         private string? selectedFolderPath;
         private const string stacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
         private string[] availableStacks = [];
         private readonly ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+        private ObservableCollection<NrqlAlert> AlertItems { get; set; } = new ObservableCollection<NrqlAlert>();
+        private NrqlAlert _selectedAlert;
+        public NrqlAlert SelectedAlert
+        {
+            get => _selectedAlert;
+            set
+            {
+                _selectedAlert = value;
+                OnPropertyChanged(nameof(SelectedAlert));
+            }
+        }
 
         public NRAlerts()
         {
             this.InitializeComponent();
             LoadDirectory();
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private async void SelectFolderButton_Click(object sender, RoutedEventArgs e)
@@ -150,10 +171,37 @@ namespace App1
         private void StackComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (selectedFolderPath == null) return;
+
             var selectedItem = e.AddedItems[0]?.ToString();
             if (string.IsNullOrEmpty(selectedItem)) return;
-            string tfvarsContent = System.IO.File.ReadAllText(Path.Combine(selectedFolderPath, stacksPath, selectedItem, "auto.tfvars"));
-            Debug.WriteLine(tfvarsContent);
+
+            string tfvarsContent = File.ReadAllText(Path.Combine(selectedFolderPath, stacksPath, selectedItem, "auto.tfvars"));
+            var parser = new HclParser();
+            var parsedAlerts = parser.ParseAlerts(tfvarsContent);
+
+            AlertItems.Clear();
+            foreach (var alert in parsedAlerts)
+            {
+                AlertItems.Add(alert);
+            }
+
+            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {selectedItem}");
+        }
+
+        private void NRAlertSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (AlertItems.Count == 0) return;
+            var search = NRAlertSearch.Text.ToLower();
+            var filteredAlerts = AlertItems.Where(alert => alert.Name.ToLower().Contains(search) || alert.Description.ToLower().Contains(search));
+            AlertsListView.ItemsSource = filteredAlerts;
+        }
+
+        private void AlertsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+            {
+                SelectedAlert = (NrqlAlert)e.AddedItems[0];
+            }
         }
     }
 }
