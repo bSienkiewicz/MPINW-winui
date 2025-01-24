@@ -30,6 +30,7 @@ namespace App1
     public sealed partial class NRAlerts : Page, INotifyPropertyChanged
     {
         private string? selectedFolderPath;
+        private string? selectedStack;
         private const string stacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
         private string[] availableStacks = [];
         private readonly ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
@@ -40,8 +41,11 @@ namespace App1
             get => _selectedAlert;
             set
             {
-                _selectedAlert = value;
-                OnPropertyChanged(nameof(SelectedAlert));
+                if (_selectedAlert != value)
+                {
+                    _selectedAlert = value;
+                    OnPropertyChanged(nameof(SelectedAlert));
+                }
             }
         }
 
@@ -172,10 +176,10 @@ namespace App1
         {
             if (selectedFolderPath == null) return;
 
-            var selectedItem = e.AddedItems[0]?.ToString();
-            if (string.IsNullOrEmpty(selectedItem)) return;
+            selectedStack = e.AddedItems[0]?.ToString();
+            if (string.IsNullOrEmpty(selectedStack)) return;
 
-            string tfvarsContent = File.ReadAllText(Path.Combine(selectedFolderPath, stacksPath, selectedItem, "auto.tfvars"));
+            string tfvarsContent = File.ReadAllText(Path.Combine(selectedFolderPath, stacksPath, selectedStack, "auto.tfvars"));
             var parser = new HclParser();
             var parsedAlerts = parser.ParseAlerts(tfvarsContent);
 
@@ -185,7 +189,7 @@ namespace App1
                 AlertItems.Add(alert);
             }
 
-            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {selectedItem}");
+            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {selectedStack}");
         }
 
         private void NRAlertSearch_TextChanged(object sender, TextChangedEventArgs e)
@@ -200,7 +204,78 @@ namespace App1
         {
             if (e.AddedItems.Count > 0)
             {
+
+                // Switch to the new alert
                 SelectedAlert = (NrqlAlert)e.AddedItems[0];
+            }
+        }
+
+        private void AddNewAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Create a new empty alert
+            if (selectedStack == null) return;
+
+            var newAlert = new NrqlAlert
+            {
+                Name = "New Alert",
+                Description = "",
+                NrqlQuery = "",
+                RunbookUrl = "",
+                Severity = "CRITICAL",
+                Enabled = true,
+                AggregationMethod = "",
+                AggregationWindow = 0,
+                AggregationDelay = 0,
+                CriticalOperator = "",
+                CriticalThreshold = 0.0,
+                CriticalThresholdDuration = 0,
+                CriticalThresholdOccurrences = ""
+            };
+
+            // Add the new alert to the AlertItems collection
+            AlertItems.Add(newAlert);
+
+            // Select the new alert in the ListView
+            AlertsListView.SelectedItem = newAlert;
+
+            // Set focus on the Name text box in the right column
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                var nameTextBox = FindName("NameTextBox") as TextBox;
+                nameTextBox?.Focus(FocusState.Programmatic);
+            });
+        }
+
+        private void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
+        {
+            if (selectedFolderPath == null) return;
+
+            var filePath = Path.Combine(selectedFolderPath, stacksPath, stackName, "auto.tfvars");
+
+            // Read the original file content
+            var originalContent = File.ReadAllText(filePath);
+
+            // Replace the nr_nrql_alerts section with the updated alerts
+            var parser = new HclParser();
+            var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
+
+            // Write the updated content back to the file
+            File.WriteAllText(filePath, updatedContent);
+        }
+
+        private void SaveSelectedAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Save changes to the current alert before switching
+            if (_selectedAlert != null)
+            {
+                var index = AlertItems.IndexOf(_selectedAlert);
+                if (index != -1)
+                {
+                    AlertItems[index] = _selectedAlert;
+                }
+                if (stacksComboBox.SelectedItem == null || AlertItems == null) return;
+
+                SaveAlertsToFile(selectedStack, AlertItems.ToList());
             }
         }
     }

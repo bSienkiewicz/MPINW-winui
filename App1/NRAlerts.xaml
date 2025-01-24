@@ -53,10 +53,10 @@
         </Grid>
 
         <Grid
-    Grid.Row="2"
-    HorizontalAlignment="Stretch"
-    VerticalAlignment="Stretch"
-    ColumnSpacing="10">
+            Grid.Row="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="2*" />
@@ -68,11 +68,23 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBox PlaceholderText="Search for an alert"
-                    Name="NRAlertSearch"
-                    TextChanged="NRAlertSearch_TextChanged"
-                    Grid.Row="0"
-                         Margin="0, 0, 0, 15"/>
+                <Grid Grid.Row="0" Margin="0, 0, 0, 15" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox PlaceholderText="Search for an alert"
+                            Name="NRAlertSearch"
+                            TextChanged="NRAlertSearch_TextChanged" Grid.Column="0" />
+                    <Button Grid.Column="1" Style="{StaticResource AccentButtonStyle}" Click="AddNewAlertButton_Click">
+                        <FontIcon Glyph="&#xE710;" />
+                    </Button>
+                    <Button Grid.Column="2">
+                        <FontIcon Glyph="&#xE9F5;" />
+                    </Button>
+                </Grid>
+
                 <ScrollView HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1">
                     <ListView x:Name="AlertsListView" ItemsSource="{x:Bind AlertItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="AlertsListView_SelectionChanged">
                         <ListView.ItemTemplate>
@@ -87,23 +99,69 @@
             </Grid>
 
             <!-- Right Column -->
-            <ScrollView HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                <StackPanel Spacing="10" Padding="10">
-                    <CheckBox IsChecked="{x:Bind SelectedAlert.Enabled, Mode=TwoWay}" Content="Enabled" />
-                    <TextBlock Text="{x:Bind SelectedAlert.Name}" FontSize="18" FontWeight="Bold"/>
-                    <TextBox Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}" Header="Name:" />
-                    <TextBox Text="{x:Bind SelectedAlert.Severity, Mode=TwoWay}" Header="Severity" />
-                    <TextBox Text="{x:Bind SelectedAlert.Description, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="Description:" />
-                    <TextBox Text="{x:Bind SelectedAlert.NrqlQuery, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="NRQL Query:" MinHeight="100" />
-                    <TextBox Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}" Header="Severity" />
-                    <TextBox Text="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}" Header="AggregationMethod" />
-                    <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}" Header="AggregationDelay" />
-                    <TextBox Text="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}" Header="CriticalOperator" />
-                    <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}" Header="CriticalThreshold" />
-                    <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}" Header="CriticalThresholdDuration" />
-                    <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}" Header="CriticalThresholdOccurrences" />
-                </StackPanel>
-            </ScrollView>
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}" Padding="10" RowSpacing="30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <ScrollView  Grid.Row="0">
+                    <StackPanel Spacing="10" Padding="10">
+                        <CheckBox IsChecked="{x:Bind SelectedAlert.Enabled, Mode=TwoWay}" Content="Enabled" />
+                        <TextBox x:Name="NameTextBox" Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}" Header="Name:" />
+                        <TextBox Text="{x:Bind SelectedAlert.Severity, Mode=TwoWay}" Header="Severity" />
+                        <TextBox Text="{x:Bind SelectedAlert.Description, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="Description:" />
+                        <TextBox Text="{x:Bind SelectedAlert.NrqlQuery, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Header="NRQL Query:" MinHeight="100" />
+                        <TextBox Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}" Header="Severity" />
+                        <TextBox Text="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}" Header="AggregationMethod" />
+                        <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}" Header="AggregationDelay" />
+                        <TextBox Text="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}" Header="CriticalOperator" />
+                        <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}" Header="CriticalThreshold" />
+                        <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}" Header="CriticalThresholdDuration" />
+                        <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}" Header="CriticalThresholdOccurrences" />
+                    </StackPanel>
+                </ScrollView>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Grid.Column="0" Spacing="10">
+                        <Button x:Name="cloneButton">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xF584;" />
+                                <TextBlock Text="Duplicate" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="deleteButton" Background="IndianRed" Foreground="Black">
+                            <FontIcon Glyph="&#xE74D;" />
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="The alert will be removed, continue?" Margin="0,0,0,12" />
+                                        <Button Content="Yes, delete the alert" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="2" Spacing="10">
+                        <Button x:Name="saveButton" Style="{StaticResource AccentButtonStyle}" Click="SaveSelectedAlertButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74E;" />
+                                <TextBlock Text="Save" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="cancelButton">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE711;" />
+                                <TextBlock Text="Cancel" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Grid>
 
     </Grid>

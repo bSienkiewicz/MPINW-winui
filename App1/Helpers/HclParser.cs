@@ -119,5 +119,53 @@ namespace App1.Helpers
             var value = ParseStringValue(block, key);
             return double.TryParse(value, out double result) ? result : 0.0;
         }
+
+        public string SerializeAlerts(List<NrqlAlert> alerts, bool ignoreEmptyValues)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("nr_nrql_alerts = [");
+
+            foreach (var alert in alerts)
+            {
+                sb.AppendLine("  {");
+
+                AppendIfNotEmpty(sb, "name", alert.Name, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "description", alert.Description, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "nrql_query", alert.NrqlQuery, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "runbook_url", alert.RunbookUrl, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "severity", alert.Severity, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "enabled", alert.Enabled.ToString().ToLower(), ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "aggregation_method", alert.AggregationMethod, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow.ToString(), ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "aggregation_delay", alert.AggregationDelay.ToString(), ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "critical_operator", alert.CriticalOperator, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold.ToString(), ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "critical_threshold_duration", alert.CriticalThresholdDuration.ToString(), ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "critical_threshold_occurrences", alert.CriticalThresholdOccurrences, ignoreEmptyValues);
+
+                sb.AppendLine("  },");
+            }
+
+            sb.AppendLine("]");
+            return sb.ToString();
+        }
+
+        private void AppendIfNotEmpty(StringBuilder sb, string key, string value, bool ignoreEmptyValues)
+        {
+            if (!ignoreEmptyValues || !string.IsNullOrWhiteSpace(value))
+            {
+                sb.AppendLine($"    \"{key}\" = \"{value}\"");
+            }
+        }
+
+        public string ReplaceNrqlAlertsSection(string originalContent, List<NrqlAlert> alerts)
+        {
+            // Serialize the updated alerts to HCL format
+            var updatedAlertsSection = SerializeAlerts(alerts, true);
+
+            // Use regex to find and replace the nr_nrql_alerts section
+            var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[.*?\]", RegexOptions.Singleline);
+            return regex.Replace(originalContent, updatedAlertsSection);
+        }
     }
 }
