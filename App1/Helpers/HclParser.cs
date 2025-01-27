@@ -36,8 +36,9 @@ namespace App1.Helpers
         {
             var alerts = new List<NrqlAlert>();
 
-            // Extract everything between the square brackets after nr_nrql_alerts =
+            // Find the nr_nrql_alerts array using a greedy regex
             var arrayMatch = Regex.Match(content, @"nr_nrql_alerts\s*=\s*\[(.*)\]", RegexOptions.Singleline);
+
             if (!arrayMatch.Success)
             {
                 return alerts;
@@ -163,8 +164,7 @@ namespace App1.Helpers
             // Serialize the updated alerts to HCL format
             var updatedAlertsSection = SerializeAlerts(alerts, true);
 
-            // Use regex to find and replace the nr_nrql_alerts section
-            var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[.*?\]", RegexOptions.Singleline);
+            var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[(.*?)\]", RegexOptions.Singleline);
             return regex.Replace(originalContent, updatedAlertsSection);
         }
     }

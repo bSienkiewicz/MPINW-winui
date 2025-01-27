@@ -15,8 +15,8 @@
   <mp:PhoneIdentity PhoneProductId="5760861f-a38f-44ae-888b-f69b0e79e9e3" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>App1</DisplayName>
-    <PublisherDisplayName>bartoszsienkiewicz</PublisherDisplayName>
+    <DisplayName>MPINW</DisplayName>
+    <PublisherDisplayName>BSI</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

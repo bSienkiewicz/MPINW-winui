@@ -78,11 +78,11 @@ namespace App1
             if (folder != null)
             {
                 selectedFolderPath = folder.Path;
-                ValidateAndUpdateUI(selectedFolderPath);
+                ValidateAndUpdateUi(selectedFolderPath);
             }
         }
 
-        private void ValidateAndUpdateUI(string folderPath)
+        private void ValidateAndUpdateUi(string folderPath)
         {
             var validationResult = ValidateFolder(folderPath);
 
@@ -162,8 +162,27 @@ namespace App1
             selectedFolderPath = localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
             if (selectedFolderPath != string.Empty)
             {
-                ValidateAndUpdateUI(selectedFolderPath);
+                ValidateAndUpdateUi(selectedFolderPath);
                 GetAlertStacksFromDirectories();
+            }
+        }
+        private void openFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedFolderPath == null) return;
+
+            var folderPath = Path.Combine(selectedFolderPath, stacksPath);
+            if (Directory.Exists(folderPath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = folderPath,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                Debug.WriteLine($"Directory not found: {folderPath}");
             }
         }
 
@@ -246,6 +265,8 @@ namespace App1
             });
         }
 
+
+
         private void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
         {
             if (selectedFolderPath == null) return;
@@ -273,10 +294,47 @@ namespace App1
                 {
                     AlertItems[index] = _selectedAlert;
                 }
-                if (stacksComboBox.SelectedItem == null || AlertItems == null) return;
+                if (stacksComboBox.SelectedItem == null || AlertItems == null || selectedStack == null) return;
 
                 SaveAlertsToFile(selectedStack, AlertItems.ToList());
             }
         }
+        private void CopyAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAlert == null || selectedStack == null) return;
+
+            // Create a new alert and copy all properties from the selected alert
+            var alertToAdd = new NrqlAlert
+            {
+                Name = _selectedAlert.Name + " Copy",
+                Description = _selectedAlert.Description,
+                NrqlQuery = _selectedAlert.NrqlQuery,
+                RunbookUrl = _selectedAlert.RunbookUrl,
+                Severity = _selectedAlert.Severity,
+                Enabled = _selectedAlert.Enabled,
+                AggregationMethod = _selectedAlert.AggregationMethod,
+                AggregationWindow = _selectedAlert.AggregationWindow,
+                AggregationDelay = _selectedAlert.AggregationDelay,
+                CriticalOperator = _selectedAlert.CriticalOperator,
+                CriticalThreshold = _selectedAlert.CriticalThreshold,
+                CriticalThresholdDuration = _selectedAlert.CriticalThresholdDuration,
+                CriticalThresholdOccurrences = _selectedAlert.CriticalThresholdOccurrences
+            };
+
+            AlertItems.Add(alertToAdd);
+            AlertsListView.SelectedItem = alertToAdd;
+            cloneButton.Flyout.Hide();
+            SaveAlertsToFile(selectedStack, AlertItems.ToList());
+        }
+
+        private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAlert == null || selectedStack == null) return;
+            AlertItems.Remove(_selectedAlert);
+            SelectedAlert = null;
+            SaveAlertsToFile(selectedStack, AlertItems.ToList());
+            deleteButton.Flyout.Hide();
+        }
+
     }
 }
