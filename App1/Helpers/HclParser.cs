@@ -17,11 +17,11 @@ namespace App1.Helpers
         public string Severity { get; set; }
         public bool Enabled { get; set; }
         public string AggregationMethod { get; set; }
-        public int AggregationWindow { get; set; }
-        public int AggregationDelay { get; set; }
+        public int? AggregationWindow { get; set; }
+        public int? AggregationDelay { get; set; }
         public string CriticalOperator { get; set; }
         public double CriticalThreshold { get; set; }
-        public int CriticalThresholdDuration { get; set; }
+        public int? CriticalThresholdDuration { get; set; }
         public string CriticalThresholdOccurrences { get; set; }
 
         public override string ToString()

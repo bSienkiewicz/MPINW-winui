@@ -97,7 +97,7 @@
                         Style="{StaticResource AccentButtonStyle}">
                         <FontIcon Glyph="&#xE710;" />
                     </Button>
-                    <Button Grid.Column="2">
+                    <Button Grid.Column="2" Click="GenerateAlertButton_Click">
                         <FontIcon Glyph="&#xE9F5;" />
                     </Button>
                 </Grid>

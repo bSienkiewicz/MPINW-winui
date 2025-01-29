@@ -29,11 +29,12 @@ namespace App1
 {
     public sealed partial class NRAlerts : Page, INotifyPropertyChanged
     {
-        private string? selectedFolderPath;
-        private string? selectedStack;
-        private const string stacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
-        private string[] availableStacks = [];
-        private readonly ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+        private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+        private readonly ApplicationDataContainer _localSettings;
+
+        private string? _selectedFolderPath;
+        private string? _selectedStack;
+        private string[] _availableStacks = [];
         private ObservableCollection<NrqlAlert> AlertItems { get; set; } = new ObservableCollection<NrqlAlert>();
         private NrqlAlert _selectedAlert;
         public NrqlAlert SelectedAlert
@@ -51,11 +52,12 @@ namespace App1
 
         public NRAlerts()
         {
-            this.InitializeComponent();
+            InitializeComponent();
+            _localSettings = ApplicationData.Current.LocalSettings;
             LoadDirectory();
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged(string propertyName)
         {
@@ -77,8 +79,8 @@ namespace App1
 
             if (folder != null)
             {
-                selectedFolderPath = folder.Path;
-                ValidateAndUpdateUi(selectedFolderPath);
+                _selectedFolderPath = folder.Path;
+                ValidateAndUpdateUi(_selectedFolderPath);
             }
         }
 
@@ -135,15 +137,15 @@ namespace App1
 
         private void GetAlertStacksFromDirectories()
         {
-            if (selectedFolderPath == null) return;
+            if (_selectedFolderPath == null) return;
 
-            var path = Path.Combine(selectedFolderPath, stacksPath);
+            var path = Path.Combine(_selectedFolderPath, StacksPath);
             if (Directory.Exists(path))
             {
-                availableStacks = Directory.GetDirectories(path)
+                _availableStacks = Directory.GetDirectories(path)
                     .Select(dir => new DirectoryInfo(dir).Name)
                     .ToArray();
-                stacksComboBox.ItemsSource = availableStacks;
+                stacksComboBox.ItemsSource = _availableStacks;
             }
             else
             {
@@ -154,23 +156,23 @@ namespace App1
 
         private void SaveDirectory()
         {
-            localSettings.Values["NRAlertsDir"] = selectedFolderPath;
+            _localSettings.Values["NRAlertsDir"] = _selectedFolderPath;
         }
 
         private void LoadDirectory()
         {
-            selectedFolderPath = localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
-            if (selectedFolderPath != string.Empty)
+            _selectedFolderPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+            if (_selectedFolderPath != string.Empty)
             {
-                ValidateAndUpdateUi(selectedFolderPath);
+                ValidateAndUpdateUi(_selectedFolderPath);
                 GetAlertStacksFromDirectories();
             }
         }
         private void openFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            if (selectedFolderPath == null) return;
+            if (_selectedFolderPath == null) return;
 
-            var folderPath = Path.Combine(selectedFolderPath, stacksPath);
+            var folderPath = Path.Combine(_selectedFolderPath, StacksPath);
             if (Directory.Exists(folderPath))
             {
                 Process.Start(new ProcessStartInfo
@@ -188,17 +190,17 @@ namespace App1
 
         private void DeleteDirectory()
         {
-            localSettings.Values["NRAlertsDir"] = string.Empty;
+            _localSettings.Values["NRAlertsDir"] = string.Empty;
         }
 
         private void StackComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (selectedFolderPath == null) return;
+            if (_selectedFolderPath == null) return;
 
-            selectedStack = e.AddedItems[0]?.ToString();
-            if (string.IsNullOrEmpty(selectedStack)) return;
+            _selectedStack = e.AddedItems[0]?.ToString();
+            if (string.IsNullOrEmpty(_selectedStack)) return;
 
-            string tfvarsContent = File.ReadAllText(Path.Combine(selectedFolderPath, stacksPath, selectedStack, "auto.tfvars"));
+            string tfvarsContent = File.ReadAllText(Path.Combine(_selectedFolderPath, StacksPath, _selectedStack, "auto.tfvars"));
             var parser = new HclParser();
             var parsedAlerts = parser.ParseAlerts(tfvarsContent);
 
@@ -208,7 +210,7 @@ namespace App1
                 AlertItems.Add(alert);
             }
 
-            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {selectedStack}");
+            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {_selectedStack}");
         }
 
         private void NRAlertSearch_TextChanged(object sender, TextChangedEventArgs e)
@@ -232,7 +234,7 @@ namespace App1
         private void AddNewAlertButton_Click(object sender, RoutedEventArgs e)
         {
             // Create a new empty alert
-            if (selectedStack == null) return;
+            if (_selectedStack == null) return;
 
             var newAlert = new NrqlAlert
             {
@@ -264,14 +266,14 @@ namespace App1
                 nameTextBox?.Focus(FocusState.Programmatic);
             });
         }
-
-
+        
+        
 
         private void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
         {
-            if (selectedFolderPath == null) return;
+            if (_selectedFolderPath == null) return;
 
-            var filePath = Path.Combine(selectedFolderPath, stacksPath, stackName, "auto.tfvars");
+            var filePath = Path.Combine(_selectedFolderPath, StacksPath, stackName, "auto.tfvars");
 
             // Read the original file content
             var originalContent = File.ReadAllText(filePath);
@@ -294,14 +296,14 @@ namespace App1
                 {
                     AlertItems[index] = _selectedAlert;
                 }
-                if (stacksComboBox.SelectedItem == null || AlertItems == null || selectedStack == null) return;
+                if (stacksComboBox.SelectedItem == null || AlertItems == null || _selectedStack == null) return;
 
-                SaveAlertsToFile(selectedStack, AlertItems.ToList());
+                SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             }
         }
         private void CopyAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedAlert == null || selectedStack == null) return;
+            if (_selectedAlert == null || _selectedStack == null) return;
 
             // Create a new alert and copy all properties from the selected alert
             var alertToAdd = new NrqlAlert
@@ -324,17 +326,80 @@ namespace App1
             AlertItems.Add(alertToAdd);
             AlertsListView.SelectedItem = alertToAdd;
             cloneButton.Flyout.Hide();
-            SaveAlertsToFile(selectedStack, AlertItems.ToList());
+            SaveAlertsToFile(_selectedStack, AlertItems.ToList());
         }
 
         private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedAlert == null || selectedStack == null) return;
+            if (_selectedAlert == null || _selectedStack == null) return;
             AlertItems.Remove(_selectedAlert);
             SelectedAlert = null;
-            SaveAlertsToFile(selectedStack, AlertItems.ToList());
+            SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             deleteButton.Flyout.Hide();
         }
 
+        private async void GenerateAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            // SELECT percentage(count(*), where ExitStatus = 'Error') from Transaction where appName = 'hm.mpm.metapack.com_BlackBox' and CarrierName = 'UPS API' and PrintOperation like '%create%' FACET BusinessUnit
+            if (_selectedStack == null) return;
+            
+            var dialog = new ContentDialog()
+            {
+                Title = "Enter Information",
+                XamlRoot = this.Content.XamlRoot,
+                PrimaryButtonText = "OK",
+                SecondaryButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            // Create the content panel
+            StackPanel panel = new StackPanel();
+            panel.Spacing = 10;
+
+            // Add a TextBox
+            TextBox textBoxApp = new TextBox();
+            textBoxApp.Header = "AppName:";
+            TextBox textBoxCarrier = new TextBox();
+            textBoxCarrier.Header = "AppName:";
+            panel.Children.Add(textBoxApp);
+            panel.Children.Add(textBoxCarrier);
+
+            // Set the content
+            dialog.Content = panel;
+
+            // Show the dialog and handle the result
+            var result = await dialog.ShowAsync();
+
+            switch (result)
+            {
+                case ContentDialogResult.Primary:
+                    var appName = textBoxApp.Text;
+                    var carrierName = textBoxCarrier.Text;
+                    var newAlert = new NrqlAlert
+                    {
+                        Name = $"Print duration for {carrierName}",
+                        Description = $"Alert related to increased {carrierName} print duration",
+                        NrqlQuery = $"SELECT percentage(count(*), where ExitStatus = 'Error') from Transaction where appName = '{appName}.mpm.metapack.com_BlackBox' and CarrierName = '{carrierName}' and PrintOperation like '%create%' FACET BusinessUnit",
+                        RunbookUrl = "",
+                        Severity = "CRITICAL",
+                        Enabled = true,
+                        AggregationMethod = "event_flow",
+                        AggregationDelay = 120,
+                        CriticalOperator = "",
+                        CriticalThreshold = 5,
+                        CriticalThresholdDuration = 300,
+                        CriticalThresholdOccurrences = "ALL"
+                    };
+                    
+                    AlertItems.Add(newAlert);
+                    AlertsListView.SelectedItem = newAlert;
+                    SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+                    break;
+                
+                case ContentDialogResult.Secondary:
+                    // Handle Cancel button click
+                    break;
+            }
+        }
     }
 }
