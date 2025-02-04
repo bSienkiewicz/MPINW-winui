@@ -45,6 +45,11 @@
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="New Relic Alert Manager - Table" Tag="NRAlertsTable">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="LSTool" Tag="Page2">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE773;" />

@@ -51,6 +51,13 @@ public sealed partial class MainWindow : Window
 
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
+        
+        if (args.IsSettingsSelected)
+        {
+            // Navigate to the settings page
+            ContentFrame.Navigate(typeof(SettingsPage));
+            return;
+        }
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
             string? tag = selectedItem.Tag?.ToString();
@@ -64,6 +71,9 @@ public sealed partial class MainWindow : Window
                         break;
                     case "NRAlerts":
                         ContentFrame.Navigate(typeof(NRAlerts));
+                        break;
+                    case "NRAlertsTable":
+                        ContentFrame.Navigate(typeof(NRAlerts_Manager));
                         break;
                     case "Page2":
                         ContentFrame.Navigate(typeof(Page2));

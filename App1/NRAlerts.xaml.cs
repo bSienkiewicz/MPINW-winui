@@ -21,22 +21,33 @@ using System.Text.Json;
 using App1.Helpers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using StorageFolder = ABI.Windows.Storage.StorageFolder;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace App1
 {
+    /// <summary>
+    /// Manages New Relic alerts configuration for different stacks
+    /// </summary>
     public sealed partial class NRAlerts : Page, INotifyPropertyChanged
     {
+        // Path to the stacks configuration directory relative to the repository root
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+
         private readonly ApplicationDataContainer _localSettings;
+        private readonly string[] _requiredFolders = { ".github", "ansible", "metaform", "terraform" };
 
         private string? _selectedFolderPath;
         private string? _selectedStack;
         private string[] _availableStacks = [];
-        private ObservableCollection<NrqlAlert> AlertItems { get; set; } = new ObservableCollection<NrqlAlert>();
+
+        // Collection of alerts that supports UI updates when modified
+        public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
+
         private NrqlAlert _selectedAlert;
+
         public NrqlAlert SelectedAlert
         {
             get => _selectedAlert;
@@ -50,6 +61,8 @@ namespace App1
             }
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         public NRAlerts()
         {
             InitializeComponent();
@@ -57,26 +70,14 @@ namespace App1
             LoadDirectory();
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected void OnPropertyChanged(string propertyName)
-        {
+        protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+
+        #region Directory Management
 
         private async void SelectFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            var folderPicker = new FolderPicker();
-
-            // Get the window handle from the current window
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-
+            var folder = await InitializeFolderPicker().PickSingleFolderAsync();
             if (folder != null)
             {
                 _selectedFolderPath = folder.Path;
@@ -84,123 +85,119 @@ namespace App1
             }
         }
 
+        private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            // open new folder in explorer based on the selected folder path + stacks path 
+            if (_selectedFolderPath == null) return;
+
+            var path = Path.Combine(_selectedFolderPath, StacksPath);
+            if (Directory.Exists(path))
+            {
+                Process.Start("explorer.exe", path);
+            }
+        }
+
+        /// <summary>
+        /// Initializes a folder picker with proper Windows handle and settings
+        /// </summary>
+        private FolderPicker InitializeFolderPicker()
+        {
+            var folderPicker = new FolderPicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+            };
+
+            // Required for WinUI 3 folder picker initialization
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+            folderPicker.FileTypeFilter.Add("*");
+
+            return folderPicker;
+        }
+
         private void ValidateAndUpdateUi(string folderPath)
         {
-            var validationResult = ValidateFolder(folderPath);
+            var (isValid, _) = ValidateFolder(folderPath);
 
-            //pathTextBlock.Text = folderPath;
-
-            if (validationResult.IsValid)
+            if (isValid)
             {
                 infoBar.IsOpen = false;
-                //continueButton.IsEnabled = true;
                 SaveDirectory();
+                GetAlertStacksFromDirectories();
             }
             else
             {
-                infoBar.Title = $"Invalid repository structure.";
-                infoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
-                infoBar.Message = "PLease select a correct folder.";
-                infoBar.IsOpen = true;
-                //continueButton.IsEnabled = false;
+                ShowErrorInfoBar("Invalid repository structure.", "Please select a correct folder.");
                 DeleteDirectory();
             }
         }
 
+        private void ShowErrorInfoBar(string title, string message)
+        {
+            infoBar.Title = title;
+            infoBar.Severity = InfoBarSeverity.Error;
+            infoBar.Message = message;
+            infoBar.IsOpen = true;
+        }
+
+        /// <summary>
+        /// Validates if the selected folder contains required repository structure
+        /// </summary>
         private (bool IsValid, string[] MissingFolders) ValidateFolder(string folderPath)
         {
-            var requiredFolders = new[] { ".github", "ansible", "metaform", "terraform" };
-
             try
             {
                 var existingFolders = Directory.GetDirectories(folderPath)
                     .Select(path => new DirectoryInfo(path).Name)
                     .ToArray();
 
-                var missingFolders = requiredFolders
-                    .Where(required => !existingFolders.Contains(required))
-                    .ToArray();
-
-                return (
-                    IsValid: !missingFolders.Any(),
-                    MissingFolders: missingFolders
-                );
+                var missingFolders = _requiredFolders.Except(existingFolders).ToArray();
+                return (IsValid: !missingFolders.Any(), MissingFolders: missingFolders);
             }
             catch (Exception)
             {
-                return (
-                    IsValid: false,
-                    MissingFolders: requiredFolders
-                );
+                return (IsValid: false, MissingFolders: _requiredFolders);
             }
         }
+
+        #endregion
+
+        #region Alert Management
 
         private void GetAlertStacksFromDirectories()
         {
-            if (_selectedFolderPath == null) return;
+            if (string.IsNullOrEmpty(_selectedFolderPath)) return;
 
             var path = Path.Combine(_selectedFolderPath, StacksPath);
-            if (Directory.Exists(path))
-            {
-                _availableStacks = Directory.GetDirectories(path)
-                    .Select(dir => new DirectoryInfo(dir).Name)
-                    .ToArray();
-                stacksComboBox.ItemsSource = _availableStacks;
-            }
-            else
+            if (!Directory.Exists(path))
             {
                 Debug.WriteLine($"Directory not found: {path}");
+                return;
             }
-        }
 
-
-        private void SaveDirectory()
-        {
-            _localSettings.Values["NRAlertsDir"] = _selectedFolderPath;
-        }
-
-        private void LoadDirectory()
-        {
-            _selectedFolderPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
-            if (_selectedFolderPath != string.Empty)
-            {
-                ValidateAndUpdateUi(_selectedFolderPath);
-                GetAlertStacksFromDirectories();
-            }
-        }
-        private void openFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedFolderPath == null) return;
-
-            var folderPath = Path.Combine(_selectedFolderPath, StacksPath);
-            if (Directory.Exists(folderPath))
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = folderPath,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-            else
-            {
-                Debug.WriteLine($"Directory not found: {folderPath}");
-            }
-        }
-
-        private void DeleteDirectory()
-        {
-            _localSettings.Values["NRAlertsDir"] = string.Empty;
+            _availableStacks = Directory.GetDirectories(path)
+                .Select(dir => new DirectoryInfo(dir).Name)
+                .ToArray();
+            stacksComboBox.ItemsSource = _availableStacks;
         }
 
         private void StackComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_selectedFolderPath == null) return;
+            if (_selectedFolderPath == null || e.AddedItems.Count == 0) return;
 
             _selectedStack = e.AddedItems[0]?.ToString();
             if (string.IsNullOrEmpty(_selectedStack)) return;
 
-            string tfvarsContent = File.ReadAllText(Path.Combine(_selectedFolderPath, StacksPath, _selectedStack, "auto.tfvars"));
+            LoadAlertsForStack();
+        }
+
+        /// <summary>
+        /// Loads and parses alerts from the tfvars file for the selected stack
+        /// </summary>
+        private void LoadAlertsForStack()
+        {
+            var tfvarsPath = Path.Combine(_selectedFolderPath, StacksPath, _selectedStack, "auto.tfvars");
+            var tfvarsContent = File.ReadAllText(tfvarsPath);
             var parser = new HclParser();
             var parsedAlerts = parser.ParseAlerts(tfvarsContent);
 
@@ -209,15 +206,20 @@ namespace App1
             {
                 AlertItems.Add(alert);
             }
-
-            Debug.WriteLine($"** Found {AlertItems.Count} alerts for {_selectedStack}");
         }
+
+        #endregion
+
+        #region UI Event Handlers
 
         private void NRAlertSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (AlertItems.Count == 0) return;
+
             var search = NRAlertSearch.Text.ToLower();
-            var filteredAlerts = AlertItems.Where(alert => alert.Name.ToLower().Contains(search) || alert.Description.ToLower().Contains(search));
+            var filteredAlerts = AlertItems.Where(alert =>
+                alert.Name.ToLower().Contains(search) ||
+                alert.Description.ToLower().Contains(search));
             AlertsListView.ItemsSource = filteredAlerts;
         }
 
@@ -225,90 +227,33 @@ namespace App1
         {
             if (e.AddedItems.Count > 0)
             {
-
-                // Switch to the new alert
                 SelectedAlert = (NrqlAlert)e.AddedItems[0];
             }
         }
 
-        private void AddNewAlertButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Create a new empty alert
-            if (_selectedStack == null) return;
-
-            var newAlert = new NrqlAlert
-            {
-                Name = "New Alert",
-                Description = "",
-                NrqlQuery = "",
-                RunbookUrl = "",
-                Severity = "CRITICAL",
-                Enabled = true,
-                AggregationMethod = "",
-                AggregationWindow = 0,
-                AggregationDelay = 0,
-                CriticalOperator = "",
-                CriticalThreshold = 0.0,
-                CriticalThresholdDuration = 0,
-                CriticalThresholdOccurrences = ""
-            };
-
-            // Add the new alert to the AlertItems collection
-            AlertItems.Add(newAlert);
-
-            // Select the new alert in the ListView
-            AlertsListView.SelectedItem = newAlert;
-
-            // Set focus on the Name text box in the right column
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                var nameTextBox = FindName("NameTextBox") as TextBox;
-                nameTextBox?.Focus(FocusState.Programmatic);
-            });
-        }
-        
-        
-
-        private void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
-        {
-            if (_selectedFolderPath == null) return;
-
-            var filePath = Path.Combine(_selectedFolderPath, StacksPath, stackName, "auto.tfvars");
-
-            // Read the original file content
-            var originalContent = File.ReadAllText(filePath);
-
-            // Replace the nr_nrql_alerts section with the updated alerts
-            var parser = new HclParser();
-            var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
-
-            // Write the updated content back to the file
-            File.WriteAllText(filePath, updatedContent);
-        }
-
         private void SaveSelectedAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            // Save changes to the current alert before switching
-            if (_selectedAlert != null)
-            {
-                var index = AlertItems.IndexOf(_selectedAlert);
-                if (index != -1)
-                {
-                    AlertItems[index] = _selectedAlert;
-                }
-                if (stacksComboBox.SelectedItem == null || AlertItems == null || _selectedStack == null) return;
+            if (_selectedAlert == null ||
+                stacksComboBox.SelectedItem == null ||
+                AlertItems == null ||
+                _selectedStack == null) return;
 
+            var index = AlertItems.IndexOf(_selectedAlert);
+            if (index != -1)
+            {
+                AlertItems[index] = _selectedAlert;
                 SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             }
         }
+
         private void CopyAlertButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedAlert == null || _selectedStack == null) return;
 
-            // Create a new alert and copy all properties from the selected alert
-            var alertToAdd = new NrqlAlert
+            // Clone the selected alert with a "Copy" suffix
+            var alertCopy = new NrqlAlert
             {
-                Name = _selectedAlert.Name + " Copy",
+                Name = $"{_selectedAlert.Name} Copy",
                 Description = _selectedAlert.Description,
                 NrqlQuery = _selectedAlert.NrqlQuery,
                 RunbookUrl = _selectedAlert.RunbookUrl,
@@ -323,8 +268,8 @@ namespace App1
                 CriticalThresholdOccurrences = _selectedAlert.CriticalThresholdOccurrences
             };
 
-            AlertItems.Add(alertToAdd);
-            AlertsListView.SelectedItem = alertToAdd;
+            AlertItems.Add(alertCopy);
+            AlertsListView.SelectedItem = alertCopy;
             cloneButton.Flyout.Hide();
             SaveAlertsToFile(_selectedStack, AlertItems.ToList());
         }
@@ -332,74 +277,116 @@ namespace App1
         private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedAlert == null || _selectedStack == null) return;
+
             AlertItems.Remove(_selectedAlert);
             SelectedAlert = null;
             SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             deleteButton.Flyout.Hide();
         }
 
+        private void AddNewAlertButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedStack == null) return;
+
+            var newAlert = new NrqlAlert
+            {
+                Name = "New Alert", Description = "Alert description", NrqlQuery = "",
+                RunbookUrl = "", Severity = "CRITICAL", Enabled = true, AggregationMethod = "event_flow"
+            };
+            AlertItems.Add(newAlert);
+            AlertsListView.SelectedItem = newAlert;
+            SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+        }
+
         private async void GenerateAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            // SELECT percentage(count(*), where ExitStatus = 'Error') from Transaction where appName = 'hm.mpm.metapack.com_BlackBox' and CarrierName = 'UPS API' and PrintOperation like '%create%' FACET BusinessUnit
             if (_selectedStack == null) return;
-            
-            var dialog = new ContentDialog()
+
+            var (appName, carrierName) = await ShowGenerateAlertDialog();
+            if (string.IsNullOrEmpty(appName) || string.IsNullOrEmpty(carrierName)) return;
+
+            var newAlert = new NrqlAlert
+            {
+                Name = $"Print duration for {carrierName}",
+                Description = $"Alert related to increased {carrierName} print duration",
+                NrqlQuery =
+                    $"SELECT average(duration) from Transaction where appName = '{appName}.mpm.metapack.com_BlackBox' and CarrierName = '{carrierName}' and PrintOperation like '%create%' FACET BusinessUnit",
+                RunbookUrl = "",
+                Severity = "CRITICAL",
+                Enabled = true,
+                AggregationMethod = "event_flow",
+                CriticalThresholdOccurrences = "ALL",
+                CriticalThresholdDuration = 300,
+                CriticalThreshold = 7,
+                CriticalOperator = "ABOVE",
+                AggregationDelay = 120,
+            };
+            AlertItems.Add(newAlert);
+            AlertsListView.SelectedItem = newAlert;
+            SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+        }
+
+        #endregion
+
+        #region Storage Operations
+
+        private void SaveDirectory() =>
+            _localSettings.Values["NRAlertsDir"] = _selectedFolderPath;
+
+        private void LoadDirectory()
+        {
+            _selectedFolderPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+            if (!string.IsNullOrEmpty(_selectedFolderPath))
+            {
+                ValidateAndUpdateUi(_selectedFolderPath);
+            }
+        }
+
+        private void DeleteDirectory() =>
+            _localSettings.Values["NRAlertsDir"] = string.Empty;
+
+        /// <summary>
+        /// Saves the current alerts configuration back to the tfvars file
+        /// </summary>
+        private void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
+        {
+            if (_selectedFolderPath == null) return;
+
+            var filePath = Path.Combine(_selectedFolderPath, StacksPath, stackName, "auto.tfvars");
+            var originalContent = File.ReadAllText(filePath);
+            var parser = new HclParser();
+            var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
+            File.WriteAllText(filePath, updatedContent);
+        }
+
+        /// <summary>
+        /// Shows a dialog to collect information for generating a new alert
+        /// </summary>
+        private async Task<(string AppName, string CarrierName)> ShowGenerateAlertDialog()
+        {
+            var dialog = new ContentDialog
             {
                 Title = "Enter Information",
-                XamlRoot = this.Content.XamlRoot,
+                XamlRoot = Content.XamlRoot,
                 PrimaryButtonText = "OK",
                 SecondaryButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary
             };
 
-            // Create the content panel
-            StackPanel panel = new StackPanel();
-            panel.Spacing = 10;
+            var panel = new StackPanel { Spacing = 10 };
+            var appNameBox = new TextBox { Header = "AppName:" };
+            var carrierBox = new TextBox { Header = "Carrier Name:" };
 
-            // Add a TextBox
-            TextBox textBoxApp = new TextBox();
-            textBoxApp.Header = "AppName:";
-            TextBox textBoxCarrier = new TextBox();
-            textBoxCarrier.Header = "AppName:";
-            panel.Children.Add(textBoxApp);
-            panel.Children.Add(textBoxCarrier);
-
-            // Set the content
+            panel.Children.Add(appNameBox);
+            panel.Children.Add(carrierBox);
             dialog.Content = panel;
 
-            // Show the dialog and handle the result
             var result = await dialog.ShowAsync();
-
-            switch (result)
-            {
-                case ContentDialogResult.Primary:
-                    var appName = textBoxApp.Text;
-                    var carrierName = textBoxCarrier.Text;
-                    var newAlert = new NrqlAlert
-                    {
-                        Name = $"Print duration for {carrierName}",
-                        Description = $"Alert related to increased {carrierName} print duration",
-                        NrqlQuery = $"SELECT percentage(count(*), where ExitStatus = 'Error') from Transaction where appName = '{appName}.mpm.metapack.com_BlackBox' and CarrierName = '{carrierName}' and PrintOperation like '%create%' FACET BusinessUnit",
-                        RunbookUrl = "",
-                        Severity = "CRITICAL",
-                        Enabled = true,
-                        AggregationMethod = "event_flow",
-                        AggregationDelay = 120,
-                        CriticalOperator = "",
-                        CriticalThreshold = 5,
-                        CriticalThresholdDuration = 300,
-                        CriticalThresholdOccurrences = "ALL"
-                    };
-                    
-                    AlertItems.Add(newAlert);
-                    AlertsListView.SelectedItem = newAlert;
-                    SaveAlertsToFile(_selectedStack, AlertItems.ToList());
-                    break;
-                
-                case ContentDialogResult.Secondary:
-                    // Handle Cancel button click
-                    break;
-            }
+            return result == ContentDialogResult.Primary
+                ? (appNameBox.Text, carrierBox.Text)
+                : (string.Empty, string.Empty);
         }
+
+        #endregion
     }
 }
