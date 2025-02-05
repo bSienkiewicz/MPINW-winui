@@ -69,11 +69,11 @@ public sealed partial class MainWindow : Window
                     case "Page1":
                         ContentFrame.Navigate(typeof(Page1));
                         break;
-                    case "NRAlerts":
-                        ContentFrame.Navigate(typeof(NRAlerts));
+                    case "Alerting":
+                        ContentFrame.Navigate(typeof(Alerting));
                         break;
                     case "NRAlertsTable":
-                        ContentFrame.Navigate(typeof(NRAlerts_Manager));
+                        ContentFrame.Navigate(typeof(Alerting_Manager));
                         break;
                     case "Page2":
                         ContentFrame.Navigate(typeof(Page2));

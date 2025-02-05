@@ -40,12 +40,12 @@
                         <FontIcon Glyph="&#xECAD;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="New Relic Alert Manager" Tag="NRAlerts">
+                <NavigationViewItem Content="Alerting" Tag="Alerting">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="New Relic Alert Manager - Table" Tag="NRAlertsTable">
+                <NavigationViewItem Content="Alerting Manager" Tag="NRAlertsTable">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>

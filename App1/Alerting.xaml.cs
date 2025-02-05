@@ -31,7 +31,7 @@ namespace App1
     /// <summary>
     /// Manages New Relic alerts configuration for different stacks
     /// </summary>
-    public sealed partial class NRAlerts : Page, INotifyPropertyChanged
+    public sealed partial class Alerting : Page, INotifyPropertyChanged
     {
         // Path to the stacks configuration directory relative to the repository root
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
@@ -63,7 +63,7 @@ namespace App1
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public NRAlerts()
+        public Alerting()
         {
             InitializeComponent();
             _localSettings = ApplicationData.Current.LocalSettings;

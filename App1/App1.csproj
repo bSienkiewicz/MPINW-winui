@@ -38,13 +38,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="WinUI.TableView" Version="1.2.2" />
   </ItemGroup>
   <ItemGroup>
-    <Page Update="NRAlerts.xaml">
+    <Page Update="Alerting.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="NRAlerts_Manager.xaml">
+    <Page Update="Alerting_Manager.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SettingsPage.xaml">

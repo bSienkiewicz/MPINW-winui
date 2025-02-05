@@ -1,26 +1,130 @@
 <?xml version="1.0" encoding="utf-8" ?>
+
 <Page
-    x:Class="App1.NRAlerts_Manager"
+    x:Class="App1.Alerting_Manager"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:App1"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    xmlns:tableView="using:WinUI.TableView">
+    xmlns:tableView="using:WinUI.TableView"
+    mc:Ignorable="d">
 
 
     <Grid Padding="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        
-        <TextBlock
-            Grid.Row="0"
-            Style="{StaticResource TitleTextBlockStyle}"
-            Text="Alerting Manager" />
-        
-        
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                Margin="0,0,0,20"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Text="Alerting Manager" />
+
+            <Button
+                x:Name="FetchNRButton"
+                Grid.Column="1"
+                Click="FetchNRButton_Click"
+                Style="{StaticResource AccentButtonStyle}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xEBD3;" />
+                    <TextBlock Text="Fetch" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!--  Fixed Header  -->
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1.5*" />
+                <ColumnDefinition Width="1.5*" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                Margin="0,0,12,0"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="App Name" />
+            <TextBlock
+                Grid.Column="1"
+                Margin="0,0,12,0"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="Carrier" />
+            <TextBlock
+                Grid.Column="2"
+                Margin="0,0,12,0"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="Print Duration" />
+            <TextBlock
+                Grid.Column="3"
+                Margin="0,0,12,0"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="Error Rate" />
+            <TextBlock
+                Grid.Column="4"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="Actions" />
+        </Grid>
+
+        <!--  Scrollable Content  -->
+        <ScrollViewer
+            Grid.Row="2"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto"
+            VerticalScrollMode="Auto">
+            <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{x:Bind AlertItems}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:AlertItem">
+                        <Grid Margin="0,0,0,8" HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind AppName}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="0,0,12,0"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind Carrier}" />
+                            <Button
+                                Grid.Column="2"
+                                Content="Create Alert"
+                                IsEnabled="{x:Bind PrintDuration}" />
+                            <Button
+                                Grid.Column="3"
+                                Content="Create Alert"
+                                IsEnabled="{x:Bind ErrorRate}" />
+                            <Button
+                                Grid.Column="4"
+                                Command="{x:Bind ConfigureCommand}"
+                                Content="Configure"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </Grid>
 </Page>
