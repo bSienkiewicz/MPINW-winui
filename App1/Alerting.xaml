@@ -31,7 +31,7 @@
             <TextBlock
                 Grid.Column="0"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="New Relic Alerts Management" />
+                Text="Alerting" />
 
             <StackPanel
                 Grid.Column="2"
