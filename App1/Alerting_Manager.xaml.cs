@@ -15,6 +15,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading;
 using App1.Services;
 using System.Linq;
+using App1.Helpers;
 
 namespace App1
 {
@@ -24,11 +25,17 @@ namespace App1
         public ObservableCollection<CarrierItem> Carriers { get; } = new ObservableCollection<CarrierItem>();
 
         private readonly ApplicationDataContainer _localSettings;
+        private AppNameItem _selectedApp;
+        private CarrierItem _selectedCarrier;
+
+        private string _selectedStack = "shd03"; 
+        private string _repositoryPath;
 
         public Alerting_Manager()
         {
             this.InitializeComponent();
             _localSettings = ApplicationData.Current.LocalSettings;
+            _repositoryPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
             AppNamesList.ItemsSource = AppNames;
             CarriersList.ItemsSource = Carriers;
             LoadSavedData();
@@ -124,12 +131,99 @@ namespace App1
         {
             if (AppNamesList.SelectedItem is AppNameItem selectedApp)
             {
+                _selectedApp = selectedApp;
                 Carriers.Clear();
 
                 foreach (var carrier in selectedApp.Carriers)
                 {
                     Carriers.Add(carrier);
                 }
+
+                UpdateAlertButtonsState();
+            }
+        }
+
+        private void CarriersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CarriersList.SelectedItem is CarrierItem selectedCarrier)
+            {
+                _selectedCarrier = selectedCarrier;
+                UpdateAlertButtonsState();
+            }
+        }
+
+        private void UpdateAlertButtonsState()
+        {
+            if (_selectedApp != null && _selectedCarrier != null && !string.IsNullOrEmpty(_repositoryPath))
+            {
+                Debug.WriteLine($"Selected App: {_selectedApp.AppName}");
+                Debug.WriteLine($"Selected Carrier: {_selectedCarrier.CarrierName}");
+                Debug.WriteLine($"Repository Path: {_repositoryPath}");
+                Debug.WriteLine($"Selected Stack: {_selectedStack}");
+
+                var existingAlerts = AlertService.Instance.GetAlertsForStack(_repositoryPath, _selectedStack);
+                Debug.WriteLine($"Number of existing alerts: {existingAlerts.Count}");
+
+                // Print details of each existing alert
+                foreach (var alert in existingAlerts)
+                {
+                    Debug.WriteLine($"Alert NRQL Query: {alert.NrqlQuery}");
+                }
+
+                // Check if print duration alert exists and get the first matching alert
+                var matchingAlert = existingAlerts.FirstOrDefault(alert =>
+                    alert.NrqlQuery.Contains($"appName = '{_selectedApp.AppName}") &&
+                    alert.NrqlQuery.Contains($"CarrierName = '{_selectedCarrier.CarrierName}'") &&
+                    alert.NrqlQuery.Contains("average(duration)"));
+
+                bool printDurationExists = matchingAlert != null;
+
+                if (printDurationExists)
+                {
+                    Debug.WriteLine($"Matching Alert NRQL Query: {matchingAlert.NrqlQuery}");
+                }
+
+                Debug.WriteLine($"Print Duration Exists: {printDurationExists}");
+
+                AddPrintDurationButton.IsEnabled = !printDurationExists;
+            }
+            else
+            {
+                AddPrintDurationButton.IsEnabled = false;
+            }
+        }
+
+
+        private async void AddPrintDurationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedApp == null || _selectedCarrier == null || string.IsNullOrEmpty(_repositoryPath))
+            {
+                return;
+            }
+
+            try
+            {
+                var existingAlerts = AlertService.Instance.GetAlertsForStack(_repositoryPath, _selectedStack);
+                var newAlert = AlertService.Instance.CreatePrintDurationAlert(_selectedApp.AppName, _selectedCarrier.CarrierName);
+
+                existingAlerts.Add(newAlert);
+                AlertService.Instance.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
+
+                // Show success message
+                InfoBar.Title = "Success";
+                InfoBar.Severity = InfoBarSeverity.Success;
+                InfoBar.Message = "Print Duration alert added successfully.";
+                InfoBar.IsOpen = true;
+
+                // Update button states
+                UpdateAlertButtonsState();
+            }
+            catch (Exception ex)
+            {
+                InfoBar.Title = "Error";
+                InfoBar.Severity = InfoBarSeverity.Error;
+                InfoBar.Message = $"Failed to add alert: {ex.Message}";
+                InfoBar.IsOpen = true;
             }
         }
 
@@ -138,23 +232,23 @@ namespace App1
             try
             {
                 string url = "https://api.newrelic.com/graphql";
-                string stack = "shd04";
-                string query = $@"
-        {{ 
-            actor {{ 
-                account(id: 400000) {{ 
-                    nrql(timeout: 120 query: ""SELECT uniques(CarrierName) FROM Transaction WHERE host LIKE '%{stack}%' and PrintOperation LIKE '%create%' SINCE 7 days ago FACET appName"") {{ 
-                        results 
-                    }} 
-                }} 
-            }} 
-        }}";
+                string stack = _selectedStack;
+                string query = $@"  
+               {{   
+                   actor {{   
+                       account(id: 400000) {{   
+                           nrql(timeout: 120 query: ""SELECT uniques(CarrierName) FROM Transaction WHERE host LIKE '%{stack}%' and PrintOperation LIKE '%create%' SINCE 7 days ago FACET appName"") {{   
+                               results   
+                           }}   
+                       }}   
+                   }}   
+               }}";
 
                 var requestBody = new { query = query };
                 string jsonBody = JsonConvert.SerializeObject(requestBody);
                 InfoBar.IsOpen = false;
 
-                // Show progress indicators
+                // Show progress indicators  
                 AppNames.Clear();
                 AppNameFetchingProgress.Visibility = Visibility.Visible;
                 AppNameFetchingProgress.IsActive = true;
@@ -210,8 +304,17 @@ namespace App1
 
                         foreach (var appNameItem in appNameToCarriersMap.Values)
                         {
+                            appNameItem.Carriers = appNameItem.Carriers.OrderBy(c => c.CarrierName).ToList();
                             AppNames.Add(appNameItem);
                         }
+
+                        var sortedAppNames = AppNames.OrderBy(a => a.AppName).ToList();
+                        AppNames.Clear();
+                        foreach (var appNameItem in sortedAppNames)
+                        {
+                            AppNames.Add(appNameItem);
+                        }
+
                         DataService.Instance.SaveAppNames(AppNames);
                     }
                     else
@@ -233,6 +336,63 @@ namespace App1
                 AppNameFetchingProgress.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
                 CarrierFetchingProgress.IsActive = false;
+            }
+        }
+
+        private async void CheckAndAddMissingAlerts_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(_repositoryPath))
+            {
+                return;
+            }
+
+            var existingAlerts = AlertService.Instance.GetAlertsForStack(_repositoryPath, _selectedStack);
+            var missingAlerts = new List<NrqlAlert>();
+
+            foreach (var app in AppNames)
+            {
+                foreach (var carrier in app.Carriers)
+                {
+                    if (!AlertService.Instance.AlertExistsForCarrier(existingAlerts, app.AppName, carrier.CarrierName))
+                    {
+                        var newAlert = AlertService.Instance.CreatePrintDurationAlert(app.AppName, carrier.CarrierName);
+                        missingAlerts.Add(newAlert);
+                    }
+                }
+            }
+
+            if (missingAlerts.Any())
+            {
+                // Show confirmation dialog with number of alerts to be added
+                var dialog = new ContentDialog
+                {
+                    Title = "Add Missing Alerts",
+                    Content = $"Found {missingAlerts.Count} missing alerts. Do you want to add them?",
+                    PrimaryButtonText = "Add",
+                    SecondaryButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    existingAlerts.AddRange(missingAlerts);
+                    AlertService.Instance.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
+
+                    // Show success message
+                    InfoBar.Title = "Success";
+                    InfoBar.Severity = InfoBarSeverity.Success;
+                    InfoBar.Message = $"Added {missingAlerts.Count} new alerts.";
+                    InfoBar.IsOpen = true;
+                }
+            }
+            else
+            {
+                // Show message that no missing alerts were found
+                InfoBar.Title = "No Missing Alerts";
+                InfoBar.Severity = InfoBarSeverity.Informational;
+                InfoBar.Message = "All required alerts are already configured.";
+                InfoBar.IsOpen = true;
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using App1.Helpers;
@@ -7,37 +8,37 @@ namespace App1.Services
 {
     public class AlertService
     {
+        private static AlertService _instance;
+        public static AlertService Instance => _instance ??= new AlertService();
+
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
 
-        public List<NrqlAlert> LoadAlertsForStack(string folderPath, string stackName)
+        private AlertService() { }
+
+        public List<NrqlAlert> GetAlertsForStack(string repositoryPath, string stackName)
         {
-            var tfvarsPath = Path.Combine(folderPath, StacksPath, stackName, "auto.tfvars");
+            var tfvarsPath = Path.Combine(repositoryPath, StacksPath, stackName, "auto.tfvars");
+            if (!File.Exists(tfvarsPath))
+                return new List<NrqlAlert>();
+
             var tfvarsContent = File.ReadAllText(tfvarsPath);
             var parser = new HclParser();
             return parser.ParseAlerts(tfvarsContent);
         }
 
-        public void SaveAlertsToFile(string folderPath, string stackName, List<NrqlAlert> alerts)
-        {
-            var filePath = Path.Combine(folderPath, StacksPath, stackName, "auto.tfvars");
-            var originalContent = File.ReadAllText(filePath);
-            var parser = new HclParser();
-            var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
-            File.WriteAllText(filePath, updatedContent);
-        }
-
-        public bool AlertExists(List<NrqlAlert> alerts, string appName, string carrierName)
+        public bool AlertExistsForCarrier(List<NrqlAlert> alerts, string appName, string carrierName)
         {
             return alerts.Any(alert =>
-                alert.Name.Contains(carrierName) &&
-                alert.NrqlQuery.Contains(appName));
+                alert.NrqlQuery.Contains($"appName = '{appName}") &&
+                alert.NrqlQuery.Contains($"CarrierName = '{carrierName}'") &&
+                alert.NrqlQuery.Contains("PrintOperation like '%create%'"));
         }
 
-        public void AddAlert(List<NrqlAlert> alerts, string appName, string carrierName)
+        public NrqlAlert CreatePrintDurationAlert(string appName, string carrierName)
         {
-            var newAlert = new NrqlAlert
+            return new NrqlAlert
             {
-                Name = $"Print duration for {carrierName}",
+                Name = $"{appName.Split(".")[0]} Print duration for {carrierName}",
                 Description = $"Alert related to increased {carrierName} print duration",
                 NrqlQuery = $"SELECT average(duration) from Transaction where appName = '{appName}.mpm.metapack.com_BlackBox' and CarrierName = '{carrierName}' and PrintOperation like '%create%' FACET BusinessUnit",
                 RunbookUrl = "",
@@ -50,7 +51,15 @@ namespace App1.Services
                 CriticalOperator = "ABOVE",
                 AggregationDelay = 120,
             };
-            alerts.Add(newAlert);
+        }
+
+        public void SaveAlertsToFile(string repositoryPath, string stackName, List<NrqlAlert> alerts)
+        {
+            var filePath = Path.Combine(repositoryPath, StacksPath, stackName, "auto.tfvars");
+            var originalContent = File.ReadAllText(filePath);
+            var parser = new HclParser();
+            var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
+            File.WriteAllText(filePath, updatedContent);
         }
     }
 }
