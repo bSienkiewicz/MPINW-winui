@@ -24,13 +24,61 @@ using Microsoft.UI;
 namespace App1;
 public sealed partial class MainWindow : Window
 {
+    private readonly Dictionary<string, Type> _pageMapping = new Dictionary<string, Type>
+        {
+            { "Page1", typeof(Page1) },
+            { "Alerting", typeof(Alerting) },
+            { "NRAlertsTable", typeof(Alerting_Manager) },
+            { "Page2", typeof(Page2) }
+        };
     public MainWindow()
     {
         this.InitializeComponent();
         TrySetMicaBackdrop(false);
         ExtendsContentIntoTitleBar = true;
+        ContentFrame.Navigated += OnNavigated;
         SetTitleBar(this.AppTitleBar);
         this.ContentFrame.Navigate(typeof(Page1));
+    }
+
+    private void OnNavigated(object sender, NavigationEventArgs e)
+    {
+        if (e.SourcePageType == typeof(SettingsPage))
+        {
+            NavView.SelectedItem = NavView.SettingsItem;
+            return;
+        }
+
+        var targetTag = _pageMapping.FirstOrDefault(x => x.Value == e.SourcePageType).Key;
+        if (targetTag != null)
+        {
+            var selectedItem = NavView.MenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(item => item.Tag?.ToString() == targetTag);
+
+            if (selectedItem != null)
+            {
+                NavView.SelectedItem = selectedItem;
+            }
+        }
+    }
+
+    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.IsSettingsSelected)
+        {
+            // Navigate to the settings page
+            ContentFrame.Navigate(typeof(SettingsPage));
+            return;
+        }
+        if (args.SelectedItem is NavigationViewItem selectedItem && selectedItem.Tag != null)
+        {
+            // Navigate to the corresponding page when a NavigationViewItem is selected
+            if (_pageMapping.TryGetValue(selectedItem.Tag.ToString(), out var pageType))
+            {
+                ContentFrame.Navigate(pageType);
+            }
+        }
     }
 
     bool TrySetMicaBackdrop(bool useMicaAlt)
@@ -49,39 +97,6 @@ public sealed partial class MainWindow : Window
         return false;
     }
 
-    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
-    {
-        
-        if (args.IsSettingsSelected)
-        {
-            // Navigate to the settings page
-            ContentFrame.Navigate(typeof(SettingsPage));
-            return;
-        }
-        if (args.SelectedItem is NavigationViewItem selectedItem)
-        {
-            string? tag = selectedItem.Tag?.ToString();
-
-            if (tag != null)
-            {
-                switch (tag)
-                {
-                    case "Page1":
-                        ContentFrame.Navigate(typeof(Page1));
-                        break;
-                    case "Alerting":
-                        ContentFrame.Navigate(typeof(Alerting));
-                        break;
-                    case "NRAlertsTable":
-                        ContentFrame.Navigate(typeof(Alerting_Manager));
-                        break;
-                    case "Page2":
-                        ContentFrame.Navigate(typeof(Page2));
-                        break;
-                }
-            }
-        }
-    }
     private void NavigationView_DisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args)
     {
         AppTitleBar.Margin = new Thickness()

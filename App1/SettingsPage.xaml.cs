@@ -32,7 +32,26 @@ namespace App1
             _localSettings = ApplicationData.Current.LocalSettings;
             LoadApiKey();
         }
-        
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Check if a parameter was passed
+            if (e.Parameter is string tabName)
+            {
+                // Select the corresponding tab based on the parameter
+                switch (tabName)
+                {
+                    case "ApiKeyTab":
+                        ExpanderSettings_NRAPI.IsExpanded = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         private void LoadApiKey()
         {
             if (_localSettings.Values.TryGetValue("NR_API_Key", out var value))

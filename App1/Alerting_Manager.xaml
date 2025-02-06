@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8" ?>
-
 <Page
     x:Class="App1.Alerting_Manager"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -7,18 +6,40 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:App1"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:tableView="using:WinUI.TableView"
     mc:Ignorable="d">
 
-
-    <Grid Padding="24">
+    <Grid Padding="24" ColumnSpacing="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <!--  InfoBar Row  -->
             <RowDefinition Height="Auto" />
+            <!--  Header Row  -->
             <RowDefinition Height="*" />
+            <!--  Content Row  -->
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  InfoBar for API Key Warning  -->
+        <InfoBar
+            x:Name="ApiKeyWarningInfoBar"
+            Title="API Key Missing"
+            Grid.Row="0"
+            Grid.ColumnSpan="3"
+            IsOpen="False"
+            Message="The API key is not set. Please configure it in the settings."
+            Severity="Warning">
+            <InfoBar.ActionButton>
+                <Button Click="ApiKeyWarningInfoBar_ButtonClick" Content="Go to Settings" />
+            </InfoBar.ActionButton>
+        </InfoBar>
+
+        <!--  Header  -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -31,100 +52,89 @@
                 Style="{StaticResource TitleTextBlockStyle}"
                 Text="Alerting Manager" />
 
-            <Button
-                x:Name="FetchNRButton"
-                Grid.Column="1"
-                Click="FetchNRButton_Click"
-                Style="{StaticResource AccentButtonStyle}">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xEBD3;" />
-                    <TextBlock Text="Fetch" />
-                </StackPanel>
-            </Button>
-        </Grid>
-
-        <!--  Fixed Header  -->
-        <Grid Grid.Row="1" Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="1.5*" />
-                <ColumnDefinition Width="1.5*" />
-                <ColumnDefinition Width="auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock
-                Grid.Column="0"
-                Margin="0,0,12,0"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="App Name" />
-            <TextBlock
-                Grid.Column="1"
-                Margin="0,0,12,0"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="Carrier" />
-            <TextBlock
+            <StackPanel
                 Grid.Column="2"
-                Margin="0,0,12,0"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="Print Duration" />
-            <TextBlock
-                Grid.Column="3"
-                Margin="0,0,12,0"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="Error Rate" />
-            <TextBlock
-                Grid.Column="4"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="Actions" />
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <TextBox
+                    x:Name="DaysTextBox"
+                    Width="100"
+                    Header="Days to fetch"
+                    PlaceholderText="Days"
+                    Text="30" />
+                <Button
+                    x:Name="FetchNRButton"
+                    Click="FetchNRButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xEBD3;" />
+                        <TextBlock Text="Fetch" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <!--  Scrollable Content  -->
-        <ScrollViewer
+        <!--  AppNames Column  -->
+        <StackPanel
             Grid.Row="2"
-            HorizontalScrollBarVisibility="Disabled"
-            HorizontalScrollMode="Disabled"
-            VerticalScrollBarVisibility="Auto"
-            VerticalScrollMode="Auto">
-            <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{x:Bind AlertItems}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="local:AlertItem">
-                        <Grid Margin="0,0,0,8" HorizontalAlignment="Stretch">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="1.5*" />
-                                <ColumnDefinition Width="1.5*" />
-                                <ColumnDefinition Width="auto" />
-                            </Grid.ColumnDefinitions>
+            Grid.Column="0"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            Spacing="10">
+            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="AppNames" />
+            <ProgressRing
+                x:Name="AppNameFetchingProgress"
+                IsActive="True"
+                Visibility="Collapsed" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ListView x:Name="AppNamesList" SelectionChanged="AppNamesList_SelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding AppName}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </StackPanel>
 
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="0,0,12,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind AppName}" />
-                            <TextBlock
-                                Grid.Column="1"
-                                Margin="0,0,12,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind Carrier}" />
-                            <Button
-                                Grid.Column="2"
-                                Content="Create Alert"
-                                IsEnabled="{x:Bind PrintDuration}" />
-                            <Button
-                                Grid.Column="3"
-                                Content="Create Alert"
-                                IsEnabled="{x:Bind ErrorRate}" />
-                            <Button
-                                Grid.Column="4"
-                                Command="{x:Bind ConfigureCommand}"
-                                Content="Configure"
-                                Style="{StaticResource AccentButtonStyle}" />
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+        <!--  Carriers Column  -->
+        <StackPanel
+            Grid.Row="2"
+            Grid.Column="1"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            Spacing="10">
+            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="Carriers" />
+            <ProgressRing
+                Name="CarrierFetchingProgress"
+                IsActive="True"
+                Visibility="Collapsed" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ListView x:Name="CarriersList">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding CarrierName}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </StackPanel>
+
+        <!--  Empty Column  -->
+        <StackPanel
+            Grid.Row="2"
+            Grid.Column="2"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            Spacing="10">
+            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="Empty Column" />
+        </StackPanel>
     </Grid>
 </Page>
