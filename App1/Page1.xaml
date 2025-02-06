@@ -53,6 +53,15 @@
                 IsThreeState="True"
                 Unchecked="OptionsAllCheckBox_Unchecked" />
             <ItemsView ItemTemplate="{StaticResource RetailersCheckTemplate}" ItemsSource="{x:Bind RetailerDynamicCheckBoxes}" />
+
+
+            <TextBox
+                x:Name="TestTextBox"
+                Width="200"
+                HorizontalAlignment="Left"
+                PlaceholderText="Enter some text" />
+
+            <Button Click="SaveButton_Click" Content="Save Text" />
         </StackPanel>
 
         <Grid Grid.Column="1" Margin="10,20,20,20">

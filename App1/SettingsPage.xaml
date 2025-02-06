@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 
 <Page
     x:Class="App1.SettingsPage"
@@ -7,8 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:App1"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    xmlns:tableView="using:WinUI.TableView">
+    xmlns:tableView="using:WinUI.TableView"
+    mc:Ignorable="d">
 
 
     <Grid Padding="20">
@@ -43,7 +43,7 @@
                 <Expander.Content>
                     <StackPanel HorizontalAlignment="Stretch">
                         <TextBox
-                            Name="NR_API_Key"
+                            Name="NR_API_KeyTextbox"
                             Margin="0,0,0,20"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"

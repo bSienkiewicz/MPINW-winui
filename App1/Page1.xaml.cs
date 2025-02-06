@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using App1.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -35,6 +36,18 @@ namespace App1
             this.InitializeComponent();
             FetchAndGenerateCheckboxes(new[] { "Option 1", "Option 2", "Option 3", "Option 4", "Option 5 XD" });
             UpdateSelectAllState();
+
+            string savedText = DataService.Instance.GetData<string>("savedText");
+            if (!string.IsNullOrEmpty(savedText))
+            {
+                TestTextBox.Text = savedText;
+            }
+        }
+
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            DataService.Instance.SetData("savedText", TestTextBox.Text);
         }
 
         private void FetchAndGenerateCheckboxes(IEnumerable<string> options)

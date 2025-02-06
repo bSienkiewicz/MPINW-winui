@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -56,13 +57,32 @@ namespace App1
         {
             if (_localSettings.Values.TryGetValue("NR_API_Key", out var value))
             {
-                NR_API_Key.Text = value?.ToString() ?? string.Empty;
+                NR_API_KeyTextbox.Text = value?.ToString() ?? string.Empty;
             }
         }
 
         private void NR_API_Key_OnTextChanged(object sender, TextChangedEventArgs e)
         {
-            _localSettings.Values["NR_API_Key"] = NR_API_Key.Text;
+            string apiKey = NR_API_KeyTextbox.Text;
+            bool isValid = ValidateAPIKey(apiKey);
+            if (isValid)
+            {
+                _localSettings.Values["NR_API_Key"] = apiKey;
+                NR_API_KeyTextbox.BorderBrush = null;
+            }
+            else
+            {
+                NR_API_KeyTextbox.BorderBrush = new SolidColorBrush(Colors.Red);
+            }
+        }
+
+        private bool ValidateAPIKey(string apiKey)
+        {
+            // Define the regular expression pattern
+            string pattern = @"^NRAK-[A-Z0-9]{27}$";
+
+            // Use Regex to check if the API key matches the pattern
+            return System.Text.RegularExpressions.Regex.IsMatch(apiKey, pattern);
         }
     }
 }

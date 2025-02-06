@@ -19,14 +19,14 @@
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!--  InfoBar for API Key Warning  -->
         <InfoBar
-            x:Name="ApiKeyWarningInfoBar"
+            x:Name="InfoBar"
             Title="API Key Missing"
             Grid.Row="0"
             Grid.ColumnSpan="3"
@@ -76,20 +76,29 @@
         </Grid>
 
         <!--  AppNames Column  -->
-        <StackPanel
+        <Grid
             Grid.Row="2"
             Grid.Column="0"
             Padding="10"
             VerticalAlignment="Stretch"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             CornerRadius="6"
-            Spacing="10">
-            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="AppNames" />
+            RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="15,5,0,5"
+                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                Text="Clients" />
             <ProgressRing
                 x:Name="AppNameFetchingProgress"
+                Grid.Row="1"
                 IsActive="True"
                 Visibility="Collapsed" />
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ListView x:Name="AppNamesList" SelectionChanged="AppNamesList_SelectionChanged">
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -98,23 +107,32 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </ScrollViewer>
-        </StackPanel>
+        </Grid>
 
         <!--  Carriers Column  -->
-        <StackPanel
+        <Grid
             Grid.Row="2"
             Grid.Column="1"
             Padding="10"
             VerticalAlignment="Stretch"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             CornerRadius="6"
-            Spacing="10">
-            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="Carriers" />
+            RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="15,5,0,5"
+                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                Text="Carriers" />
             <ProgressRing
                 Name="CarrierFetchingProgress"
+                Grid.Row="1"
                 IsActive="True"
                 Visibility="Collapsed" />
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ListView x:Name="CarriersList">
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -123,7 +141,7 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </ScrollViewer>
-        </StackPanel>
+        </Grid>
 
         <!--  Empty Column  -->
         <StackPanel
@@ -134,7 +152,28 @@
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             CornerRadius="6"
             Spacing="10">
-            <TextBlock Style="{StaticResource FlyoutPickerTitleTextBlockStyle}" Text="Empty Column" />
+            <TextBlock
+                Margin="15,5,0,5"
+                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                Text="Alerts" />
+            <DropDownButton Content="Add Alert">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Text="Default" />
+                        <MenuFlyoutItem Text="Customize" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+
+            <DropDownButton Content="Email" IsEnabled="False">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Text="Send" />
+                        <MenuFlyoutItem Text="Reply" />
+                        <MenuFlyoutItem Text="Reply All" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
         </StackPanel>
     </Grid>
 </Page>
