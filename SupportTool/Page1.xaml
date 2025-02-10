@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="SupportTool.Page1"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:SupportTool"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+
+    <Page.Resources>
+        <DataTemplate x:Key="RetailersCheckTemplate" x:DataType="local:RetailersCheck">
+            <ItemContainer>
+                <CheckBox
+                    Checked="CheckBox_Checked"
+                    Content="{x:Bind Content}"
+                    IsChecked="{x:Bind IsChecked}"
+                    Unchecked="CheckBox_Unchecked" />
+            </ItemContainer>
+        </DataTemplate>
+
+
+        <DataTemplate x:Key="RetailersListTemplate" x:DataType="local:RetailerData">
+            <StackPanel
+                Margin="2,0,0,0"
+                AutomationProperties.Name="{x:Bind RetailerName}"
+                Orientation="Horizontal">
+                <TextBlock
+                    Margin="24,0,0,0"
+                    VerticalAlignment="Center"
+                    Text="{x:Bind RetailerName}" />
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel
+            Grid.Column="0"
+            Margin="16,16,8,16"
+            Padding="16"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="8">
+            <CheckBox
+                x:Name="OptionsAllCheckBox"
+                Checked="OptionsAllCheckBox_Checked"
+                Content="Select all"
+                IsThreeState="True"
+                Unchecked="OptionsAllCheckBox_Unchecked" />
+            <ItemsView ItemTemplate="{StaticResource RetailersCheckTemplate}" ItemsSource="{x:Bind RetailerDynamicCheckBoxes}" />
+
+
+            <TextBox
+                x:Name="TestTextBox"
+                Width="200"
+                HorizontalAlignment="Left"
+                PlaceholderText="Enter some text" />
+
+            <Button Click="SaveButton_Click" Content="Save Text" />
+        </StackPanel>
+
+        <Grid Grid.Column="1" Margin="10,20,20,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel
+                Grid.Row="0"
+                Margin="0,0,0,8"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                CornerRadius="8" />
+
+            <SplitView
+                x:Name="splitView"
+                Grid.Row="1"
+                Margin="0,8,0,0"
+                CompactPaneLength="48"
+                CornerRadius="8"
+                DisplayMode="Inline"
+                IsPaneOpen="True"
+                OpenPaneLength="406"
+                PaneBackground="{ThemeResource LayerFillColorDefaultBrush}">
+                <SplitView.Pane>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ListView
+                            x:Name="RetailerListBox"
+                            Grid.Row="1"
+                            Margin="0,12,0,0"
+                            VerticalAlignment="Stretch"
+                            IsItemClickEnabled="True"
+                            ItemClick="RetailerListBox_ItemClick"
+                            ItemTemplate="{StaticResource RetailersListTemplate}"
+                            ItemsSource="{x:Bind retailersData}"
+                            SelectionMode="Single" />
+                    </Grid>
+                </SplitView.Pane>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Margin="12,12,0,0"
+                        Style="{StaticResource BaseTextBlockStyle}"
+                        Text="SPLITVIEW CONTENT" />
+                    <TextBlock
+                        x:Name="content"
+                        Grid.Row="1"
+                        Margin="12,12,0,0"
+                        Style="{StaticResource BodyTextBlockStyle}" />
+                </Grid>
+            </SplitView>
+        </Grid>
+    </Grid>
+</Page>

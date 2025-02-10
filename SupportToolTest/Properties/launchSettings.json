@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SupportToolTest (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SupportToolTest (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
