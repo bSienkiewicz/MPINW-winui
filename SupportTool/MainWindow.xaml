@@ -50,6 +50,11 @@
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Alerting List" Tag="NRAlertsList">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="LSTool" Tag="Page2">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE773;" />

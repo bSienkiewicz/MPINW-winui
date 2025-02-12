@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="SupportTool.Alerting_List"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:SupportTool"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" ColumnSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!--  InfoBar Row  -->
+            <RowDefinition Height="Auto" />
+            <!--  Header Row  -->
+            <RowDefinition Height="*" />
+            <!--  Content Row  -->
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  InfoBar for API Key Warning  -->
+        <InfoBar
+            x:Name="InfoBar"
+            Title="API Key Missing"
+            Grid.Row="0"
+            Grid.ColumnSpan="3"
+            Margin="0,0,0,20"
+            IsOpen="False"
+            Message="The API key is not set. Please configure it in the settings."
+            Severity="Warning">
+            <InfoBar.ActionButton>
+                <Button Click="ApiKeyWarningInfoBar_ButtonClick" Content="Go to Settings" />
+            </InfoBar.ActionButton>
+        </InfoBar>
+
+        <!--  Header  -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                Margin="0,0,0,20"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Text="Alerting List" />
+
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <!--<ComboBox
+                    x:Name="stacksComboBox"
+                    Width="200"
+                    PlaceholderText="Select a stack..."
+                    SelectionChanged="StackComboBox_SelectionChanged" />-->
+                <TextBox
+                    x:Name="DaysTextBox"
+                    Width="100"
+                    Header="Days to fetch"
+                    PlaceholderText="Days"
+                    Text="30" />
+                <Button
+                    x:Name="FetchNRButton"
+                    Click="FetchNRButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xEBD3;" />
+                        <TextBlock Text="Fetch" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!--  AppNames Column  -->
+        <Grid
+            Grid.Row="2"
+            Grid.Column="0"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="15,5,0,5"
+                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                Text="Clients" />
+            <ProgressRing
+                x:Name="AppNameFetchingProgress"
+                Grid.Row="1"
+                IsActive="True"
+                Visibility="Collapsed" />
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ListView x:Name="AppNamesList" SelectionChanged="AppNamesList_SelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding AppName}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </Grid>
+
+        <!--  Carriers Column  -->
+        <Grid
+            Grid.Row="2"
+            Grid.Column="1"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="15,5,0,5"
+                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                Text="Carriers" />
+            <ProgressRing
+                Name="CarrierFetchingProgress"
+                Grid.Row="1"
+                IsActive="True"
+                Visibility="Collapsed" />
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ListView x:Name="CarriersList" SelectionChanged="CarriersList_SelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding CarrierName}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </Grid>
+
+        <!--  Alert Column  -->
+        <StackPanel
+            Grid.Row="2"
+            Grid.Column="2"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="6"
+            Spacing="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Column="0"
+                    Margin="15,5,0,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="Alerts" />
+
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="15,5,15,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="2/2"
+                    TextAlignment="Right" />
+            </Grid>
+
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    Margin="15,5,0,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="Print Duration" />
+                <TextBlock
+                    Margin="15,5,0,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="Exists" />
+            </StackPanel>
+
+            <Button
+                x:Name="AddPrintDurationButton"
+                Margin="15,0,0,0"
+                Click="AddPrintDurationButton_Click"
+                IsEnabled="False">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE710;" />
+                    <TextBlock Text="Add Error Rate Alert" />
+                </StackPanel>
+            </Button>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    Margin="15,5,0,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="Error Rate" />
+                <TextBlock
+                    Margin="15,5,0,5"
+                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
+                    Text="Exists" />
+            </StackPanel>
+
+            <DropDownButton Margin="15,0,0,0" Content="Add Alert">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Click="AddErrorRateButton_Click" Text="Default" />
+                        <MenuFlyoutItem Text="Customize" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+        </StackPanel>
+    </Grid>
+</Page>

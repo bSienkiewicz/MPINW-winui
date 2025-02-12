@@ -29,6 +29,7 @@ public sealed partial class MainWindow : Window
             { "Page1", typeof(Page1) },
             { "Alerting", typeof(Alerting) },
             { "NRAlertsTable", typeof(Alerting_Manager) },
+            { "NRAlertsList", typeof(Alerting_List) },
             { "Page2", typeof(Page2) }
         };
     public MainWindow()
