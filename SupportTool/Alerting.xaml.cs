@@ -50,7 +50,7 @@ namespace SupportTool
         // Collection of alerts that supports UI updates when modified
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
 
-        private NrqlAlert? _selectedAlert;
+        private NrqlAlert _selectedAlert;
 
         public NrqlAlert SelectedAlert
         {
@@ -73,6 +73,24 @@ namespace SupportTool
             _localSettings = ApplicationData.Current.LocalSettings;
             _alertService = new AlertService();
             LoadDirectory();
+            LoadSavedStack();
+        }
+
+        private void LoadSavedStack()
+        {
+            _selectedStack = _localSettings.Values["SelectedStack"] as string ?? string.Empty;
+            if (!string.IsNullOrEmpty(_selectedStack))
+            {
+                if (_availableStacks.Contains(_selectedStack))
+                {
+                    stacksComboBox.SelectedItem = _selectedStack;
+                    LoadAlertsForStack();
+                }
+                else
+                {
+                    Debug.WriteLine($"Saved stack '{_selectedStack}' not found.");
+                }
+            }
         }
 
         protected void OnPropertyChanged(string propertyName) =>
@@ -191,6 +209,7 @@ namespace SupportTool
             if (_selectedFolderPath == null || e.AddedItems.Count == 0) return;
 
             _selectedStack = e.AddedItems[0]?.ToString();
+            _localSettings.Values["SelectedStack"] = _selectedStack;
             if (string.IsNullOrEmpty(_selectedStack)) return;
 
             // Clear the selected alert first
