@@ -50,7 +50,7 @@ namespace SupportTool
         // Collection of alerts that supports UI updates when modified
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
 
-        private NrqlAlert _selectedAlert;
+        private NrqlAlert? _selectedAlert;
 
         public NrqlAlert SelectedAlert
         {
@@ -193,6 +193,10 @@ namespace SupportTool
             _selectedStack = e.AddedItems[0]?.ToString();
             if (string.IsNullOrEmpty(_selectedStack)) return;
 
+            // Clear the selected alert first
+            SelectedAlert = new NrqlAlert(); 
+            AlertsListView.SelectedItem = null;
+
             LoadAlertsForStack();
             NRAlertSearch.Text = string.Empty;
             AlertsListView.ItemsSource = AlertItems;
@@ -284,7 +288,7 @@ namespace SupportTool
             if (_selectedAlert == null || _selectedStack == null) return;
 
             AlertItems.Remove(_selectedAlert);
-            SelectedAlert = null;
+            SelectedAlert = new NrqlAlert();
             _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
             deleteButton.Flyout.Hide();
         }
