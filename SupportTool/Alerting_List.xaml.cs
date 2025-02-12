@@ -22,11 +22,12 @@ namespace SupportTool
 {
     public sealed partial class Alerting_List : Page
     {
-        private ObservableCollection<AppNameItem> AppNames { get; } = new ObservableCollection<AppNameItem>();
+        public ObservableCollection<AppCarrierItem> AppNames { get; } = new();
         private readonly ApplicationDataContainer _localSettings;
         private readonly NewRelicApiService _newRelicApiService;
         private readonly AlertService _alertService;
         private string _selectedStack = string.Empty;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public Alerting_List()
         {
@@ -52,17 +53,13 @@ namespace SupportTool
             {
                 stacksComboBox.SelectedItem = _selectedStack;
                 // Load data for the selected stack
-                _ = LoadAppNamesForStack();
+                _ = LoadAppNamesForStack(_selectedStack);
             }
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (IsApiKeyPresent() && !AppNames.Any() && !string.IsNullOrEmpty(_selectedStack))
-            {
-                await LoadAppNamesForStack();
-            }
         }
 
         private bool IsApiKeyPresent()
@@ -76,58 +73,47 @@ namespace SupportTool
         {
             if (e.AddedItems.Count > 0)
             {
-                // Clear existing data
                 AppNames.Clear();
+
+                // Cancel previous fetching operation
+                _cancellationTokenSource?.Cancel();
+                _cancellationTokenSource = new CancellationTokenSource();
 
                 // Update selected stack
                 _selectedStack = e.AddedItems[0].ToString();
-
-                // Save to local storage
                 _localSettings.Values["SelectedStack"] = _selectedStack;
 
-                // Load new data if API key is present
                 if (IsApiKeyPresent())
                 {
-                    await LoadAppNamesForStack();
+                    await LoadAppNamesForStack(_selectedStack, _cancellationTokenSource.Token);
                 }
             }
         }
 
-        private async Task LoadAppNamesForStack()
+        private async Task LoadAppNamesForStack(string stack, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(_selectedStack))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(stack)) return;
 
             try
             {
+                AppNames.Clear();
                 AppNameFetchingProgress.Visibility = Visibility.Visible;
                 AppNameFetchingProgress.IsActive = true;
 
-                // Always fetch fresh data from API when stack changes
-                var fetchedAppNames = await _newRelicApiService.FetchAppNamesAndCarriers(_selectedStack);
+                var appCarrierPairs = await _newRelicApiService.FetchAppNamesAndCarriers(stack, cancellationToken);
 
-                AppNames.Clear();
-                foreach (var app in fetchedAppNames)
+                foreach (var app in appCarrierPairs)
                 {
-                    AppNames.Add(app);
+                    if (cancellationToken.IsCancellationRequested) return;
+                    foreach (var carrier in app.Carriers)
+                    {
+                        AppNames.Add(new AppCarrierItem { AppName = app.AppName, CarrierName = carrier.CarrierName });
+                    }
                 }
-
-                // Cache the new data
-                DataService.Instance.SaveAppNames(AppNames);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading app names: {ex.Message}");
-                // Consider showing an error message to the user
-                ContentDialog errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = "Failed to load app names. Please try again.",
-                    CloseButtonText = "OK"
-                };
-                await errorDialog.ShowAsync();
+                Debug.WriteLine($"Error loading app-carrier data: {ex.Message}");
             }
             finally
             {
@@ -140,7 +126,9 @@ namespace SupportTool
         {
             if (IsApiKeyPresent())
             {
-                await LoadAppNamesForStack();
+                _cancellationTokenSource?.Cancel();
+                _cancellationTokenSource = new CancellationTokenSource();
+                await LoadAppNamesForStack(_selectedStack, _cancellationTokenSource.Token);
             }
         }
 
@@ -148,6 +136,21 @@ namespace SupportTool
         {
             Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
         }
+
+        private void AppNamesList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+
+            if (AppNamesList.SelectedItem is not null)
+            {
+                var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
+                Debug.WriteLine($"Double-clicked: {selectedApp.AppName}, {selectedApp.CarrierName}");
+            }
+        }
+    }
+    public class AppCarrierItem
+    {
+        public string AppName { get; set; }
+        public string CarrierName { get; set; }
     }
 
 }

@@ -83,30 +83,54 @@
         <Grid
             Grid.Row="2"
             Grid.Column="0"
-            Padding="10"
+            Padding="5"
             VerticalAlignment="Stretch"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             CornerRadius="6"
             RowSpacing="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock
+            <!--<TextBlock
                 Grid.Row="0"
                 Margin="15,5,0,5"
                 Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                Text="Clients" />
+                Text="Clients" />-->
+            <Grid Grid.Row="1" Margin="10,0,10,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    Content="Client Name"
+                    CornerRadius="5,0,0,5" />
+                <Button
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    Content="Carrier Name"
+                    CornerRadius="0,5,5,0" />
+            </Grid>
             <ProgressRing
                 x:Name="AppNameFetchingProgress"
-                Grid.Row="1"
+                Grid.Row="2"
                 IsActive="True"
                 Visibility="Collapsed" />
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="AppNamesList">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <ListView x:Name="AppNamesList" DoubleTapped="AppNamesList_DoubleTapped">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding AppName}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding AppName}" />
+                                <TextBlock Grid.Column="1" Text="{Binding CarrierName}" />
+                            </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
+using System.Diagnostics;
+using System.Threading;
 
 namespace SupportTool.Services
 {
@@ -20,7 +22,7 @@ namespace SupportTool.Services
             _localSettings = ApplicationData.Current.LocalSettings;
         }
 
-        public async Task<List<AppNameItem>> FetchAppNamesAndCarriers(string stack)
+        public async Task<List<AppNameItem>> FetchAppNamesAndCarriers(string stack, CancellationToken cancellationToken = default)
         {
             var appNames = new List<AppNameItem>();
             try
@@ -28,6 +30,11 @@ namespace SupportTool.Services
                 if (!_localSettings.Values.TryGetValue("NR_API_Key", out var value))
                 {
                     throw new Exception("API key not found in local settings.");
+                }
+
+                if (string.IsNullOrEmpty(stack))
+                {
+                    throw new Exception("Stack name is required.");
                 }
 
                 string apiKey = value.ToString();
@@ -54,7 +61,8 @@ namespace SupportTool.Services
                     };
                     requestMessage.Headers.Add("X-Api-Key", apiKey);
 
-                    HttpResponseMessage response = await client.SendAsync(requestMessage);
+                    // Pass the cancellation token to the HTTP request
+                    HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
                     string responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
@@ -103,9 +111,16 @@ namespace SupportTool.Services
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation gracefully
+                Debug.WriteLine("FetchAppNamesAndCarriers was canceled.");
+                throw; // Re-throw if you want the caller to handle the cancellation
+            }
             catch (Exception ex)
             {
                 // Handle or log the exception appropriately
+                Debug.WriteLine($"Error in FetchAppNamesAndCarriers: {ex.Message}");
                 throw; // Re-throw for now
             }
 
