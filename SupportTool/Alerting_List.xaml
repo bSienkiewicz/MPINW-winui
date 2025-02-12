@@ -20,8 +20,6 @@
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!--  InfoBar for API Key Warning  -->
@@ -58,11 +56,11 @@
                 VerticalAlignment="Center"
                 Orientation="Horizontal"
                 Spacing="10">
-                <!--<ComboBox
+                <ComboBox
                     x:Name="stacksComboBox"
                     Width="200"
                     PlaceholderText="Select a stack..."
-                    SelectionChanged="StackComboBox_SelectionChanged" />-->
+                    SelectionChanged="StackComboBox_SelectionChanged" />
                 <TextBox
                     x:Name="DaysTextBox"
                     Width="100"
@@ -105,7 +103,7 @@
                 IsActive="True"
                 Visibility="Collapsed" />
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="AppNamesList" SelectionChanged="AppNamesList_SelectionChanged">
+                <ListView x:Name="AppNamesList">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding AppName}" />
@@ -115,110 +113,5 @@
             </ScrollViewer>
         </Grid>
 
-        <!--  Carriers Column  -->
-        <Grid
-            Grid.Row="2"
-            Grid.Column="1"
-            Padding="10"
-            VerticalAlignment="Stretch"
-            Background="{ThemeResource LayerFillColorDefaultBrush}"
-            CornerRadius="6"
-            RowSpacing="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <TextBlock
-                Grid.Row="0"
-                Margin="15,5,0,5"
-                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                Text="Carriers" />
-            <ProgressRing
-                Name="CarrierFetchingProgress"
-                Grid.Row="1"
-                IsActive="True"
-                Visibility="Collapsed" />
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="CarriersList" SelectionChanged="CarriersList_SelectionChanged">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding CarrierName}" />
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </ScrollViewer>
-        </Grid>
-
-        <!--  Alert Column  -->
-        <StackPanel
-            Grid.Row="2"
-            Grid.Column="2"
-            Padding="10"
-            VerticalAlignment="Stretch"
-            Background="{ThemeResource LayerFillColorDefaultBrush}"
-            CornerRadius="6"
-            Spacing="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock
-                    Grid.Column="0"
-                    Margin="15,5,0,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="Alerts" />
-
-                <TextBlock
-                    Grid.Column="1"
-                    Margin="15,5,15,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="2/2"
-                    TextAlignment="Right" />
-            </Grid>
-
-
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    Margin="15,5,0,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="Print Duration" />
-                <TextBlock
-                    Margin="15,5,0,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="Exists" />
-            </StackPanel>
-
-            <Button
-                x:Name="AddPrintDurationButton"
-                Margin="15,0,0,0"
-                Click="AddPrintDurationButton_Click"
-                IsEnabled="False">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE710;" />
-                    <TextBlock Text="Add Error Rate Alert" />
-                </StackPanel>
-            </Button>
-
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    Margin="15,5,0,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="Error Rate" />
-                <TextBlock
-                    Margin="15,5,0,5"
-                    Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                    Text="Exists" />
-            </StackPanel>
-
-            <DropDownButton Margin="15,0,0,0" Content="Add Alert">
-                <DropDownButton.Flyout>
-                    <MenuFlyout Placement="Bottom">
-                        <MenuFlyoutItem Click="AddErrorRateButton_Click" Text="Default" />
-                        <MenuFlyoutItem Text="Customize" />
-                    </MenuFlyout>
-                </DropDownButton.Flyout>
-            </DropDownButton>
-        </StackPanel>
     </Grid>
 </Page>

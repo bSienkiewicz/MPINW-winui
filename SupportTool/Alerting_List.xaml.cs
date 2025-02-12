@@ -16,126 +16,123 @@ using System.Threading;
 using SupportTool.Services;
 using System.Linq;
 using SupportTool.Helpers;
+using System.IO;
 
 namespace SupportTool
 {
     public sealed partial class Alerting_List : Page
     {
         private ObservableCollection<AppNameItem> AppNames { get; } = new ObservableCollection<AppNameItem>();
-        private ObservableCollection<CarrierItem> Carriers { get; } = new ObservableCollection<CarrierItem>();
-
         private readonly ApplicationDataContainer _localSettings;
-        private AppNameItem _selectedApp;
-        private CarrierItem _selectedCarrier;
         private readonly NewRelicApiService _newRelicApiService;
         private readonly AlertService _alertService;
-
-        private string _selectedStack = "shd03"; 
-        private string _repositoryPath;
+        private string _selectedStack = string.Empty;
 
         public Alerting_List()
         {
-            this.InitializeComponent();
+            InitializeComponent();
             _localSettings = ApplicationData.Current.LocalSettings;
-            _repositoryPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
-            AppNamesList.ItemsSource = AppNames;
-            CarriersList.ItemsSource = Carriers;
             _newRelicApiService = new NewRelicApiService();
             _alertService = new AlertService();
-            LoadSavedData();
+
+            InitializeControls();
         }
 
-
-        private void LoadSavedData()
+        private void InitializeControls()
         {
-            var savedAppNames = DataService.Instance.GetAppNames();
-            if (savedAppNames != null && savedAppNames.Any())
+            AppNamesList.ItemsSource = AppNames;
+
+            // Load available stacks into combo box
+            var availableStacks = _alertService.GetAlertStacksFromDirectories();
+            stacksComboBox.ItemsSource = availableStacks;
+
+            // Restore previously selected stack
+            _selectedStack = _localSettings.Values["SelectedStack"] as string ?? string.Empty;
+            if (!string.IsNullOrEmpty(_selectedStack) && availableStacks.Contains(_selectedStack))
             {
-                AppNames.Clear();
-                foreach (var app in savedAppNames)
-                {
-                    AppNames.Add(app);
-                }
+                stacksComboBox.SelectedItem = _selectedStack;
+                // Load data for the selected stack
+                _ = LoadAppNamesForStack();
             }
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            if (IsApiKeyPresent())
+            if (IsApiKeyPresent() && !AppNames.Any() && !string.IsNullOrEmpty(_selectedStack))
             {
-                if (!AppNames.Any() || !Carriers.Any())
-                {
-                    await LoadAppNamesAndCarriers();
-                }
+                await LoadAppNamesForStack();
             }
         }
 
         private bool IsApiKeyPresent()
         {
-            if (!_localSettings.Values.ContainsKey("NR_API_Key"))
+            bool hasApiKey = _localSettings.Values.ContainsKey("NR_API_Key");
+            InfoBar.IsOpen = !hasApiKey;
+            return hasApiKey;
+        }
+
+        private async void StackComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
             {
-                InfoBar.IsOpen = true;
-                return false;
-            }
-            else
-            {
-                InfoBar.IsOpen = false;
-                return true;
+                // Clear existing data
+                AppNames.Clear();
+
+                // Update selected stack
+                _selectedStack = e.AddedItems[0].ToString();
+
+                // Save to local storage
+                _localSettings.Values["SelectedStack"] = _selectedStack;
+
+                // Load new data if API key is present
+                if (IsApiKeyPresent())
+                {
+                    await LoadAppNamesForStack();
+                }
             }
         }
 
-        private void ApiKeyWarningInfoBar_ButtonClick(object sender, RoutedEventArgs e)
+        private async Task LoadAppNamesForStack()
         {
-            Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
-        }
+            if (string.IsNullOrEmpty(_selectedStack))
+            {
+                return;
+            }
 
-        private async Task LoadAppNamesAndCarriers()
-        {
             try
             {
-                // Show progress indicators
-                AppNames.Clear();
                 AppNameFetchingProgress.Visibility = Visibility.Visible;
                 AppNameFetchingProgress.IsActive = true;
-                CarrierFetchingProgress.Visibility = Visibility.Visible;
-                CarrierFetchingProgress.IsActive = true;
 
-                // Load from DataService first
-                var savedAppNames = DataService.Instance.GetAppNames();
+                // Always fetch fresh data from API when stack changes
+                var fetchedAppNames = await _newRelicApiService.FetchAppNamesAndCarriers(_selectedStack);
 
-                // If no saved data, fetch from API
-                if (savedAppNames == null || !savedAppNames.Any())
+                AppNames.Clear();
+                foreach (var app in fetchedAppNames)
                 {
-                    var appNames = await _newRelicApiService.FetchAppNamesAndCarriers(_selectedStack);
-                    foreach (var app in appNames)
-                    {
-                        AppNames.Add(app);
-                    }
-                    DataService.Instance.SaveAppNames(AppNames);
+                    AppNames.Add(app);
                 }
-                else
-                {
-                    // Use saved data
-                    AppNames.Clear();
-                    foreach (var app in savedAppNames)
-                    {
-                        AppNames.Add(app);
-                    }
-                }
+
+                // Cache the new data
+                DataService.Instance.SaveAppNames(AppNames);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"🚨 Error occurred: {ex}");
-                // Handle/log the exception appropriately
+                Debug.WriteLine($"Error loading app names: {ex.Message}");
+                // Consider showing an error message to the user
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "Failed to load app names. Please try again.",
+                    CloseButtonText = "OK"
+                };
+                await errorDialog.ShowAsync();
             }
             finally
             {
                 AppNameFetchingProgress.Visibility = Visibility.Collapsed;
                 AppNameFetchingProgress.IsActive = false;
-                CarrierFetchingProgress.Visibility = Visibility.Collapsed;
-                CarrierFetchingProgress.IsActive = false;
             }
         }
 
@@ -143,112 +140,13 @@ namespace SupportTool
         {
             if (IsApiKeyPresent())
             {
-                await LoadAppNamesAndCarriers();
+                await LoadAppNamesForStack();
             }
         }
 
-        private void AppNamesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ApiKeyWarningInfoBar_ButtonClick(object sender, RoutedEventArgs e)
         {
-            if (AppNamesList.SelectedItem is AppNameItem selectedApp)
-            {
-                _selectedApp = selectedApp;
-                Carriers.Clear();
-
-                foreach (var carrier in selectedApp.Carriers)
-                {
-                    Carriers.Add(carrier);
-                }
-
-                UpdateAlertButtonsState();
-            }
-        }
-
-        private void CarriersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (CarriersList.SelectedItem is CarrierItem selectedCarrier)
-            {
-                _selectedCarrier = selectedCarrier;
-                UpdateAlertButtonsState();
-            }
-        }
-
-        private void UpdateAlertButtonsState()
-        {
-            if (_selectedApp != null && _selectedCarrier != null && !string.IsNullOrEmpty(_repositoryPath))
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                bool printDurationExists = _alertService.AlertExistsForCarrier(existingAlerts, _selectedApp.AppName, _selectedCarrier.CarrierName);
-                AddPrintDurationButton.IsEnabled = !printDurationExists;
-            }
-            else
-            {
-                AddPrintDurationButton.IsEnabled = false;
-            }
-        }
-
-        private void AddPrintDurationButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedApp == null || _selectedCarrier == null || string.IsNullOrEmpty(_repositoryPath))
-            {
-                return;
-            }
-
-            try
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                var newAlert = _alertService.CreatePrintDurationAlert(_selectedApp.AppName, _selectedCarrier.CarrierName);
-
-                existingAlerts.Add(newAlert);
-                _alertService.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
-
-                // Show success message
-                InfoBar.Title = "Success";
-                InfoBar.Severity = InfoBarSeverity.Success;
-                InfoBar.Message = "Print Duration alert added successfully.";
-                InfoBar.IsOpen = true;
-
-                // Update button states
-                UpdateAlertButtonsState();
-            }
-            catch (Exception ex)
-            {
-                InfoBar.Title = "Error";
-                InfoBar.Severity = InfoBarSeverity.Error;
-                InfoBar.Message = $"Failed to add alert: {ex.Message}";
-                InfoBar.IsOpen = true;
-            }
-        }
-        private void AddErrorRateButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedApp == null || _selectedCarrier == null || string.IsNullOrEmpty(_repositoryPath))
-            {
-                return;
-            }
-
-            try
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                var newAlert = _alertService.CreateErrorRateAlert(_selectedApp.AppName, _selectedCarrier.CarrierName);
-
-                existingAlerts.Add(newAlert);
-                _alertService.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
-
-                // Show success message
-                InfoBar.Title = "Success";
-                InfoBar.Severity = InfoBarSeverity.Success;
-                InfoBar.Message = "Print Duration alert added successfully.";
-                InfoBar.IsOpen = true;
-
-                // Update button states
-                UpdateAlertButtonsState();
-            }
-            catch (Exception ex)
-            {
-                InfoBar.Title = "Error";
-                InfoBar.Severity = InfoBarSeverity.Error;
-                InfoBar.Message = $"Failed to add alert: {ex.Message}";
-                InfoBar.IsOpen = true;
-            }
+            Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
         }
     }
 

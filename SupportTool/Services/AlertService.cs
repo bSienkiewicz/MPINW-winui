@@ -1,16 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using SupportTool.Helpers;
+using Windows.Storage;
 
 namespace SupportTool.Services
 {
     public class AlertService
     {
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+        private readonly ApplicationDataContainer _localSettings;
+        private string? _selectedFolderPath;
+        private string[] _availableStacks = [];
 
-        public AlertService() { }
+        public AlertService()
+        {
+            _localSettings = ApplicationData.Current.LocalSettings;
+        }
 
         public List<NrqlAlert> GetAlertsForStack(string repositoryPath, string stackName)
         {
@@ -74,6 +82,23 @@ namespace SupportTool.Services
             var parser = new HclParser();
             var updatedContent = parser.ReplaceNrqlAlertsSection(originalContent, alerts);
             File.WriteAllText(filePath, updatedContent);
+        }
+        public string[] GetAlertStacksFromDirectories()
+        {
+            _selectedFolderPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+            if (string.IsNullOrEmpty(_selectedFolderPath)) return [];
+
+            var path = Path.Combine(_selectedFolderPath, StacksPath);
+            if (!Directory.Exists(path))
+            {
+                Debug.WriteLine($"Directory not found: {path}");
+                return [];
+            }
+
+            _availableStacks = Directory.GetDirectories(path)
+                .Select(dir => new DirectoryInfo(dir).Name)
+                .ToArray();
+            return _availableStacks;
         }
     }
 }

@@ -47,7 +47,6 @@ namespace SupportTool
         private readonly AlertService _alertService; 
         private int _dragStartIndex = -1;
 
-        // Collection of alerts that supports UI updates when modified
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
 
         private NrqlAlert _selectedAlert;
@@ -72,11 +71,12 @@ namespace SupportTool
             InitializeComponent();
             _localSettings = ApplicationData.Current.LocalSettings;
             _alertService = new AlertService();
+            _availableStacks = _alertService.GetAlertStacksFromDirectories();
             LoadDirectory();
-            LoadSavedStack();
+            LoadStack();
         }
 
-        private void LoadSavedStack()
+        private void LoadStack()
         {
             _selectedStack = _localSettings.Values["SelectedStack"] as string ?? string.Empty;
             if (!string.IsNullOrEmpty(_selectedStack))
@@ -110,7 +110,6 @@ namespace SupportTool
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            // open new folder in explorer based on the selected folder path + stacks path 
             if (_selectedFolderPath == null) return;
 
             var path = Path.Combine(_selectedFolderPath, StacksPath);
@@ -120,9 +119,6 @@ namespace SupportTool
             }
         }
 
-        /// <summary>
-        /// Initializes a folder picker with proper Windows handle and settings
-        /// </summary>
         private FolderPicker InitializeFolderPicker()
         {
             var folderPicker = new FolderPicker
@@ -130,7 +126,6 @@ namespace SupportTool
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary
             };
 
-            // Required for WinUI 3 folder picker initialization
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
             folderPicker.FileTypeFilter.Add("*");
@@ -146,7 +141,7 @@ namespace SupportTool
             {
                 infoBar.IsOpen = false;
                 SaveDirectory();
-                GetAlertStacksFromDirectories();
+                stacksComboBox.ItemsSource = _alertService.GetAlertStacksFromDirectories();
             }
             else
             {
@@ -163,9 +158,6 @@ namespace SupportTool
             infoBar.IsOpen = true;
         }
 
-        /// <summary>
-        /// Validates if the selected folder contains required repository structure
-        /// </summary>
         private (bool IsValid, string[] MissingFolders) ValidateFolder(string folderPath)
         {
             try
@@ -183,27 +175,6 @@ namespace SupportTool
             }
         }
 
-        #endregion
-
-        #region Alert Management
-
-        private void GetAlertStacksFromDirectories()
-        {
-            if (string.IsNullOrEmpty(_selectedFolderPath)) return;
-
-            var path = Path.Combine(_selectedFolderPath, StacksPath);
-            if (!Directory.Exists(path))
-            {
-                Debug.WriteLine($"Directory not found: {path}");
-                return;
-            }
-
-            _availableStacks = Directory.GetDirectories(path)
-                .Select(dir => new DirectoryInfo(dir).Name)
-                .ToArray();
-            stacksComboBox.ItemsSource = _availableStacks;
-        }
-
         private void StackComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_selectedFolderPath == null || e.AddedItems.Count == 0) return;
@@ -212,8 +183,7 @@ namespace SupportTool
             _localSettings.Values["SelectedStack"] = _selectedStack;
             if (string.IsNullOrEmpty(_selectedStack)) return;
 
-            // Clear the selected alert first
-            SelectedAlert = new NrqlAlert(); 
+            SelectedAlert = new NrqlAlert();
             AlertsListView.SelectedItem = null;
 
             LoadAlertsForStack();
@@ -221,9 +191,6 @@ namespace SupportTool
             AlertsListView.ItemsSource = AlertItems;
         }
 
-        /// <summary>
-        /// Loads and parses alerts from the tfvars file for the selected stack
-        /// </summary>
         private void LoadAlertsForStack()
         {
             var tfvarsPath = Path.Combine(_selectedFolderPath, StacksPath, _selectedStack, "auto.tfvars");
@@ -278,7 +245,6 @@ namespace SupportTool
         {
             if (_selectedAlert == null || _selectedStack == null) return;
 
-            // Clone the selected alert with a "Copy" suffix
             var alertCopy = new NrqlAlert
             {
                 Name = $"{_selectedAlert.Name} Copy",
@@ -326,40 +292,7 @@ namespace SupportTool
             _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
         }
 
-        private async void GenerateAlertButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedStack == null) return;
-
-            var (appName, carrierName) = await ShowGenerateAlertDialog();
-            if (string.IsNullOrEmpty(appName) || string.IsNullOrEmpty(carrierName)) return;
-
-            var newAlert = new NrqlAlert
-            {
-                Name = $"Print duration for {carrierName}",
-                Description = $"Alert related to increased {carrierName} print duration",
-                NrqlQuery =
-                    $"SELECT average(duration) from Transaction where appName = '{appName}.mpm.metapack.com_BlackBox' and CarrierName = '{carrierName}' and PrintOperation like '%create%' FACET BusinessUnit",
-                RunbookUrl = "",
-                Severity = "CRITICAL",
-                Enabled = true,
-                AggregationMethod = "event_flow",
-                CriticalThresholdOccurrences = "ALL",
-                CriticalThresholdDuration = 300,
-                CriticalThreshold = 7,
-                CriticalOperator = "ABOVE",
-                AggregationDelay = 120,
-            };
-            AlertItems.Add(newAlert);
-            AlertsListView.SelectedItem = newAlert;
-            _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
-        }
-
-        /// <summary>
-        /// Allows reordering alerts on the list view.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-
+        // Used for alert reordering
         private void AlertsListView_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
         {
             if (e.Items.FirstOrDefault() is NrqlAlert draggedAlert)
@@ -368,6 +301,7 @@ namespace SupportTool
             }
         }
 
+        // Used for alert reordering
         private void AlertsListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             if (args.DropResult == DataPackageOperation.Move && _dragStartIndex != -1)
@@ -381,7 +315,6 @@ namespace SupportTool
                     {
                         AlertItems.Move(oldIndex, newIndex);
 
-                        // Save changes
                         if (_selectedFolderPath != null && _selectedStack != null)
                         {
                             _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
@@ -411,36 +344,6 @@ namespace SupportTool
                 ValidateAndUpdateUi(_selectedFolderPath);
             }
         }
-
-        /// <summary>
-        /// Shows a dialog to collect information for generating a new alert
-        /// </summary>
-        private async Task<(string AppName, string CarrierName)> ShowGenerateAlertDialog()
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Enter Information",
-                XamlRoot = Content.XamlRoot,
-                PrimaryButtonText = "OK",
-                SecondaryButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary
-            };
-
-            var panel = new StackPanel { Spacing = 10 };
-            var appNameBox = new TextBox { Header = "AppName:" };
-            var carrierBox = new TextBox { Header = "Carrier Name:" };
-
-            panel.Children.Add(appNameBox);
-            panel.Children.Add(carrierBox);
-            dialog.Content = panel;
-
-            var result = await dialog.ShowAsync();
-            return result == ContentDialogResult.Primary
-                ? (appNameBox.Text, carrierBox.Text)
-                : (string.Empty, string.Empty);
-        }
-
-
         #endregion
     }
 }

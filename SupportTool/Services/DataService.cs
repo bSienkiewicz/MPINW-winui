@@ -44,6 +44,11 @@ namespace SupportTool.Services
             SetData("AppNames", appNames);
         }
 
+        public void SaveStacks(string[] stacks)
+        {
+            SetData("Stacks", stacks);
+        }
+
         public ObservableCollection<AppNameItem> GetAppNames()
         {
             return GetData<ObservableCollection<AppNameItem>>("AppNames") ?? new ObservableCollection<AppNameItem>();
