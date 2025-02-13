@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:SupportTool"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:SupportTool.Models"
     mc:Ignorable="d">
 
     <Grid Padding="24" ColumnSpacing="10">
@@ -61,12 +62,6 @@
                     Width="200"
                     PlaceholderText="Select a stack..."
                     SelectionChanged="StackComboBox_SelectionChanged" />
-                <TextBox
-                    x:Name="DaysTextBox"
-                    Width="100"
-                    Header="Days to fetch"
-                    PlaceholderText="Days"
-                    Text="30" />
                 <Button
                     x:Name="FetchNRButton"
                     Click="FetchNRButton_Click"
@@ -78,6 +73,8 @@
                 </Button>
             </StackPanel>
         </Grid>
+
+
 
         <!--  AppNames Column  -->
         <Grid
@@ -93,15 +90,29 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <!--<TextBlock
-                Grid.Row="0"
-                Margin="15,5,0,5"
-                Style="{StaticResource FlyoutPickerTitleTextBlockStyle}"
-                Text="Clients" />-->
+
+            <SelectorBar x:Name="SelectorBar1">
+                <SelectorBarItem
+                    x:Name="SelectorBarItemRecent"
+                    Icon="List"
+                    Text="All PD/ER Alerts" />
+                <SelectorBarItem
+                    x:Name="SelectorBarItemShared"
+                    Icon="Important"
+                    IsSelected="True"
+                    Text="Missing" />
+                <SelectorBarItem
+                    x:Name="SelectorBarItemFavorites"
+                    Icon="Accept"
+                    Text="Existing" />
+            </SelectorBar>
+
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="1*" MinWidth="100" />
+                    <ColumnDefinition Width="1*" MinWidth="100" />
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="0"
@@ -112,24 +123,58 @@
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     Content="Carrier Name"
+                    CornerRadius="0,0,0,0" />
+                <Button
+                    Grid.Column="2"
+                    HorizontalAlignment="Stretch"
+                    Content="PD Alert"
+                    CornerRadius="0,0,0,0" />
+                <Button
+                    Grid.Column="3"
+                    HorizontalAlignment="Stretch"
+                    Content="ER Alert"
                     CornerRadius="0,5,5,0" />
             </Grid>
+
             <ProgressRing
                 x:Name="AppNameFetchingProgress"
                 Grid.Row="2"
                 IsActive="True"
                 Visibility="Collapsed" />
+
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <ListView x:Name="AppNamesList" DoubleTapped="AppNamesList_DoubleTapped">
                     <ListView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="models:AppCarrierItem">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="1*" MinWidth="100" />
+                                    <ColumnDefinition Width="1*" MinWidth="100" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding AppName}" />
-                                <TextBlock Grid.Column="1" Text="{Binding CarrierName}" />
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AppName}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding CarrierName}" />
+
+                                <CheckBox
+                                    x:Name="PDCheck"
+                                    Grid.Column="2"
+                                    Content="Print Duration Alert"
+                                    IsChecked="{x:Bind HasPrintDurationAlert}"
+                                    IsEnabled="False" />
+
+                                <CheckBox
+                                    x:Name="ERCheck"
+                                    Grid.Column="3"
+                                    Content="Error Rate Alert"
+                                    IsChecked="{x:Bind HasErrorRateAlert}"
+                                    IsEnabled="False" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

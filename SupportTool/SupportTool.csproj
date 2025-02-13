@@ -43,6 +43,11 @@
     <PackageReference Include="WinUI.TableView" Version="1.2.2" />
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Dialogs\AlertEditDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="Alerting.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

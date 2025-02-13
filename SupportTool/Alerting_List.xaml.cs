@@ -17,6 +17,8 @@ using SupportTool.Services;
 using System.Linq;
 using SupportTool.Helpers;
 using System.IO;
+using Microsoft.UI.Xaml.Input;
+using SupportTool.Models;
 
 namespace SupportTool
 {
@@ -27,6 +29,7 @@ namespace SupportTool
         private readonly NewRelicApiService _newRelicApiService;
         private readonly AlertService _alertService;
         private string _selectedStack = string.Empty;
+        private string _repositoryPath;
         private CancellationTokenSource _cancellationTokenSource;
 
         public Alerting_List()
@@ -102,12 +105,30 @@ namespace SupportTool
 
                 var appCarrierPairs = await _newRelicApiService.FetchAppNamesAndCarriers(stack, cancellationToken);
 
+                _repositoryPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, stack);
+
                 foreach (var app in appCarrierPairs)
                 {
                     if (cancellationToken.IsCancellationRequested) return;
                     foreach (var carrier in app.Carriers)
                     {
-                        AppNames.Add(new AppCarrierItem { AppName = app.AppName, CarrierName = carrier.CarrierName });
+                        var hasPrintDurationAlert = _alertService.AlertExistsForCarrier(
+                            existingAlerts,
+                            app.AppName,
+                            carrier.CarrierName);
+
+                        var hasErrorRateAlert = existingAlerts.Any(alert =>
+                            alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
+                            alert.Name.ToLower().Contains(app.AppName.ToLower().Split('.')[0]));
+
+                        AppNames.Add(new AppCarrierItem
+                        {
+                            AppName = app.AppName,
+                            CarrierName = carrier.CarrierName,
+                            HasPrintDurationAlert = hasPrintDurationAlert,
+                            HasErrorRateAlert = hasErrorRateAlert
+                        });
                     }
                 }
             }
@@ -137,20 +158,11 @@ namespace SupportTool
             Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
         }
 
-        private void AppNamesList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private async void AppNamesList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-
-            if (AppNamesList.SelectedItem is not null)
-            {
-                var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
-                Debug.WriteLine($"Double-clicked: {selectedApp.AppName}, {selectedApp.CarrierName}");
-            }
+            var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
+            Debug.WriteLine($"Double-clicked: {selectedApp.AppName}, {selectedApp.CarrierName}");
         }
-    }
-    public class AppCarrierItem
-    {
-        public string AppName { get; set; }
-        public string CarrierName { get; set; }
     }
 
 }
