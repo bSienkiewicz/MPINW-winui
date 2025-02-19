@@ -234,7 +234,7 @@
                                     <TextBlock Text="Save" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="cancelButton">
+                            <Button x:Name="cancelButton" Click="cancelButton_Click">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE711;" />
                                     <TextBlock Text="Cancel" />
@@ -245,6 +245,5 @@
                 </Grid>
             </Grid>
         </Grid>
-
     </Grid>
 </Page>

@@ -34,7 +34,7 @@ namespace SupportToolTest
   }
 ]";
 
-            var alerts = _parser.ParseAlerts2(testContent);
+            var alerts = _parser.ParseAlerts(testContent);
 
             Assert.AreEqual(1, alerts.Count);
             Assert.AreEqual("Test Alert", alerts[0].Name);
@@ -54,7 +54,7 @@ namespace SupportToolTest
   }
 ]";
 
-            var alerts = _parser.ParseAlerts2(testContent);
+            var alerts = _parser.ParseAlerts(testContent);
 
             Assert.AreEqual(1, alerts.Count);
             Assert.AreEqual("Test Alert", alerts[0].Name);
@@ -75,7 +75,7 @@ namespace SupportToolTest
   }
 ]";
 
-            var alerts = _parser.ParseAlerts2(testContent);
+            var alerts = _parser.ParseAlerts(testContent);
 
             Assert.AreEqual(2, alerts.Count);
             Assert.AreEqual("Alert 1", alerts[0].Name);
@@ -93,7 +93,7 @@ namespace SupportToolTest
   }
 ]";
 
-            var alerts = _parser.ParseAlerts2(testContent);
+            var alerts = _parser.ParseAlerts(testContent);
 
             Assert.AreEqual(1, alerts.Count);
             Assert.AreEqual("Commented Alert", alerts[0].Name);

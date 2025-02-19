@@ -159,7 +159,6 @@ namespace SupportTool
                     Carriers.Add(carrier);
                 }
 
-                UpdateAlertButtonsState();
             }
         }
 
@@ -167,87 +166,7 @@ namespace SupportTool
         {
             if (CarriersList.SelectedItem is CarrierItem selectedCarrier)
             {
-                _selectedCarrier = selectedCarrier;
-                UpdateAlertButtonsState();
-            }
-        }
 
-        private void UpdateAlertButtonsState()
-        {
-            if (_selectedApp != null && _selectedCarrier != null && !string.IsNullOrEmpty(_repositoryPath))
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                bool printDurationExists = _alertService.AlertExistsForCarrier(existingAlerts, _selectedApp.AppName, _selectedCarrier.CarrierName);
-                AddPrintDurationButton.IsEnabled = !printDurationExists;
-            }
-            else
-            {
-                AddPrintDurationButton.IsEnabled = false;
-            }
-        }
-
-        private void AddPrintDurationButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedApp == null || _selectedCarrier == null || string.IsNullOrEmpty(_repositoryPath))
-            {
-                return;
-            }
-
-            try
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                var newAlert = _alertService.CreatePrintDurationAlert(_selectedApp.AppName, _selectedCarrier.CarrierName);
-
-                existingAlerts.Add(newAlert);
-                _alertService.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
-
-                // Show success message
-                InfoBar.Title = "Success";
-                InfoBar.Severity = InfoBarSeverity.Success;
-                InfoBar.Message = "Print Duration alert added successfully.";
-                InfoBar.IsOpen = true;
-
-                // Update button states
-                UpdateAlertButtonsState();
-            }
-            catch (Exception ex)
-            {
-                InfoBar.Title = "Error";
-                InfoBar.Severity = InfoBarSeverity.Error;
-                InfoBar.Message = $"Failed to add alert: {ex.Message}";
-                InfoBar.IsOpen = true;
-            }
-        }
-        private void AddErrorRateButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedApp == null || _selectedCarrier == null || string.IsNullOrEmpty(_repositoryPath))
-            {
-                return;
-            }
-
-            try
-            {
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, _selectedStack);
-                var newAlert = _alertService.CreateErrorRateAlert(_selectedApp.AppName, _selectedCarrier.CarrierName);
-
-                existingAlerts.Add(newAlert);
-                _alertService.SaveAlertsToFile(_repositoryPath, _selectedStack, existingAlerts);
-
-                // Show success message
-                InfoBar.Title = "Success";
-                InfoBar.Severity = InfoBarSeverity.Success;
-                InfoBar.Message = "Print Duration alert added successfully.";
-                InfoBar.IsOpen = true;
-
-                // Update button states
-                UpdateAlertButtonsState();
-            }
-            catch (Exception ex)
-            {
-                InfoBar.Title = "Error";
-                InfoBar.Severity = InfoBarSeverity.Error;
-                InfoBar.Message = $"Failed to add alert: {ex.Message}";
-                InfoBar.IsOpen = true;
             }
         }
     }

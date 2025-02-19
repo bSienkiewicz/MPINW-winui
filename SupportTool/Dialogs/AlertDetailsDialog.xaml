@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="SupportTool.Dialogs.AlertDetailsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="{x:Bind AppName}" />
+            <TextBlock
+                Margin="0,8,0,0"
+                Style="{StaticResource SubtitleTextBlockStyle}"
+                Text="{x:Bind CarrierName}" />
+        </StackPanel>
+
+        <!--  Content  -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="16">
+                <!--  Print Duration Alert Section  -->
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Print Duration Alert" />
+                    <TextBlock x:Name="PrintDurationStatusText" Text="No alert exists" Margin="0,8,0,0"/>
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <TextBlock Text="Status: " />
+                        <TextBlock Margin="8,0,0,0" Text="{x:Bind HasPrintDurationAlert}" />
+                    </StackPanel>
+                    <Button
+                        Click="CreatePrintDurationAlert_Click"
+                        Content="Create Print Duration Alert"
+                        Visibility="{x:Bind ShowCreatePrintDurationButton}" />
+                </StackPanel>
+
+                <!--  Error Rate Alert Section  -->
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Error Rate Alert" />
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <TextBlock Text="Status: " />
+                        <TextBlock Margin="8,0,0,0" Text="{x:Bind HasErrorRateAlert}" />
+                    </StackPanel>
+                    <Button
+                        Click="CreateErrorRateAlert_Click"
+                        Content="Create Error Rate Alert"
+                        Visibility="{x:Bind ShowCreateErrorRateButton}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!--  Footer  -->
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,20,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button Click="CloseButton_Click" Content="Close" />
+        </StackPanel>
+    </Grid>
+</Page>

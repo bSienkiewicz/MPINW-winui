@@ -1,33 +1,28 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Windows.UI.Xaml;
-using Newtonsoft.Json;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Threading;
 using SupportTool.Services;
 using System.Linq;
-using SupportTool.Helpers;
-using System.IO;
 using Microsoft.UI.Xaml.Input;
 using SupportTool.Models;
+using SupportTool.Helpers;
+using System.Collections.Generic;
+using SupportTool.Dialogs;
 
 namespace SupportTool
 {
     public sealed partial class Alerting_List : Page
     {
         public ObservableCollection<AppCarrierItem> AppNames { get; } = new();
-        private readonly ApplicationDataContainer _localSettings;
-        private readonly NewRelicApiService _newRelicApiService;
-        private readonly AlertService _alertService;
+        private readonly NewRelicApiService _newRelicApiService = new();
+        private readonly AlertService _alertService = new();
+        private readonly SettingsService _settingsService = new();
         private string _selectedStack = string.Empty;
         private string _repositoryPath;
         private CancellationTokenSource _cancellationTokenSource;
@@ -35,10 +30,6 @@ namespace SupportTool
         public Alerting_List()
         {
             InitializeComponent();
-            _localSettings = ApplicationData.Current.LocalSettings;
-            _newRelicApiService = new NewRelicApiService();
-            _alertService = new AlertService();
-
             InitializeControls();
         }
 
@@ -51,7 +42,7 @@ namespace SupportTool
             stacksComboBox.ItemsSource = availableStacks;
 
             // Restore previously selected stack
-            _selectedStack = _localSettings.Values["SelectedStack"] as string ?? string.Empty;
+            _selectedStack = _settingsService.GetSetting("SelectedStack");
             if (!string.IsNullOrEmpty(_selectedStack) && availableStacks.Contains(_selectedStack))
             {
                 stacksComboBox.SelectedItem = _selectedStack;
@@ -67,7 +58,7 @@ namespace SupportTool
 
         private bool IsApiKeyPresent()
         {
-            bool hasApiKey = _localSettings.Values.ContainsKey("NR_API_Key");
+            bool hasApiKey = _settingsService.IsApiKeySet();
             InfoBar.IsOpen = !hasApiKey;
             return hasApiKey;
         }
@@ -84,9 +75,9 @@ namespace SupportTool
 
                 // Update selected stack
                 _selectedStack = e.AddedItems[0].ToString();
-                _localSettings.Values["SelectedStack"] = _selectedStack;
+                _settingsService.SetSetting("SelectedStack", _selectedStack);
 
-                if (IsApiKeyPresent())
+                if (IsApiKeyPresent() && _selectedStack != null)
                 {
                     await LoadAppNamesForStack(_selectedStack, _cancellationTokenSource.Token);
                 }
@@ -99,38 +90,16 @@ namespace SupportTool
 
             try
             {
-                AppNames.Clear();
                 AppNameFetchingProgress.Visibility = Visibility.Visible;
                 AppNameFetchingProgress.IsActive = true;
 
                 var appCarrierPairs = await _newRelicApiService.FetchAppNamesAndCarriers(stack, cancellationToken);
 
-                _repositoryPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
-                var existingAlerts = _alertService.GetAlertsForStack(_repositoryPath, stack);
+                _repositoryPath = _settingsService.GetSetting("NRAlertsDir");
+                var existingAlerts = _alertService.GetAlertsForStack(stack);
 
-                foreach (var app in appCarrierPairs)
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-                    foreach (var carrier in app.Carriers)
-                    {
-                        var hasPrintDurationAlert = _alertService.AlertExistsForCarrier(
-                            existingAlerts,
-                            app.AppName,
-                            carrier.CarrierName);
-
-                        var hasErrorRateAlert = existingAlerts.Any(alert =>
-                            alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
-                            alert.Name.ToLower().Contains(app.AppName.ToLower().Split('.')[0]));
-
-                        AppNames.Add(new AppCarrierItem
-                        {
-                            AppName = app.AppName,
-                            CarrierName = carrier.CarrierName,
-                            HasPrintDurationAlert = hasPrintDurationAlert,
-                            HasErrorRateAlert = hasErrorRateAlert
-                        });
-                    }
-                }
+                AppNames.Clear(); // Clear before adding new items
+                CheckForMissingAppNameCarrierPairs(appCarrierPairs, cancellationToken, existingAlerts);
             }
             catch (Exception ex)
             {
@@ -140,6 +109,34 @@ namespace SupportTool
             {
                 AppNameFetchingProgress.Visibility = Visibility.Collapsed;
                 AppNameFetchingProgress.IsActive = false;
+            }
+        }
+
+        private void CheckForMissingAppNameCarrierPairs(List<AppNameItem> appCarrierPairs, CancellationToken cancellationToken, List<NrqlAlert> existingAlerts)
+        {
+
+            foreach (var app in appCarrierPairs)
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+                foreach (var carrier in app.Carriers)
+                {
+                    var hasPrintDurationAlert = _alertService.AlertExistsForCarrier(
+                        existingAlerts,
+                        app.AppName,
+                        carrier.CarrierName);
+
+                    var hasErrorRateAlert = existingAlerts.Any(alert =>
+                        alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
+                        alert.Name.ToLower().Contains(app.AppName.ToLower().Split('.')[0]));
+
+                    AppNames.Add(new AppCarrierItem
+                    {
+                        AppName = app.AppName,
+                        CarrierName = carrier.CarrierName,
+                        HasPrintDurationAlert = hasPrintDurationAlert,
+                        HasErrorRateAlert = hasErrorRateAlert
+                    });
+                }
             }
         }
 
@@ -158,11 +155,40 @@ namespace SupportTool
             Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
         }
 
+        private void RefreshAlertStatus()
+        {
+            if (string.IsNullOrEmpty(_selectedStack)) return;
+
+            var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
+
+            foreach (var item in AppNames)
+            {
+                item.HasPrintDurationAlert = _alertService.AlertExistsForCarrier(
+                    existingAlerts,
+                    item.AppName,
+                    item.CarrierName);
+
+                item.HasErrorRateAlert = existingAlerts.Any(alert =>
+                    alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
+                    alert.Name.ToLower().Contains(item.AppName.ToLower().Split('.')[0]));
+            }
+        }
+
         private async void AppNamesList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
-            Debug.WriteLine($"Double-clicked: {selectedApp.AppName}, {selectedApp.CarrierName}");
+            //NrqlAlert newAlert = _alertService.CreateMissingAlertByType(selectedApp, AlertType.PrintDuration);
+            //List<NrqlAlert> existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
+
+            //existingAlerts.Add(newAlert);
+            //_alertService.SaveAlertsToFile(_selectedStack, existingAlerts);
+
+            var dialog = new AlertDetailsDialog(selectedApp, _selectedStack, _alertService);
+            await dialog.ShowAsync();
+
+            // Refresh the list after dialog is closed to show updated alert status
+            RefreshAlertStatus();
+
         }
     }
-
 }

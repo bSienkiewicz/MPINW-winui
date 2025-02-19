@@ -1,27 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Storage.Pickers;
 using Windows.Storage;
-using Windows.Networking;
 using System.Diagnostics;
-using System.Text.Json;
 using SupportTool.Helpers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using StorageFolder = ABI.Windows.Storage.StorageFolder;
 using SupportTool.Services;
 using Windows.ApplicationModel.DataTransfer;
 
@@ -38,19 +26,16 @@ namespace SupportTool
         // Path to the stacks configuration directory relative to the repository root
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
 
-        private readonly ApplicationDataContainer _localSettings;
+        public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
         private readonly string[] _requiredFolders = { ".github", "ansible", "metaform", "terraform" };
-
         private string? _selectedFolderPath;
         private string? _selectedStack;
         private string[] _availableStacks = [];
-        private readonly AlertService _alertService; 
+        private readonly AlertService _alertService = new();
+        private readonly SettingsService _settings = new();
         private int _dragStartIndex = -1;
 
-        public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
-
         private NrqlAlert _selectedAlert;
-
         public NrqlAlert SelectedAlert
         {
             get => _selectedAlert;
@@ -69,8 +54,6 @@ namespace SupportTool
         public Alerting()
         {
             InitializeComponent();
-            _localSettings = ApplicationData.Current.LocalSettings;
-            _alertService = new AlertService();
             _availableStacks = _alertService.GetAlertStacksFromDirectories();
             LoadDirectory();
             LoadStack();
@@ -78,7 +61,7 @@ namespace SupportTool
 
         private void LoadStack()
         {
-            _selectedStack = _localSettings.Values["SelectedStack"] as string ?? string.Empty;
+            _selectedStack = _settings.GetSetting("SelectedStack");
             if (!string.IsNullOrEmpty(_selectedStack))
             {
                 if (_availableStacks.Contains(_selectedStack))
@@ -180,12 +163,14 @@ namespace SupportTool
             if (_selectedFolderPath == null || e.AddedItems.Count == 0) return;
 
             _selectedStack = e.AddedItems[0]?.ToString();
-            _localSettings.Values["SelectedStack"] = _selectedStack;
+            _settings.SetSetting("SelectedStack", _selectedStack);
             if (string.IsNullOrEmpty(_selectedStack)) return;
 
+            // Clear the selected alerts section
             SelectedAlert = new NrqlAlert();
             AlertsListView.SelectedItem = null;
 
+            // Load alerts for selected stack and re-set the sources
             LoadAlertsForStack();
             NRAlertSearch.Text = string.Empty;
             AlertsListView.ItemsSource = AlertItems;
@@ -222,6 +207,7 @@ namespace SupportTool
         {
             if (e.AddedItems.Count > 0)
             {
+                // Set the selected alerts to display its details
                 SelectedAlert = (NrqlAlert)e.AddedItems[0];
             }
         }
@@ -237,7 +223,7 @@ namespace SupportTool
             if (index != -1)
             {
                 AlertItems[index] = _selectedAlert;
-                _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
+                _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             }
         }
 
@@ -265,7 +251,7 @@ namespace SupportTool
             AlertItems.Add(alertCopy);
             AlertsListView.SelectedItem = alertCopy;
             cloneButton.Flyout.Hide();
-            _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
+            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
         }
 
         private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
@@ -274,7 +260,7 @@ namespace SupportTool
 
             AlertItems.Remove(_selectedAlert);
             SelectedAlert = new NrqlAlert();
-            _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
+            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             deleteButton.Flyout.Hide();
         }
 
@@ -289,7 +275,7 @@ namespace SupportTool
             };
             AlertItems.Add(newAlert);
             AlertsListView.SelectedItem = newAlert;
-            _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
+            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
         }
 
         // Used for alert reordering
@@ -317,7 +303,7 @@ namespace SupportTool
 
                         if (_selectedFolderPath != null && _selectedStack != null)
                         {
-                            _alertService.SaveAlertsToFile(_selectedFolderPath, _selectedStack, AlertItems.ToList());
+                            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
                         }
                     }
                 }
@@ -331,19 +317,26 @@ namespace SupportTool
         #region Storage Operations
 
         private void SaveDirectory() =>
-            _localSettings.Values["NRAlertsDir"] = _selectedFolderPath;
+            _settings.SetSetting("NRAlertsDir", _selectedFolderPath);
+
 
         private void DeleteDirectory() =>
-            _localSettings.Values["NRAlertsDir"] = string.Empty;
+            _settings.SetSetting("NRAlertsDir", string.Empty);
 
         private void LoadDirectory()
         {
-            _selectedFolderPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+            _selectedFolderPath = _settings.GetSetting("NRAlertsDir");
             if (!string.IsNullOrEmpty(_selectedFolderPath))
             {
                 ValidateAndUpdateUi(_selectedFolderPath);
             }
         }
         #endregion
+
+        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            SelectedAlert = new NrqlAlert();
+            AlertsListView.SelectedItem = null;
+        }
     }
 }
