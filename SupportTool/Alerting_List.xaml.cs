@@ -22,9 +22,8 @@ namespace SupportTool
         public ObservableCollection<AppCarrierItem> AppNames { get; } = new();
         private readonly NewRelicApiService _newRelicApiService = new();
         private readonly AlertService _alertService = new();
-        private readonly SettingsService _settingsService = new();
+        private readonly SettingsService _settings = new();
         private string _selectedStack = string.Empty;
-        private string _repositoryPath;
         private CancellationTokenSource _cancellationTokenSource;
 
         public Alerting_List()
@@ -42,7 +41,7 @@ namespace SupportTool
             stacksComboBox.ItemsSource = availableStacks;
 
             // Restore previously selected stack
-            _selectedStack = _settingsService.GetSetting("SelectedStack");
+            _selectedStack = _settings.GetSetting("SelectedStack");
             if (!string.IsNullOrEmpty(_selectedStack) && availableStacks.Contains(_selectedStack))
             {
                 stacksComboBox.SelectedItem = _selectedStack;
@@ -58,7 +57,7 @@ namespace SupportTool
 
         private bool IsApiKeyPresent()
         {
-            bool hasApiKey = _settingsService.IsApiKeySet();
+            bool hasApiKey = _settings.IsApiKeySet();
             InfoBar.IsOpen = !hasApiKey;
             return hasApiKey;
         }
@@ -75,7 +74,7 @@ namespace SupportTool
 
                 // Update selected stack
                 _selectedStack = e.AddedItems[0].ToString();
-                _settingsService.SetSetting("SelectedStack", _selectedStack);
+                _settings.SetSetting("SelectedStack", _selectedStack);
 
                 if (IsApiKeyPresent() && _selectedStack != null)
                 {
@@ -90,16 +89,28 @@ namespace SupportTool
 
             try
             {
-                AppNameFetchingProgress.Visibility = Visibility.Visible;
                 AppNameFetchingProgress.IsActive = true;
+                AppNameFetchingProgress.Visibility = Visibility.Visible;
 
                 var appCarrierPairs = await _newRelicApiService.FetchAppNamesAndCarriers(stack, cancellationToken);
-
-                _repositoryPath = _settingsService.GetSetting("NRAlertsDir");
                 var existingAlerts = _alertService.GetAlertsForStack(stack);
 
-                AppNames.Clear(); // Clear before adding new items
-                CheckForMissingAppNameCarrierPairs(appCarrierPairs, cancellationToken, existingAlerts);
+                AppNames.Clear();
+                foreach (var app in appCarrierPairs)
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+                    foreach (var carrier in app.Carriers)
+                    {
+                        var item = new AppCarrierItem
+                        {
+                            AppName = app.AppName,
+                            CarrierName = carrier.CarrierName
+                        };
+                        item.HasPrintDurationAlert = _alertService.HasAlert(existingAlerts, item, AlertType.PrintDuration);
+                        item.HasErrorRateAlert = _alertService.HasAlert(existingAlerts, item, AlertType.ErrorRate);
+                        AppNames.Add(item);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -107,36 +118,8 @@ namespace SupportTool
             }
             finally
             {
-                AppNameFetchingProgress.Visibility = Visibility.Collapsed;
                 AppNameFetchingProgress.IsActive = false;
-            }
-        }
-
-        private void CheckForMissingAppNameCarrierPairs(List<AppNameItem> appCarrierPairs, CancellationToken cancellationToken, List<NrqlAlert> existingAlerts)
-        {
-
-            foreach (var app in appCarrierPairs)
-            {
-                if (cancellationToken.IsCancellationRequested) return;
-                foreach (var carrier in app.Carriers)
-                {
-                    var hasPrintDurationAlert = _alertService.AlertExistsForCarrier(
-                        existingAlerts,
-                        app.AppName,
-                        carrier.CarrierName);
-
-                    var hasErrorRateAlert = existingAlerts.Any(alert =>
-                        alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
-                        alert.Name.ToLower().Contains(app.AppName.ToLower().Split('.')[0]));
-
-                    AppNames.Add(new AppCarrierItem
-                    {
-                        AppName = app.AppName,
-                        CarrierName = carrier.CarrierName,
-                        HasPrintDurationAlert = hasPrintDurationAlert,
-                        HasErrorRateAlert = hasErrorRateAlert
-                    });
-                }
+                AppNameFetchingProgress.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -158,37 +141,37 @@ namespace SupportTool
         private void RefreshAlertStatus()
         {
             if (string.IsNullOrEmpty(_selectedStack)) return;
+            Debug.WriteLine("Refreshed UI");
 
             var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
 
-            foreach (var item in AppNames)
+            // Force UI update by re-adding items
+            for (int i = 0; i < AppNames.Count; i++)
             {
-                item.HasPrintDurationAlert = _alertService.AlertExistsForCarrier(
-                    existingAlerts,
-                    item.AppName,
-                    item.CarrierName);
+                var item = AppNames[i];
 
-                item.HasErrorRateAlert = existingAlerts.Any(alert =>
-                    alert.NrqlQuery.Contains($"WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
-                    alert.Name.ToLower().Contains(item.AppName.ToLower().Split('.')[0]));
+                bool newPDStatus = _alertService.HasAlert(existingAlerts, item, AlertType.PrintDuration);
+                bool newERStatus = _alertService.HasAlert(existingAlerts, item, AlertType.ErrorRate);
+
+                if (item.HasPrintDurationAlert != newPDStatus || item.HasErrorRateAlert != newERStatus)
+                {
+                    item.HasPrintDurationAlert = newPDStatus;
+                    item.HasErrorRateAlert = newERStatus;
+
+                    // This forces the UI to recognize the change
+                    AppNames[i] = item;
+                }
             }
         }
 
         private async void AppNamesList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
-            //NrqlAlert newAlert = _alertService.CreateMissingAlertByType(selectedApp, AlertType.PrintDuration);
-            //List<NrqlAlert> existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
-
-            //existingAlerts.Add(newAlert);
-            //_alertService.SaveAlertsToFile(_selectedStack, existingAlerts);
-
             var dialog = new AlertDetailsDialog(selectedApp, _selectedStack, _alertService);
+            dialog.AlertAdded += RefreshAlertStatus;
             await dialog.ShowAsync();
 
-            // Refresh the list after dialog is closed to show updated alert status
             RefreshAlertStatus();
-
         }
     }
 }

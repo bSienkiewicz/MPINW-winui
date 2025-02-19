@@ -26,6 +26,7 @@ namespace SupportTool.Dialogs
 {
     public sealed partial class AlertDetailsDialog : Page
     {
+        public event Action? AlertAdded;
         public string AppName { get; }
         public string CarrierName { get; }
         public bool HasPrintDurationAlert { get; }
@@ -33,9 +34,6 @@ namespace SupportTool.Dialogs
         public Visibility ShowCreatePrintDurationButton => HasPrintDurationAlert ? Visibility.Collapsed : Visibility.Visible;
         public Visibility ShowCreateErrorRateButton => HasErrorRateAlert ? Visibility.Collapsed : Visibility.Visible;
 
-        public event Action ClosedEvent;
-        public event Action ErrorEvent;
-        public event Action AlertCreatedEvent;
 
         private readonly ContentDialog _dialog;
         private readonly AlertService _alertService;
@@ -72,6 +70,7 @@ namespace SupportTool.Dialogs
             try
             {
                 var button = (Button)sender;
+
                 // New AppCarrier combination
                 var item = new AppCarrierItem { AppName = AppName, CarrierName = CarrierName };
                 var alerts = _alertService.GetAlertsForStack(_selectedStack);
@@ -79,16 +78,12 @@ namespace SupportTool.Dialogs
                 // Add the new generated alert to the alert list and save it to file
                 alerts.Add(_alertService.CreateMissingAlertByType(item, AlertType.PrintDuration));
                 _alertService.SaveAlertsToFile(_selectedStack, alerts);
-                button.IsEnabled = false;
-                if (PrintDurationStatusText != null)
-                {
-                    PrintDurationStatusText.Text = "Alert exists";
-                }
+                AlertAdded?.Invoke();
+                button.Visibility = Visibility.Collapsed;
 
             }
             catch (Exception ex)
             {
-                ErrorEvent?.Invoke();
                 _dialog.Hide();
             }
         }
@@ -97,14 +92,20 @@ namespace SupportTool.Dialogs
         {
             try
             {
+                var button = (Button)sender;
+
+                // New AppCarrier combination
                 var item = new AppCarrierItem { AppName = AppName, CarrierName = CarrierName };
                 var alerts = _alertService.GetAlertsForStack(_selectedStack);
+
+                // Add the new generated alert to the alert list and save it to file
                 alerts.Add(_alertService.CreateMissingAlertByType(item, AlertType.ErrorRate));
                 _alertService.SaveAlertsToFile(_selectedStack, alerts);
+                AlertAdded?.Invoke();
+                button.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
-                ErrorEvent?.Invoke();
                 _dialog.Hide();
             }
         }

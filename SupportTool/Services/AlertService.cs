@@ -13,26 +13,42 @@ namespace SupportTool.Services
     {
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
         private readonly string[] _requiredFolders = [".github", "ansible", "metaform", "terraform"];
-        private readonly ApplicationDataContainer _localSettings;
-        private readonly string _repositoryPath;
-        private string? _selectedFolderPath;
-        private string[] _availableStacks = [];
+        private readonly SettingsService _settings = new();
 
         public AlertService()
         {
-            _localSettings = ApplicationData.Current.LocalSettings;
         }
 
         public string RepositoryPath
         {
-            get => _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
-            private set => _localSettings.Values["NRAlertsDir"] = value;
+            get => _settings.GetSetting("NRAlertsDir");
+            private set => _settings.SetSetting("NRAlertsDir", value);
         }
 
         public string SelectedStack
         {
-            get => _localSettings.Values["SelectedStack"] as string ?? string.Empty;
-            set => _localSettings.Values["SelectedStack"] = value;
+            get => _settings.GetSetting("SelectedStack");
+            set => _settings.SetSetting("SelectedStack", value);
+        }
+
+        public List<NrqlAlert> GetAlertsForStack(string stackName)
+        {
+            var tfvarsPath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
+            if (!File.Exists(tfvarsPath))
+                return [];
+
+            var parser = new HclParser();
+            return parser.ParseAlerts(File.ReadAllText(tfvarsPath));
+        }
+
+        public void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
+        {
+            var filePath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
+            var parser = new HclParser();
+            var updatedContent = parser.ReplaceNrqlAlertsSection(
+                File.ReadAllText(filePath),
+                alerts);
+            File.WriteAllText(filePath, updatedContent);
         }
 
         public bool ValidateRepository(string folderPath, out string[] missingFolders)
@@ -53,19 +69,6 @@ namespace SupportTool.Services
             }
         }
 
-        public void SetRepository(string path)
-        {
-            if (ValidateRepository(path, out _))
-            {
-                RepositoryPath = path;
-            }
-            else
-            {
-                RepositoryPath = string.Empty;
-                throw new InvalidOperationException("Invalid repository structure");
-            }
-        }
-
         public string[] GetAlertStacksFromDirectories()
         {
             if (string.IsNullOrEmpty(RepositoryPath)) return [];
@@ -78,15 +81,6 @@ namespace SupportTool.Services
                     .ToArray();
         }
 
-        public List<NrqlAlert> GetAlertsForStack(string stackName)
-        {
-            var tfvarsPath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
-            if (!File.Exists(tfvarsPath))
-                return [];
-
-            var parser = new HclParser();
-            return parser.ParseAlerts(File.ReadAllText(tfvarsPath));
-        }
 
         public bool HasAlert(List<NrqlAlert> alerts, AppCarrierItem item, AlertType alertType)
         {
@@ -95,22 +89,15 @@ namespace SupportTool.Services
                 AlertType.PrintDuration => alerts.Any(alert =>
                     alert.NrqlQuery.Contains($"appName = '{item.AppName}'") &&
                     alert.NrqlQuery.Contains($"CarrierName = '{item.CarrierName}'") &&
-                    alert.NrqlQuery.Contains("PrintOperation like '%create%'")),
+                    alert.NrqlQuery.Contains($"average(duration)")),
 
                 AlertType.ErrorRate => alerts.Any(alert =>
-                    alert.NrqlQuery.Contains("WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel") &&
+                    alert.NrqlQuery.Contains($"appName = '{item.AppName}'") &&
+                    alert.NrqlQuery.Contains("SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100") &&
                     alert.Name.ToLower().Contains(item.ClientName.ToLower())),
 
                 _ => false
             };
-        }
-
-        public bool AlertExistsForCarrier(List<NrqlAlert> alerts, string appName, string carrierName)
-        {
-            return alerts.Any(alert =>
-                alert.NrqlQuery.Contains($"appName = '{appName}") &&
-                alert.NrqlQuery.Contains($"CarrierName = '{carrierName}'") &&
-                alert.NrqlQuery.Contains("PrintOperation like '%create%'"));
         }
 
         public NrqlAlert CreateMissingAlertByType(AppCarrierItem item, AlertType alertType)
@@ -136,7 +123,7 @@ namespace SupportTool.Services
                 {
                     Name = $"{item.ClientName} Error rate for {item.CarrierName}",
                     Description = $"Alert related to {item.CarrierName} error rate for {item.AppName}",
-                    NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) *100 FROM Transaction WHERE appName like 'pvh.mpm.metapack.%' AND name not like '%.PrintParcel'",
+                    NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100 FROM Transaction WHERE appName = '{item.AppName}' AND name not like '%.PrintParcel'",
                     Severity = "CRITICAL",
                     Enabled = true,
                     CriticalThresholdOccurrences = "ALL",
@@ -148,16 +135,6 @@ namespace SupportTool.Services
 
                 _ => throw new ArgumentException("Invalid alert type")
             };
-        }
-
-        public void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
-        {
-            var filePath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
-            var parser = new HclParser();
-            var updatedContent = parser.ReplaceNrqlAlertsSection(
-                File.ReadAllText(filePath),
-                alerts);
-            File.WriteAllText(filePath, updatedContent);
         }
 
         public NrqlAlert CloneAlert(NrqlAlert alert) => new()
@@ -175,17 +152,6 @@ namespace SupportTool.Services
             CriticalThreshold = alert.CriticalThreshold,
             CriticalThresholdDuration = alert.CriticalThresholdDuration,
             CriticalThresholdOccurrences = alert.CriticalThresholdOccurrences
-        };
-
-        public NrqlAlert CreateEmptyAlert() => new()
-        {
-            Name = "New Alert",
-            Description = "Alert description",
-            NrqlQuery = string.Empty,
-            RunbookUrl = string.Empty,
-            Severity = "CRITICAL",
-            Enabled = true,
-            AggregationMethod = "event_flow"
         };
     }
 }

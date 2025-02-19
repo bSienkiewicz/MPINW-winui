@@ -29,7 +29,6 @@
                 <!--  Print Duration Alert Section  -->
                 <StackPanel>
                     <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Print Duration Alert" />
-                    <TextBlock x:Name="PrintDurationStatusText" Text="No alert exists" Margin="0,8,0,0"/>
                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                         <TextBlock Text="Status: " />
                         <TextBlock Margin="8,0,0,0" Text="{x:Bind HasPrintDurationAlert}" />

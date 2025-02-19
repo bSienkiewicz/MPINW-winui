@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,8 +21,8 @@ namespace SupportTool.Models
             set
             {
                 _appName = value;
-                OnPropertyChanged(nameof(AppName));
-                OnPropertyChanged(nameof(ClientName));
+                OnPropertyChanged();
+                OnPropertyChanged();
             }
         }
 
@@ -31,7 +32,7 @@ namespace SupportTool.Models
             set
             {
                 _carrierName = value;
-                OnPropertyChanged(nameof(CarrierName));
+                OnPropertyChanged();
             }
         }
 
@@ -40,8 +41,11 @@ namespace SupportTool.Models
             get => _hasPrintDurationAlert;
             set
             {
-                _hasPrintDurationAlert = value;
-                OnPropertyChanged(nameof(HasPrintDurationAlert));
+                if (_hasPrintDurationAlert != value)
+                {
+                    _hasPrintDurationAlert = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -51,15 +55,19 @@ namespace SupportTool.Models
             set
             {
                 _hasErrorRateAlert = value;
-                OnPropertyChanged(nameof(HasErrorRateAlert));
+                OnPropertyChanged();
             }
         }
 
         public string ClientName => AppName?.Split('.')[0].ToUpper() ?? string.Empty;
 
+
         public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName) =>
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     public enum AlertType
