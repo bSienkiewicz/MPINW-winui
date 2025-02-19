@@ -90,6 +90,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox
                         Name="NRAlertSearch"
@@ -101,6 +102,10 @@
                         Click="AddNewAlertButton_Click"
                         Style="{StaticResource AccentButtonStyle}">
                         <FontIcon Glyph="&#xE710;" />
+                    </Button>
+
+                    <Button Grid.Column="2" Click="SortAlertsButton_Click">
+                        <FontIcon Glyph="&#xE84A;" />
                     </Button>
                 </Grid>
 

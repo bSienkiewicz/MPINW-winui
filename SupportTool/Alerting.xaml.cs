@@ -338,5 +338,15 @@ namespace SupportTool
             SelectedAlert = new NrqlAlert();
             AlertsListView.SelectedItem = null;
         }
+
+        private void SortAlertsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var sortedList = AlertItems.OrderBy(item => item.Name.ToLower()).ToList();
+            AlertItems.Clear();
+            foreach(var item in sortedList)
+            {
+                AlertItems.Add(item);
+            }
+        }
     }
 }

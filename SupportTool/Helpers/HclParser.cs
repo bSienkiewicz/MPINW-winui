@@ -25,6 +25,7 @@ namespace SupportTool.Helpers
         public double CriticalThreshold { get; set; }
         public int? CriticalThresholdDuration { get; set; }
         public string CriticalThresholdOccurrences { get; set; }
+        public bool ValueChanged { get; set; }
 
         public override string ToString()
         {
