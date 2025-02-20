@@ -18,6 +18,8 @@ using SupportTool.Models;
 using SupportTool.Services;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Threading;
+using System.Collections;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -37,6 +39,8 @@ namespace SupportTool.Dialogs
 
         private readonly ContentDialog _dialog;
         private readonly AlertService _alertService;
+        private readonly NewRelicApiService _newRelicApiService = new();
+        private CancellationTokenSource _cancellationTokenSource;
         private readonly string _selectedStack;
 
         public AlertDetailsDialog(AppCarrierItem item, string selectedStack, AlertService alertService)
@@ -49,7 +53,7 @@ namespace SupportTool.Dialogs
             HasErrorRateAlert = item.HasErrorRateAlert;
             _selectedStack = selectedStack;
             _alertService = alertService;
-
+            
             _dialog = new ContentDialog
             {
                 Content = this,
@@ -110,9 +114,13 @@ namespace SupportTool.Dialogs
             }
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private async void FetchMedianDurationButton_Click(object sender, RoutedEventArgs e)
         {
-            _dialog.Hide();
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            var duration = await _newRelicApiService.FetchMedianDurationForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
+            AverageMedian.Text = duration.ToString();
         }
     }
 }

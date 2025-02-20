@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="20">
+    <Grid Padding="20" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -15,8 +15,11 @@
         </Grid.RowDefinitions>
 
         <!--  Header  -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="{x:Bind AppName}" />
+        <StackPanel
+            Grid.Row="0"
+            Width="1400"
+            Margin="0,0,0,20">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Review missing alerts" />
             <TextBlock
                 Margin="0,8,0,0"
                 Style="{StaticResource SubtitleTextBlockStyle}"
@@ -54,13 +57,15 @@
             </StackPanel>
         </ScrollViewer>
 
+
         <!--  Footer  -->
         <StackPanel
             Grid.Row="2"
             Margin="0,20,0,0"
             HorizontalAlignment="Right"
             Orientation="Horizontal">
-            <Button Click="CloseButton_Click" Content="Close" />
+            <TextBlock x:Name="AverageMedian" Text="AverageMedian" />
+            <Button Click="FetchMedianDurationButton_Click" Content="Close" />
         </StackPanel>
     </Grid>
 </Page>

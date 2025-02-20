@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using System.Diagnostics;
 using System.Threading;
+using System.Collections;
 
 namespace SupportTool.Services
 {
@@ -125,6 +126,76 @@ namespace SupportTool.Services
             }
 
             return appNames;
+        }
+
+        public async Task<float> FetchMedianDurationForAppNameAndCarrier(string AppName, string CarrierName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!_localSettings.Values.TryGetValue("NR_API_Key", out var value))
+                {
+                    throw new Exception("API key not found in local settings.");
+                }
+
+                if (string.IsNullOrEmpty(AppName) || string.IsNullOrEmpty(CarrierName))
+                {
+                    throw new Exception("App Name and Carrier Name are required.");
+                }
+
+                string apiKey = value.ToString();
+                string url = "https://api.newrelic.com/graphql";
+
+                string query = $@"
+                    {{
+                        actor {{
+                            account(id: 400000) {{
+                                nrql(query: ""FROM Transaction SELECT percentile(duration, 50) AS 'percentile' WHERE appName = '{AppName}' AND CarrierName = '{CarrierName}' SINCE 7 days ago"") {{
+                                    results
+                                }}
+                            }}
+                        }}
+                    }}";
+
+                var requestBody = new { query = query };
+                string jsonBody = JsonConvert.SerializeObject(requestBody);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
+                    {
+                        Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+                    };
+                    requestMessage.Headers.Add("X-Api-Key", apiKey);
+
+                    HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception($"HTTP Error: {response.StatusCode}, Response: {responseContent}.");
+                    }
+
+                    var result = JsonConvert.DeserializeObject<JObject>(responseContent);
+                    var percentileValue = result?["data"]?["actor"]?["account"]?["nrql"]?["results"]?.FirstOrDefault()?["percentile"]?["50"];
+
+                    if (percentileValue == null)
+                    {
+                        throw new Exception("Invalid response format or missing percentile data.");
+                    }
+
+                    return percentileValue.Value<float>();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("FetchMedianDurationForAppNameAndCarrier was canceled.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in FetchMedianDurationForAppNameAndCarrier: {ex.Message}");
+                throw;
+            }
         }
     }
 }

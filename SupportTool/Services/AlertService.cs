@@ -94,7 +94,7 @@ namespace SupportTool.Services
                 AlertType.ErrorRate => alerts.Any(alert =>
                     alert.NrqlQuery.Contains($"appName = '{item.AppName}'") &&
                     alert.NrqlQuery.Contains("SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100") &&
-                    alert.Name.ToLower().Contains(item.ClientName.ToLower())),
+                    alert.NrqlQuery.Contains($"CarrierName = '{item.CarrierName}'")),
 
                 _ => false
             };
