@@ -7,29 +7,20 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="20" HorizontalAlignment="Stretch">
+    <Grid Padding="0" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
-        <StackPanel
-            Grid.Row="0"
-            Width="1400"
-            Margin="0,0,0,20">
-            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Review missing alerts" />
-            <TextBlock
-                Margin="0,8,0,0"
-                Style="{StaticResource SubtitleTextBlockStyle}"
-                Text="{x:Bind CarrierName}" />
-        </StackPanel>
 
         <!--  Content  -->
-        <ScrollViewer Grid.Row="1">
+        <!--<ScrollViewer Grid.Row="1">
             <StackPanel Spacing="16">
-                <!--  Print Duration Alert Section  -->
+        -->
+        <!--  Print Duration Alert Section  -->
+        <!--
                 <StackPanel>
                     <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Print Duration Alert" />
                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
@@ -42,7 +33,9 @@
                         Visibility="{x:Bind ShowCreatePrintDurationButton}" />
                 </StackPanel>
 
-                <!--  Error Rate Alert Section  -->
+        -->
+        <!--  Error Rate Alert Section  -->
+        <!--
                 <StackPanel>
                     <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Error Rate Alert" />
                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
@@ -55,17 +48,64 @@
                         Visibility="{x:Bind ShowCreateErrorRateButton}" />
                 </StackPanel>
             </StackPanel>
-        </ScrollViewer>
-
-
+        </ScrollViewer>-->
         <!--  Footer  -->
-        <StackPanel
-            Grid.Row="2"
-            Margin="0,20,0,0"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal">
-            <TextBlock x:Name="AverageMedian" Text="AverageMedian" />
-            <Button Click="FetchMedianDurationButton_Click" Content="Close" />
-        </StackPanel>
+        <Grid
+            Grid.Row="0"
+            Margin="0,0,0,20"
+            HorizontalAlignment="Stretch"
+            ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                Click="CreatePrintDurationAlert_Click"
+                Content="Print Duration Template"
+                IsEnabled="{x:Bind ShowCreatePrintDurationButton}" />
+            <Button
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Click="CreatePrintDurationAlert_Click"
+                Content="Error Rate Template"
+                IsEnabled="{x:Bind ShowCreatePrintDurationButton}" />
+        </Grid>
+
+        <ScrollView
+            Grid.Row="1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
+            <StackPanel Padding="10" Spacing="10">
+                <TextBox
+                    x:Name="NameTextBox"
+                    Header="Name:"
+                    Text="" />
+                <TextBox Header="Severity" Text="" />
+                <TextBox
+                    AcceptsReturn="True"
+                    Header="Description:"
+                    Text=""
+                    TextWrapping="Wrap" />
+                <TextBox
+                    MinHeight="100"
+                    AcceptsReturn="True"
+                    Header="NRQL Query:"
+                    Text=""
+                    TextWrapping="Wrap" />
+                <TextBox Header="Runbook URL" Text="" />
+                <TextBox Header="AggregationMethod" Text="" />
+                <TextBox Header="AggregationDelay" Text="" />
+                <TextBox Header="CriticalOperator" Text="" />
+                <TextBox Header="CriticalThreshold" Text="" />
+                <TextBlock x:Name="AverageMedian" Text="AverageMedian" />
+                <Button Click="FetchMedianDurationButton_Click" Content="Close" />
+                <TextBox Header="CriticalThresholdDuration" Text="" />
+                <TextBox Header="CriticalThresholdOccurrences" Text="" />
+            </StackPanel>
+        </ScrollView>
+
+
     </Grid>
 </Page>

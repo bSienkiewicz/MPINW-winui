@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace SupportTool.Helpers
 {
@@ -164,7 +165,17 @@ namespace SupportTool.Helpers
 
             if (!match.Success) return string.Empty;
 
-            return (match.Groups[1].Value + match.Groups[2].Value).Trim().Trim('"');
+            var value = (match.Groups[1].Value + match.Groups[2].Value).Trim().Trim('"');
+
+            // Normalize specific fields
+            return key switch
+            {
+                "severity" => value.ToUpper(),
+                "aggregation_method" => value.ToUpper(),
+                "critical_operator" => value.ToUpper(),
+                "critical_threshold_occurrences" => value.ToUpper(),
+                _ => value
+            };
         }
 
         private bool ParseBoolValue(string block, string key)

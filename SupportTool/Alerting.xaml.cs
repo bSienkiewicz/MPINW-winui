@@ -35,6 +35,11 @@ namespace SupportTool
         private readonly SettingsService _settings = new();
         private int _dragStartIndex = -1;
 
+        public string[] Severities => AlertConstants.Severities;
+        public string[] AggregationMethods => AlertConstants.AggregationMethods;
+        public string[] CriticalOperators => AlertConstants.CriticalOperators;
+        public string[] ThresholdOccurrences => AlertConstants.ThresholdOccurrences;
+
         private NrqlAlert _selectedAlert;
         public NrqlAlert SelectedAlert
         {

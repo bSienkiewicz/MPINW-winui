@@ -1,25 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using SupportTool.Models;
 using SupportTool.Services;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using System.Threading;
-using System.Collections;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -33,8 +18,8 @@ namespace SupportTool.Dialogs
         public string CarrierName { get; }
         public bool HasPrintDurationAlert { get; }
         public bool HasErrorRateAlert { get; }
-        public Visibility ShowCreatePrintDurationButton => HasPrintDurationAlert ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility ShowCreateErrorRateButton => HasErrorRateAlert ? Visibility.Collapsed : Visibility.Visible;
+        public bool ShowCreatePrintDurationButton => !HasPrintDurationAlert;
+        public bool ShowCreateErrorRateButton => !HasErrorRateAlert;
 
 
         private readonly ContentDialog _dialog;
@@ -53,13 +38,14 @@ namespace SupportTool.Dialogs
             HasErrorRateAlert = item.HasErrorRateAlert;
             _selectedStack = selectedStack;
             _alertService = alertService;
-            
+
             _dialog = new ContentDialog
             {
                 Content = this,
                 XamlRoot = App.MainWindow.Content.XamlRoot,
                 Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 DefaultButton = ContentDialogButton.Close,
+                Width = 1000,
                 CloseButtonText = "Close"
             };
         }

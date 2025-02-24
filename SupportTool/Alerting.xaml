@@ -149,30 +149,123 @@
                     </Grid.RowDefinitions>
                     <ScrollView Grid.Row="0">
                         <StackPanel Padding="10" Spacing="10">
+
                             <CheckBox Content="Enabled" IsChecked="{x:Bind SelectedAlert.Enabled, Mode=TwoWay}" />
-                            <TextBox
-                                x:Name="NameTextBox"
-                                Header="Name:"
-                                Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}" />
-                            <TextBox Header="Severity" Text="{x:Bind SelectedAlert.Severity, Mode=TwoWay}" />
+
+                            <TextBox x:Name="NameTextBox" Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Name:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind Severities}"
+                                SelectedItem="{x:Bind SelectedAlert.Severity, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Severity:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </ComboBox.Header>
+                            </ComboBox>
+
                             <TextBox
                                 AcceptsReturn="True"
                                 Header="Description:"
                                 Text="{x:Bind SelectedAlert.Description, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
+
                             <TextBox
                                 MinHeight="100"
                                 AcceptsReturn="True"
                                 Header="NRQL Query:"
                                 Text="{x:Bind SelectedAlert.NrqlQuery, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
-                            <TextBox Header="Runbook URL" Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}" />
-                            <TextBox Header="AggregationMethod" Text="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}" />
-                            <TextBox Header="AggregationDelay" Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}" />
-                            <TextBox Header="CriticalOperator" Text="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}" />
-                            <TextBox Header="CriticalThreshold" Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}" />
-                            <TextBox Header="CriticalThresholdDuration" Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}" />
-                            <TextBox Header="CriticalThresholdOccurrences" Text="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}" />
+
+                            <TextBox Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Runbook URL:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind AggregationMethods}"
+                                SelectedItem="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Method:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Delay:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind CriticalOperators}"
+                                SelectedItem="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Operator:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Duration:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind ThresholdOccurrences}"
+                                SelectedItem="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Occurrences:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </ComboBox.Header>
+                            </ComboBox>
                         </StackPanel>
                     </ScrollView>
 
@@ -219,7 +312,8 @@
                                             <Button
                                                 Background="IndianRed"
                                                 Click="DeleteAlertButton_Click"
-                                                Content="Yes, delete the alert" />
+                                                Content="Yes, delete the alert"
+                                                Foreground="Black" />
                                         </StackPanel>
                                     </Flyout>
                                 </Button.Flyout>
