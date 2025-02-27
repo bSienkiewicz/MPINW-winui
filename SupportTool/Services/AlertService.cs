@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using SupportTool.Helpers;
 using SupportTool.Models;
 using Windows.Storage;
@@ -67,6 +71,47 @@ namespace SupportTool.Services
                 missingFolders = _requiredFolders;
                 return false;
             }
+        }
+
+        public bool ValidateAlertInputs(NrqlAlert alert)
+        {
+            if (alert == null)
+                return false;
+
+            // List of fields to validate
+            var fieldsToValidate = new Dictionary<string, string>
+                {
+                    { "Name", alert.Name },
+                    { "Description", alert.Description },
+                    { "NrqlQuery", alert.NrqlQuery },
+                    { "RunbookUrl", alert.RunbookUrl },
+                    { "Severity", alert.Severity },
+                    { "AggregationMethod", alert.AggregationMethod },
+                    { "CriticalOperator", alert.CriticalOperator },
+                    { "CriticalThresholdOccurrences", alert.CriticalThresholdOccurrences }
+                };
+
+            // Check each field for invalid characters
+            foreach (var field in fieldsToValidate)
+            {
+                if (ContainsInvalidCharacters(field.Value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ContainsInvalidCharacters(string input)
+        {
+            if (input == null || input == string.Empty)
+                return false;
+            // List of invalid characters
+            char[] invalidChars = {'[', ']', '{', '}' };
+
+            // Check if the input contains any invalid characters
+            return input.IndexOfAny(invalidChars) >= 0;
         }
 
         public string[] GetAlertStacksFromDirectories()

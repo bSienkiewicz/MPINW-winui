@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,7 @@ namespace SupportTool.Helpers
         public int? AggregationWindow { get; set; }
         public int? AggregationDelay { get; set; }
         public string CriticalOperator { get; set; }
-        public double CriticalThreshold { get; set; }
+        public double? CriticalThreshold { get; set; }
         public int? CriticalThresholdDuration { get; set; }
         public string CriticalThresholdOccurrences { get; set; }
         public bool ValueChanged { get; set; }
@@ -184,11 +185,12 @@ namespace SupportTool.Helpers
             return value == "true";
         }
 
-        private int ParseIntValue(string block, string key)
+        private int? ParseIntValue(string block, string key)
         {
             var value = ParseStringValue(block, key);
-            return int.TryParse(value, out int result) ? result : 0;
+            return int.TryParse(value, out int result) ? result : (int?)null;
         }
+
 
         private double ParseDoubleValue(string block, string key)
         {
@@ -256,10 +258,23 @@ namespace SupportTool.Helpers
         {
             // Serialize the updated alerts to HCL format
             var updatedAlertsSection = SerializeAlerts(alerts, true);
+            Debug.WriteLine(updatedAlertsSection);
 
-            // More robust regex pattern to capture everything within square brackets
-            var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[((?:[^\[\]]|\[[^\[\]]*\])*)\]", RegexOptions.Singleline);
-            return regex.Replace(originalContent, updatedAlertsSection);
+            //var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[((?:[^\[\]]|\[[^\[\]]*\])*)\]", RegexOptions.Singleline); - old regex in case this new one fucks something up
+            var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[(.*)\](?=\s*$|\s*\w+\s*=)", RegexOptions.Singleline);
+
+            var match = regex.Match(originalContent);
+            if (!match.Success)
+            {
+                Debug.WriteLine("No match found for nr_nrql_alerts section.");
+                return originalContent;
+            }
+            Debug.WriteLine($"Matched section:\n{match.Value}");
+
+
+            // Replace the entire content with the updated section
+            return originalContent.Replace(match.Value, updatedAlertsSection);
+
         }
     }
 }

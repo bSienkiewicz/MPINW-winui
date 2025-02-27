@@ -91,7 +91,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <SelectorBar x:Name="SelectorBar1">
+            <!--<SelectorBar x:Name="SelectorBar1">
                 <SelectorBarItem
                     x:Name="SelectorBarItemRecent"
                     Icon="List"
@@ -105,7 +105,7 @@
                     x:Name="SelectorBarItemFavorites"
                     Icon="Accept"
                     Text="Existing" />
-            </SelectorBar>
+            </SelectorBar>-->
 
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>

@@ -12,6 +12,8 @@
 
     <Page.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:NullableIntConverter x:Key="NullableIntConverter" />
+        <converters:NullableDoubleConverter x:Key="NullableDoubleConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -211,7 +213,7 @@
                                 </ComboBox.Header>
                             </ComboBox>
 
-                            <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}">
+                            <TextBox Text="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
                                 <TextBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -234,7 +236,7 @@
                                 </ComboBox.Header>
                             </ComboBox>
 
-                            <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}">
+                            <TextBox Text="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay, Converter={StaticResource NullableDoubleConverter}}">
                                 <TextBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -244,7 +246,7 @@
                                 </TextBox.Header>
                             </TextBox>
 
-                            <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}">
+                            <TextBox Text="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
                                 <TextBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"

@@ -224,6 +224,11 @@ namespace SupportTool
                 AlertItems == null ||
                 _selectedStack == null) return;
 
+            if (!_alertService.ValidateAlertInputs(_selectedAlert))
+            {
+                return;
+            }
+
             var index = AlertItems.IndexOf(_selectedAlert);
             if (index != -1)
             {
