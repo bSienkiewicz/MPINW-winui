@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Linq;
 using System.Globalization;
+using SupportTool.CustomControls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -93,29 +94,6 @@ namespace SupportTool.Dialogs
             OnPropertyChanged(nameof(NewAlertData));
         }
 
-        //private void CreatePrintDurationAlert_Click(object sender, RoutedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        var button = (Button)sender;
-
-        //        // New AppCarrier combination
-        //        var item = new AppCarrierItem { AppName = AppName, CarrierName = CarrierName };
-        //        var alerts = _alertService.GetAlertsForStack(_selectedStack);
-
-        //        // Add the new generated alert to the alert list and save it to file
-        //        alerts.Add(_alertService.CreateMissingAlertByType(item, AlertType.PrintDuration));
-        //        _alertService.SaveAlertsToFile(_selectedStack, alerts);
-        //        AlertAdded?.Invoke();
-        //        button.Visibility = Visibility.Collapsed;
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _dialog.Hide();
-        //    }
-        //}
-
         private async void FetchMedianDurationButton_Click(object sender, RoutedEventArgs e)
         {
             _cancellationTokenSource?.Cancel();
@@ -124,21 +102,37 @@ namespace SupportTool.Dialogs
             var duration = await _newRelicApiService.FetchMedianDurationForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
             //AverageMedian.Text = duration.ToString();
         }
+
         private void SaveButton_Click(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
             try
             {
                 var alerts = _alertService.GetAlertsForStack(_selectedStack);
-                alerts.Add(NewAlertData);
-                _alertService.SaveAlertsToFile(_selectedStack, alerts);
-                AlertAdded?.Invoke();
-                _dialog.Hide();
+                var errors = _alertService.ValidateAlertInputs(NewAlertData, alerts, checkForDuplicates: true);
+                if (errors.Count > 0)
+                {
+                    var errorMessage = string.Join("\n", errors);
+                    var toast = new CustomToast();
+                    ToastContainer.Children.Add(toast);
+                    toast.ShowToast("Validation error", errorMessage, InfoBarSeverity.Error, 10);
+                    args.Cancel = true;
+                    return;
+                }
+
+                if (!alerts.Contains(NewAlertData))
+                {
+                    alerts.Add(NewAlertData);
+                    _alertService.SaveAlertsToFile(_selectedStack, alerts);
+                    AlertAdded?.Invoke();
+
+                    _dialog.Hide();
+                }
             }
             catch (Exception ex)
             {
-                // Handle error
                 Debug.WriteLine(ex);
-                _dialog.Hide();
+
+                args.Cancel = true;
             }
         }
     }

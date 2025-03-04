@@ -36,7 +36,6 @@ namespace SupportTool
         private readonly AlertService _alertService = new();
         private readonly SettingsService _settings = new();
         private int _dragStartIndex = -1;
-        public DecimalFormatter DecimalFormatter { get; } = new DecimalFormatter { FractionDigits = 2 };
 
         public string[] Severities => AlertConstants.Severities;
         public string[] AggregationMethods => AlertConstants.AggregationMethods;
@@ -221,7 +220,8 @@ namespace SupportTool
                 AlertItems == null ||
                 _selectedStack == null) return;
 
-            var errors = _alertService.ValidateAlertInputs(_selectedAlert);
+            var alerts = _alertService.GetAlertsForStack(_selectedStack);
+            var errors = _alertService.ValidateAlertInputs(_selectedAlert, alerts);
             if (errors.Count > 0) // Validation failed
             {
                 var errorMessage = string.Join("\n", errors);

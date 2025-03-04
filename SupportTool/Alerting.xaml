@@ -128,8 +128,9 @@
                         SelectionMode="Single">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="helpers:NrqlAlert">
-                                <StackPanel Margin="10">
+                                <StackPanel Margin="10" Orientation="Horizontal">
                                     <TextBlock Text="{x:Bind Name}" />
+                                    <InfoBadge Style="{StaticResource InformationalIconInfoBadgeStyle}" Visibility="Visible" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -214,10 +215,8 @@
                             </ComboBox>
 
                             <NumberBox
-                                LargeChange="10"
+                                AcceptsExpression="True"
                                 Minimum="0"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
                                 Value="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock
@@ -242,7 +241,7 @@
                             </ComboBox>
 
                             <NumberBox
-                                NumberFormatter="{x:Bind DecimalFormatter}"
+                                AcceptsExpression="True"
                                 SpinButtonPlacementMode="Compact"
                                 Value="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}">
                                 <NumberBox.Header>
@@ -255,10 +254,8 @@
                             </NumberBox>
 
                             <NumberBox
-                                LargeChange="10"
+                                AcceptsExpression="True"
                                 Minimum="0"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
                                 Value="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock

@@ -22,6 +22,7 @@
             x:Name="ToastInfoBar"
             HorizontalAlignment="Center"
             VerticalAlignment="Bottom"
+            CornerRadius="5"
             IsClosable="True"
             IsOpen="True" />
     </Grid>

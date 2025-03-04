@@ -21,11 +21,11 @@ namespace SupportTool.Helpers
         public string Severity { get; set; }
         public bool Enabled { get; set; }
         public string AggregationMethod { get; set; }
-        public int? AggregationWindow { get; set; }
-        public int? AggregationDelay { get; set; }
+        public double AggregationWindow { get; set; }
+        public double AggregationDelay { get; set; }
         public string CriticalOperator { get; set; }
-        public double? CriticalThreshold { get; set; }
-        public int? CriticalThresholdDuration { get; set; }
+        public double CriticalThreshold { get; set; }
+        public double CriticalThresholdDuration { get; set; }
         public string CriticalThresholdOccurrences { get; set; }
         public bool ValueChanged { get; set; }
 
@@ -81,11 +81,11 @@ namespace SupportTool.Helpers
                     Severity = ParseStringValue(cleanBlock, "severity"),
                     Enabled = ParseBoolValue(cleanBlock, "enabled"),
                     AggregationMethod = ParseStringValue(cleanBlock, "aggregation_method"),
-                    AggregationWindow = ParseIntValue(cleanBlock, "aggregation_window"),
-                    AggregationDelay = ParseIntValue(cleanBlock, "aggregation_delay"),
+                    AggregationWindow = ParseDoubleValue(cleanBlock, "aggregation_window"),
+                    AggregationDelay = ParseDoubleValue(cleanBlock, "aggregation_delay"),
                     CriticalOperator = ParseStringValue(cleanBlock, "critical_operator"),
                     CriticalThreshold = ParseDoubleValue(cleanBlock, "critical_threshold"),
-                    CriticalThresholdDuration = ParseIntValue(cleanBlock, "critical_threshold_duration"),
+                    CriticalThresholdDuration = ParseDoubleValue(cleanBlock, "critical_threshold_duration"),
                     CriticalThresholdOccurrences = ParseStringValue(cleanBlock, "critical_threshold_occurrences")
                 };
 
@@ -142,11 +142,11 @@ namespace SupportTool.Helpers
                     Severity = ParseStringValue(cleanBlock, "severity"),
                     Enabled = ParseBoolValue(cleanBlock, "enabled"),
                     AggregationMethod = ParseStringValue(cleanBlock, "aggregation_method"),
-                    AggregationWindow = ParseIntValue(cleanBlock, "aggregation_window"),
-                    AggregationDelay = ParseIntValue(cleanBlock, "aggregation_delay"),
+                    AggregationWindow = ParseDoubleValue(cleanBlock, "aggregation_window"),
+                    AggregationDelay = ParseDoubleValue(cleanBlock, "aggregation_delay"),
                     CriticalOperator = ParseStringValue(cleanBlock, "critical_operator"),
                     CriticalThreshold = ParseDoubleValue(cleanBlock, "critical_threshold"),
-                    CriticalThresholdDuration = ParseIntValue(cleanBlock, "critical_threshold_duration"),
+                    CriticalThresholdDuration = ParseDoubleValue(cleanBlock, "critical_threshold_duration"),
                     CriticalThresholdOccurrences = ParseStringValue(cleanBlock, "critical_threshold_occurrences")
                 };
 

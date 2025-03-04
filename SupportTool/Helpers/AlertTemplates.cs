@@ -21,7 +21,7 @@ namespace SupportTool.Helpers
                 AggregationMethod = "EVENT_FLOW",
                 AggregationDelay = 120,
                 CriticalOperator = "ABOVE",
-                CriticalThreshold = 5000.0, // 5 seconds
+                CriticalThreshold = 5000, // 5 seconds
                 CriticalThresholdDuration = 300,
                 CriticalThresholdOccurrences = "ALL"
             };
@@ -40,7 +40,7 @@ namespace SupportTool.Helpers
                 AggregationMethod = "EVENT_FLOW",
                 AggregationDelay = 120,
                 CriticalOperator = "ABOVE",
-                CriticalThreshold = 5.0, // 5% error rate
+                CriticalThreshold = 5, // 5% error rate
                 CriticalThresholdDuration = 300,
                 CriticalThresholdOccurrences = "ALL"
             };

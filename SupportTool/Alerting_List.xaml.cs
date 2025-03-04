@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Windows.Storage;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml;
@@ -11,8 +10,6 @@ using SupportTool.Services;
 using System.Linq;
 using Microsoft.UI.Xaml.Input;
 using SupportTool.Models;
-using SupportTool.Helpers;
-using System.Collections.Generic;
 using SupportTool.Dialogs;
 using SupportTool.CustomControls;
 
@@ -179,10 +176,19 @@ namespace SupportTool
         {
             var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
             var dialog = new AlertDetailsDialog(selectedApp, _selectedStack, _alertService);
-            dialog.AlertAdded += RefreshAlertStatus;
+            dialog.AlertAdded += OnAlertAdded;
             await dialog.ShowAsync();
 
             RefreshAlertStatus();
+        }
+
+        private void OnAlertAdded()
+        {
+            RefreshAlertStatus();
+
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Success", "An alert has been added", InfoBarSeverity.Success, 5);
         }
     }
 }

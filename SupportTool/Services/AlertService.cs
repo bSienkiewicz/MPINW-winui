@@ -80,7 +80,7 @@ namespace SupportTool.Services
             }
         }
 
-        public List<string> ValidateAlertInputs(NrqlAlert alert)
+        public List<string> ValidateAlertInputs(NrqlAlert alert, List<NrqlAlert> existingAlerts, bool checkForDuplicates = false)
         {
             var errors = new List<string>();
 
@@ -117,28 +117,26 @@ namespace SupportTool.Services
                 errors.Add("NRQL Query must be at least 10 characters long.");
 
             // Numeric field validations
-            if (alert.CriticalThreshold.HasValue)
-            {
-                if (!double.TryParse(alert.CriticalThreshold.ToString(), out double criticalThreshold))
-                    errors.Add("Critical Threshold must be a valid number.");
-                else if (criticalThreshold < 0)
-                    errors.Add("Critical Threshold must be a non-negative number.");
-            }
+            if (alert.CriticalThreshold < 0)
+                errors.Add("Critical Threshold must be a non-negative number.");
+            if (alert.CriticalThresholdDuration < 0)
+                errors.Add("Critical Threshold Duration must be a non-negative integer.");
+            if (alert.AggregationDelay < 0)
+                errors.Add("Aggregation Delay must be a non-negative integer.");
 
-            if (alert.CriticalThresholdDuration.HasValue)
+            if (checkForDuplicates)
             {
-                if (!int.TryParse(alert.CriticalThresholdDuration.ToString(), out int criticalThresholdDuration))
-                    errors.Add("Critical Threshold Duration must be a valid integer.");
-                else if (criticalThresholdDuration < 0)
-                    errors.Add("Critical Threshold Duration must be a non-negative integer.");
-            }
+                // Check for duplicate name
+                if (existingAlerts.Any(a => a.Name.Equals(alert.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    errors.Add("An alert with this name already exists.");
+                }
 
-            if (alert.AggregationDelay.HasValue)
-            {
-                if (!int.TryParse(alert.AggregationDelay.ToString(), out int aggregationDelay))
-                    errors.Add("Aggregation Delay must be a valid integer.");
-                else if (aggregationDelay < 0)
-                    errors.Add("Aggregation Delay must be a non-negative integer.");
+                // Check for duplicate NRQL query
+                if (existingAlerts.Any(a => a.NrqlQuery.Equals(alert.NrqlQuery, StringComparison.OrdinalIgnoreCase)))
+                {
+                    errors.Add("An alert with this NRQL query already exists.");
+                }
             }
 
             return errors;
@@ -183,43 +181,6 @@ namespace SupportTool.Services
                     alert.NrqlQuery.Contains($"CarrierName = '{item.CarrierName}'")),
 
                 _ => false
-            };
-        }
-
-        public NrqlAlert CreateMissingAlertByType(AppCarrierItem item, AlertType alertType)
-        {
-            return alertType switch
-            {
-                AlertType.PrintDuration => new NrqlAlert
-                {
-                    Name = $"{item.ClientName} Print duration for {item.CarrierName}",
-                    Description = $"Alert related to increased {item.CarrierName} print duration for {item.AppName}",
-                    NrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name like '%PrintParcel' and appName = '{item.AppName}' where UserName != 'mpmwarmup' and CarrierName = '{item.CarrierName}'",
-                    Severity = "CRITICAL",
-                    Enabled = true,
-                    AggregationMethod = "event_flow",
-                    CriticalThresholdOccurrences = "ALL",
-                    CriticalThresholdDuration = 300,
-                    CriticalThreshold = 7,
-                    CriticalOperator = "ABOVE",
-                    AggregationDelay = 120,
-                },
-
-                AlertType.ErrorRate => new NrqlAlert
-                {
-                    Name = $"{item.ClientName} Error rate for {item.CarrierName}",
-                    Description = $"Alert related to {item.CarrierName} error rate for {item.AppName}",
-                    NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100 FROM Transaction WHERE appName = '{item.AppName}' AND name not like '%.PrintParcel'",
-                    Severity = "CRITICAL",
-                    Enabled = true,
-                    CriticalThresholdOccurrences = "ALL",
-                    CriticalThresholdDuration = 600,
-                    CriticalThreshold = 1,
-                    CriticalOperator = "ABOVE",
-                    AggregationDelay = 0,
-                },
-
-                _ => throw new ArgumentException("Invalid alert type")
             };
         }
 

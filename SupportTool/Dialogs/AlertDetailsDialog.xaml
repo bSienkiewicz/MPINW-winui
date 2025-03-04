@@ -15,7 +15,10 @@
         <converters:FloatToString x:Key="FlotToStringConverter" />
     </Page.Resources>
 
-    <Grid Padding="0" HorizontalAlignment="Stretch">
+    <Grid
+        x:Name="RootGrid"
+        Padding="0"
+        HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
@@ -146,15 +149,18 @@
                     </ComboBox.Header>
                 </ComboBox>
 
-                <TextBox Text="{x:Bind NewAlertData.AggregationDelay, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
-                    <TextBox.Header>
+                <NumberBox
+                    AcceptsExpression="True"
+                    Minimum="0"
+                    Value="{x:Bind NewAlertData.AggregationDelay, Mode=TwoWay}">
+                    <NumberBox.Header>
                         <TextBlock
                             VerticalAlignment="Center"
                             Text="Aggregation Delay:"
                             TextDecorations="Underline"
                             ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
-                    </TextBox.Header>
-                </TextBox>
+                    </NumberBox.Header>
+                </NumberBox>
 
                 <ComboBox
                     HorizontalAlignment="Stretch"
@@ -169,25 +175,28 @@
                     </ComboBox.Header>
                 </ComboBox>
 
-                <TextBox Text="{x:Bind NewAlertData.CriticalThreshold, Mode=TwoWay, Converter={StaticResource NullableDoubleConverter}}">
-                    <TextBox.Header>
+                <NumberBox AcceptsExpression="True" Value="{x:Bind NewAlertData.CriticalThreshold, Mode=TwoWay}">
+                    <NumberBox.Header>
                         <TextBlock
                             VerticalAlignment="Center"
                             Text="Critical Threshold:"
                             TextDecorations="Underline"
                             ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
-                    </TextBox.Header>
-                </TextBox>
+                    </NumberBox.Header>
+                </NumberBox>
 
-                <TextBox Text="{x:Bind NewAlertData.CriticalThresholdDuration, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
-                    <TextBox.Header>
+                <NumberBox
+                    AcceptsExpression="True"
+                    Minimum="0"
+                    Value="{x:Bind NewAlertData.CriticalThresholdDuration, Mode=TwoWay}">
+                    <NumberBox.Header>
                         <TextBlock
                             VerticalAlignment="Center"
                             Text="Critical Threshold Duration:"
                             TextDecorations="Underline"
                             ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
-                    </TextBox.Header>
-                </TextBox>
+                    </NumberBox.Header>
+                </NumberBox>
 
                 <ComboBox
                     HorizontalAlignment="Stretch"
@@ -205,5 +214,11 @@
         </ScrollView>
 
 
+
+        <Canvas
+            x:Name="ToastContainer"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="True" />
     </Grid>
 </Page>
