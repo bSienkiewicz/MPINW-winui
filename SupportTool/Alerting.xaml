@@ -7,6 +7,7 @@
     xmlns:helpers="using:SupportTool.Helpers"
     xmlns:local="using:SupportTool"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:SupportTool.Models"
     mc:Ignorable="d">
 
 
@@ -127,7 +128,7 @@
                         SelectionChanged="AlertsListView_SelectionChanged"
                         SelectionMode="Single">
                         <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="helpers:NrqlAlert">
+                            <DataTemplate x:DataType="models:NrqlAlert">
                                 <StackPanel Margin="10" Orientation="Horizontal">
                                     <TextBlock Text="{x:Bind Name}" />
                                     <InfoBadge Style="{StaticResource InformationalIconInfoBadgeStyle}" Visibility="Visible" />

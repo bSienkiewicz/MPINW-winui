@@ -1,40 +1,13 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+using SupportTool.Models;
 
 namespace SupportTool.Helpers
 {
-    public class NrqlAlert
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string NrqlQuery { get; set; }
-        public string RunbookUrl { get; set; }
-        public string Severity { get; set; }
-        public bool Enabled { get; set; }
-        public string AggregationMethod { get; set; }
-        public double AggregationWindow { get; set; }
-        public double AggregationDelay { get; set; }
-        public string CriticalOperator { get; set; }
-        public double CriticalThreshold { get; set; }
-        public double CriticalThresholdDuration { get; set; }
-        public string CriticalThresholdOccurrences { get; set; }
-        public bool ValueChanged { get; set; }
-
-        public override string ToString()
-        {
-            return $"Alert: {Name} - {Severity}";
-        }
-    }
-
     public class HclParser
     {
         public List<NrqlAlert> ParseAlerts(string content)

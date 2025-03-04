@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
-using SupportTool.Helpers;
+using SupportTool.Models;
 
 namespace SupportTool.Converters
 {
