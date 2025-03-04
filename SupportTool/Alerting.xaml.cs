@@ -12,6 +12,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using SupportTool.Services;
 using Windows.ApplicationModel.DataTransfer;
+using SupportTool.CustomControls;
+using Windows.Globalization.NumberFormatting;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,6 +36,7 @@ namespace SupportTool
         private readonly AlertService _alertService = new();
         private readonly SettingsService _settings = new();
         private int _dragStartIndex = -1;
+        public DecimalFormatter DecimalFormatter { get; } = new DecimalFormatter { FractionDigits = 2 };
 
         public string[] Severities => AlertConstants.Severities;
         public string[] AggregationMethods => AlertConstants.AggregationMethods;
@@ -133,17 +136,11 @@ namespace SupportTool
             }
             else
             {
-                ShowErrorInfoBar("Invalid repository structure.", "Please select a correct folder.");
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Invalid repository structure", "Please select a correct folder", InfoBarSeverity.Error, 10);
                 DeleteDirectory();
             }
-        }
-
-        private void ShowErrorInfoBar(string title, string message)
-        {
-            infoBar.Title = title;
-            infoBar.Severity = InfoBarSeverity.Error;
-            infoBar.Message = message;
-            infoBar.IsOpen = true;
         }
 
         private (bool IsValid, string[] MissingFolders) ValidateFolder(string folderPath)
@@ -224,8 +221,14 @@ namespace SupportTool
                 AlertItems == null ||
                 _selectedStack == null) return;
 
-            if (!_alertService.ValidateAlertInputs(_selectedAlert))
+            var errors = _alertService.ValidateAlertInputs(_selectedAlert);
+            if (errors.Count > 0) // Validation failed
             {
+                var errorMessage = string.Join("\n", errors);
+
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Validation error", errorMessage, InfoBarSeverity.Error, 10);
                 return;
             }
 
@@ -234,8 +237,15 @@ namespace SupportTool
             {
                 AlertItems[index] = _selectedAlert;
                 _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+
+
+                // Show toast
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Save Successful", "The alert has been saved.", InfoBarSeverity.Success, 3);
             }
         }
+
 
         private void CopyAlertButton_Click(object sender, RoutedEventArgs e)
         {
@@ -262,6 +272,12 @@ namespace SupportTool
             AlertsListView.SelectedItem = alertCopy;
             cloneButton.Flyout.Hide();
             _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+
+
+            // Show toast
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Alert duplicated", "", InfoBarSeverity.Success, 3);
         }
 
         private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
@@ -272,6 +288,11 @@ namespace SupportTool
             SelectedAlert = new NrqlAlert();
             _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
             deleteButton.Flyout.Hide();
+
+            // Show toast
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Alert deleted", "", InfoBarSeverity.Success, 3);
         }
 
         private void AddNewAlertButton_Click(object sender, RoutedEventArgs e)
@@ -286,6 +307,11 @@ namespace SupportTool
             AlertItems.Add(newAlert);
             AlertsListView.SelectedItem = newAlert;
             _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+
+            // Show toast
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Empty alert created", "", InfoBarSeverity.Success, 3);
         }
 
         // Used for alert reordering
@@ -330,8 +356,11 @@ namespace SupportTool
             _settings.SetSetting("NRAlertsDir", _selectedFolderPath);
 
 
-        private void DeleteDirectory() =>
+        private void DeleteDirectory() {
             _settings.SetSetting("NRAlertsDir", string.Empty);
+            SelectedAlert = new NrqlAlert();
+            AlertItems.Clear();
+        }
 
         private void LoadDirectory()
         {
@@ -357,6 +386,12 @@ namespace SupportTool
             {
                 AlertItems.Add(item);
             }
+
+
+            // Show toast
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Alerts sorted alphabetically", "Save any alert to confirm the new order", InfoBarSeverity.Success, 5);
         }
     }
 }

@@ -14,6 +14,7 @@ using SupportTool.Models;
 using SupportTool.Helpers;
 using System.Collections.Generic;
 using SupportTool.Dialogs;
+using SupportTool.CustomControls;
 
 namespace SupportTool
 {
@@ -38,6 +39,16 @@ namespace SupportTool
 
             // Load available stacks into combo box
             var availableStacks = _alertService.GetAlertStacksFromDirectories();
+
+            if (availableStacks == null || availableStacks.Length == 0)
+            {
+                // Show toast
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("No ", "", InfoBarSeverity.Success, 3);
+                return;
+            }
+
             stacksComboBox.ItemsSource = availableStacks;
 
             // Restore previously selected stack

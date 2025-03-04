@@ -9,7 +9,10 @@
     xmlns:models="using:SupportTool.Models"
     mc:Ignorable="d">
 
-    <Grid Padding="24" ColumnSpacing="10">
+    <Grid
+        x:Name="RootGrid"
+        Padding="24"
+        ColumnSpacing="10">
         <Grid.RowDefinitions>
             <!--  InfoBar Row  -->
             <RowDefinition Height="Auto" />
@@ -191,5 +194,10 @@
                 Subtitle="It's easier than ever to see control samples in both light and dark theme!" />
         </Grid>
 
+        <Canvas
+            x:Name="ToastContainer"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="True" />
     </Grid>
 </Page>

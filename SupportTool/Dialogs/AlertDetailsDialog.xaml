@@ -12,6 +12,7 @@
     <Page.Resources>
         <converters:NullableIntConverter x:Key="NullableIntConverter" />
         <converters:NullableDoubleConverter x:Key="NullableDoubleConverter" />
+        <converters:FloatToString x:Key="FlotToStringConverter" />
     </Page.Resources>
 
     <Grid Padding="0" HorizontalAlignment="Stretch">
@@ -168,7 +169,7 @@
                     </ComboBox.Header>
                 </ComboBox>
 
-                <TextBox Text="{x:Bind NewAlertData.CriticalThreshold, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
+                <TextBox Text="{x:Bind NewAlertData.CriticalThreshold, Mode=TwoWay, Converter={StaticResource NullableDoubleConverter}}">
                     <TextBox.Header>
                         <TextBlock
                             VerticalAlignment="Center"
@@ -178,7 +179,7 @@
                     </TextBox.Header>
                 </TextBox>
 
-                <TextBox Text="{x:Bind NewAlertData.CriticalThresholdDuration, Mode=TwoWay, Converter={StaticResource NullableDoubleConverter}}">
+                <TextBox Text="{x:Bind NewAlertData.CriticalThresholdDuration, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}">
                     <TextBox.Header>
                         <TextBlock
                             VerticalAlignment="Center"

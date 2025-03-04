@@ -47,12 +47,19 @@ namespace SupportTool.Services
 
         public void SaveAlertsToFile(string stackName, List<NrqlAlert> alerts)
         {
-            var filePath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
-            var parser = new HclParser();
-            var updatedContent = parser.ReplaceNrqlAlertsSection(
-                File.ReadAllText(filePath),
-                alerts);
-            File.WriteAllText(filePath, updatedContent);
+            try
+            {
+                var filePath = Path.Combine(RepositoryPath, StacksPath, stackName, "auto.tfvars");
+                var parser = new HclParser();
+                var updatedContent = parser.ReplaceNrqlAlertsSection(
+                    File.ReadAllText(filePath),
+                    alerts);
+                File.WriteAllText(filePath, updatedContent);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         public bool ValidateRepository(string folderPath, out string[] missingFolders)
@@ -73,34 +80,68 @@ namespace SupportTool.Services
             }
         }
 
-        public bool ValidateAlertInputs(NrqlAlert alert)
+        public List<string> ValidateAlertInputs(NrqlAlert alert)
         {
-            if (alert == null)
-                return false;
+            var errors = new List<string>();
 
-            // List of fields to validate
+            if (alert == null)
+            {
+                errors.Add("Alert cannot be null.");
+                return errors;
+            }
+
+            // Required fields with character validation
             var fieldsToValidate = new Dictionary<string, string>
                 {
                     { "Name", alert.Name },
-                    { "Description", alert.Description },
                     { "NrqlQuery", alert.NrqlQuery },
-                    { "RunbookUrl", alert.RunbookUrl },
                     { "Severity", alert.Severity },
                     { "AggregationMethod", alert.AggregationMethod },
                     { "CriticalOperator", alert.CriticalOperator },
                     { "CriticalThresholdOccurrences", alert.CriticalThresholdOccurrences }
                 };
 
-            // Check each field for invalid characters
             foreach (var field in fieldsToValidate)
             {
-                if (ContainsInvalidCharacters(field.Value))
-                {
-                    return false;
-                }
+                if (string.IsNullOrWhiteSpace(field.Value))
+                    errors.Add($"{field.Key} cannot be empty.");
+                else if (ContainsInvalidCharacters(field.Value))
+                    errors.Add($"{field.Key} contains invalid characters.");
             }
 
-            return true;
+            // Name and NRQL Query length validation
+            if (!string.IsNullOrWhiteSpace(alert.Name) && alert.Name.Length < 10)
+                errors.Add("Name must be at least 10 characters long.");
+
+            if (!string.IsNullOrWhiteSpace(alert.NrqlQuery) && alert.NrqlQuery.Length < 10)
+                errors.Add("NRQL Query must be at least 10 characters long.");
+
+            // Numeric field validations
+            if (alert.CriticalThreshold.HasValue)
+            {
+                if (!double.TryParse(alert.CriticalThreshold.ToString(), out double criticalThreshold))
+                    errors.Add("Critical Threshold must be a valid number.");
+                else if (criticalThreshold < 0)
+                    errors.Add("Critical Threshold must be a non-negative number.");
+            }
+
+            if (alert.CriticalThresholdDuration.HasValue)
+            {
+                if (!int.TryParse(alert.CriticalThresholdDuration.ToString(), out int criticalThresholdDuration))
+                    errors.Add("Critical Threshold Duration must be a valid integer.");
+                else if (criticalThresholdDuration < 0)
+                    errors.Add("Critical Threshold Duration must be a non-negative integer.");
+            }
+
+            if (alert.AggregationDelay.HasValue)
+            {
+                if (!int.TryParse(alert.AggregationDelay.ToString(), out int aggregationDelay))
+                    errors.Add("Aggregation Delay must be a valid integer.");
+                else if (aggregationDelay < 0)
+                    errors.Add("Aggregation Delay must be a non-negative integer.");
+            }
+
+            return errors;
         }
 
         private bool ContainsInvalidCharacters(string input)

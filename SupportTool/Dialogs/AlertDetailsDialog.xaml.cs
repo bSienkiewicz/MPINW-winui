@@ -9,6 +9,8 @@ using SupportTool.Helpers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Linq;
+using System.Globalization;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -60,8 +62,8 @@ namespace SupportTool.Dialogs
                 Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Width = 1000,
                 CloseButtonText = "Close",
-                PrimaryButtonText = "Save", // Add a primary button with the text "Save"
-                DefaultButton = ContentDialogButton.Primary // Set the primary button as the default
+                PrimaryButtonText = "Save",
+                DefaultButton = ContentDialogButton.Primary
             };
 
             _dialog.PrimaryButtonClick += SaveButton_Click;
@@ -75,6 +77,13 @@ namespace SupportTool.Dialogs
         private void ApplyPrintDurationTemplate_Click(object sender, RoutedEventArgs e)
         {
             NewAlertData = AlertTemplates.PrintDurationTemplate(AppName, CarrierName);
+
+            foreach (var property in NewAlertData.GetType().GetProperties())
+            {
+                var value = property.GetValue(NewAlertData);
+                Debug.WriteLine($"Key: {property.Name}, Value: {value}, Type: {value?.GetType()}");
+            }
+
             OnPropertyChanged(nameof(NewAlertData));
         }
 
@@ -128,6 +137,7 @@ namespace SupportTool.Dialogs
             catch (Exception ex)
             {
                 // Handle error
+                Debug.WriteLine(ex);
                 _dialog.Hide();
             }
         }
