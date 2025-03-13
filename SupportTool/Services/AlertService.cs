@@ -171,14 +171,13 @@ namespace SupportTool.Services
             return alertType switch
             {
                 AlertType.PrintDuration => alerts.Any(alert =>
-                    alert.NrqlQuery.Contains($"appName = '{item.AppName}'") &&
-                    alert.NrqlQuery.Contains($"CarrierName = '{item.CarrierName}'") &&
+                    alert.NrqlQuery.Contains($"{item.AppName}") &&
+                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&
                     alert.NrqlQuery.Contains($"average(duration)")),
 
                 AlertType.ErrorRate => alerts.Any(alert =>
-                    alert.NrqlQuery.Contains($"appName = '{item.AppName}'") &&
-                    alert.NrqlQuery.Contains("SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100") &&
-                    alert.NrqlQuery.Contains($"CarrierName = '{item.CarrierName}'")),
+                    alert.NrqlQuery.Contains($"{item.AppName}") &&
+                    alert.NrqlQuery.Contains("filter(count(*), WHERE ExitStatus = 'Error')/ count(*)")),
 
                 _ => false
             };

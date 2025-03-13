@@ -8,17 +8,17 @@ namespace SupportTool.Helpers
         {
             return new NrqlAlert
             {
-                Name = $"Print Duration Alert - {appName} - {carrierName}",
-                Description = $"Monitors print duration for {appName} {carrierName}",
+                Name = $"{appName.Split('.')[0].ToUpper()} PrintParcel duration - {carrierName}",
+                Description = $"PrintParcel duration for {appName.Split('.')[0].ToUpper()} ({carrierName})",
                 Severity = "CRITICAL",
-                NrqlQuery = $"SELECT percentile(duration, 95) FROM Print WHERE appName = '{appName}' AND carrier = '{carrierName}'",
+                NrqlQuery = $"SELECT average(duration) FROM Transaction where appName = '{appName}' and name = 'WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel' and PrintOperation like '%Create%' and CarrierName = '{carrierName}'",
                 RunbookUrl = "https://runbook.example.com/print-duration",
                 Enabled = true,
                 AggregationMethod = "EVENT_FLOW",
                 AggregationDelay = 120,
                 CriticalOperator = "ABOVE",
-                CriticalThreshold = 5000, // 5 seconds
-                CriticalThresholdDuration = 300,
+                CriticalThreshold = 0.5,
+                CriticalThresholdDuration = 600,
                 CriticalThresholdOccurrences = "ALL"
             };
         }
@@ -26,11 +26,11 @@ namespace SupportTool.Helpers
         public static NrqlAlert ErrorRateTemplate(string appName, string carrierName)
         {
             return new NrqlAlert
-            {
-                Name = $"Error Rate Alert - {appName} - {carrierName}",
-                Description = $"Monitors error rate for {appName} {carrierName}",
+            { 
+                Name = $"{appName.Split('.')[0].ToUpper()} Error rate - {carrierName}",
+                Description = $"Error rate for {appName.Split('.')[0].ToUpper()} ({carrierName})",
                 Severity = "CRITICAL",
-                NrqlQuery = $"SELECT percentage(count(*), WHERE error IS TRUE) FROM Transaction WHERE appName = '{appName}' AND carrier = '{carrierName}'",
+                NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100 FROM Transaction WHERE appName = '{appName}' AND name not like '%.PrintParcel'",
                 RunbookUrl = "https://runbook.example.com/error-rate",
                 Enabled = true,
                 AggregationMethod = "EVENT_FLOW",

@@ -53,6 +53,42 @@
                     </StackPanel>
                 </Expander.Content>
             </Expander>
+            <Expander
+                x:Name="ExpanderSettings_XDD"
+                Grid.Row="0"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Margin="16" Glyph="&#xF081;" />
+                        <StackPanel Padding="16">
+                            <TextBlock
+                                Margin="0,0,0,6"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                FontSize="14"
+                                Text="New Relic Connection" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="Set up New Relic API Key" />
+                        </StackPanel>
+                    </StackPanel>
+                </Expander.Header>
+                <Expander.Content>
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <TextBox
+                            Name="NR_API_KeyTextbox2"
+                            Margin="0,0,0,20"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            Header="New Relic API Key:"
+                            PlaceholderText="NRAK-1234567890"
+                            TextChanged="NR_API_Key_OnTextChanged" />
+                    </StackPanel>
+                </Expander.Content>
+            </Expander>
         </StackPanel>
     </Grid>
 </Page>

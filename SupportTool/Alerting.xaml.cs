@@ -5,7 +5,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
-using Windows.Storage;
 using System.Diagnostics;
 using SupportTool.Helpers;
 using System.Collections.ObjectModel;
@@ -13,11 +12,7 @@ using System.ComponentModel;
 using SupportTool.Services;
 using Windows.ApplicationModel.DataTransfer;
 using SupportTool.CustomControls;
-using Windows.Globalization.NumberFormatting;
 using SupportTool.Models;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace SupportTool
 {
@@ -373,7 +368,7 @@ namespace SupportTool
         }
         #endregion
 
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             SelectedAlert = new NrqlAlert();
             AlertsListView.SelectedItem = null;

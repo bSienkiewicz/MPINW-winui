@@ -352,7 +352,7 @@
                                     <TextBlock Text="Save (Ctrl+S)" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="cancelButton" Click="cancelButton_Click">
+                            <Button x:Name="cancelButton" Click="CancelButton_Click">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE711;" />
                                     <TextBlock Text="Cancel" />
