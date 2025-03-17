@@ -35,11 +35,6 @@
             PaneDisplayMode="Left"
             SelectionChanged="NavView_SelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="MPINW Tool" Tag="Page1">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xECAD;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
                 <NavigationViewItem Content="Alerting" Tag="Alerting">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
@@ -52,14 +47,20 @@
                 </NavigationViewItem>
                 <NavigationViewItem Content="Alerting List" Tag="NRAlertsList">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7BA;" />
+                        <FontIcon Glyph="&#xF0B5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <!--<NavigationViewItem Content="MPINW Tool" Tag="Page1">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xECAD;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="LSTool" Tag="Page2">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE773;" />
                     </NavigationViewItem.Icon>
-                </NavigationViewItem>
+                </NavigationViewItem>-->
             </NavigationView.MenuItems>
 
             <!--  Content area for the pages  -->

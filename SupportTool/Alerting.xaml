@@ -142,7 +142,6 @@
                             <DataTemplate x:DataType="models:NrqlAlert">
                                 <StackPanel Margin="10" Orientation="Horizontal">
                                     <TextBlock Text="{x:Bind Name}" />
-                                    <InfoBadge Style="{StaticResource InformationalIconInfoBadgeStyle}" Visibility="Visible" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -234,6 +233,19 @@
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         Text="Aggregation Delay:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind SelectedAlert.AggregationWindow, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Window:"
                                         TextDecorations="Underline"
                                         ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
                                 </NumberBox.Header>

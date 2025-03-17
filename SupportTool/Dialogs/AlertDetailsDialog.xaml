@@ -21,6 +21,7 @@
         HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -62,28 +63,70 @@
         </ScrollViewer>-->
         <!--  Footer  -->
         <Grid
-            Grid.Row="0"
+            Grid.Row="1"
             Margin="0,0,0,20"
             HorizontalAlignment="Stretch"
-            ColumnSpacing="10">
+            ColumnSpacing="10"
+            RowSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
             <Button
+                Grid.Row="0"
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"
                 Click="ApplyPrintDurationTemplate_Click"
                 Content="Print Duration Template" />
             <Button
+                Grid.Row="0"
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
                 Click="ApplyErrorRateTemplate_Click"
                 Content="Error Rate Template" />
+            <Grid
+                Grid.Row="1"
+                Grid.Column="1"
+                ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ProgressBar
+                    x:Name="MedianDurationProgress"
+                    Grid.Row="0"
+                    Grid.ColumnSpan="2"
+                    IsIndeterminate="True"
+                    ShowError="False"
+                    ShowPaused="False"
+                    Visibility="Collapsed" />
+                <NumberBox
+                    x:Name="MedianDurationContent"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    IsEnabled="false"
+                    Text="" />
+                <Button
+                    x:Name="MedianDurationButton"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Click="FetchMedianDurationButton_Click"
+                    Content="Median Duration"
+                    ToolTipService.ToolTip="Fetch the past week's median duration for this carrier and retailer" />
+            </Grid>
         </Grid>
 
         <ScrollView
-            Grid.Row="1"
+            Grid.Row="2"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch">
             <StackPanel Padding="10" Spacing="10">

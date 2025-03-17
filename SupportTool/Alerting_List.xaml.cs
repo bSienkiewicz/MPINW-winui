@@ -42,7 +42,7 @@ namespace SupportTool
                 // Show toast
                 var toast = new CustomToast();
                 ToastContainer.Children.Add(toast);
-                toast.ShowToast("No ", "", InfoBarSeverity.Success, 3);
+                toast.ShowToast("Error loading alerts", "Alert's repository location is not set properly", InfoBarSeverity.Error, 10);
                 return;
             }
 
@@ -122,7 +122,9 @@ namespace SupportTool
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading app-carrier data: {ex.Message}");
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Error loading app-carrier data", $"{ex.Message}", InfoBarSeverity.Error, 10);
             }
             finally
             {

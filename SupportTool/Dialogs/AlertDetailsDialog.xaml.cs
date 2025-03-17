@@ -99,8 +99,12 @@ namespace SupportTool.Dialogs
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource = new CancellationTokenSource();
 
+            MedianDurationButton.IsEnabled = false;
+            MedianDurationProgress.Visibility = Visibility.Visible;
             var duration = await _newRelicApiService.FetchMedianDurationForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
-            //AverageMedian.Text = duration.ToString();
+            var roundedDuration = Math.Round(duration, 3);
+            MedianDurationContent.Text = roundedDuration.ToString(CultureInfo.InvariantCulture);
+            MedianDurationProgress.Visibility = Visibility.Collapsed;
         }
 
         private void SaveButton_Click(ContentDialog sender, ContentDialogButtonClickEventArgs args)
