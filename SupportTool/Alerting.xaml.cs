@@ -389,5 +389,12 @@ namespace SupportTool
             ToastContainer.Children.Add(toast);
             toast.ShowToast("Alerts sorted alphabetically", "Save any alert to confirm the new order", InfoBarSeverity.Success, 5);
         }
+
+        private void refreshAlertsButton_Click(object sender, RoutedEventArgs e)
+        {
+            SelectedAlert = new NrqlAlert();
+            AlertsListView.SelectedItem = null;
+            LoadStack();
+        }
     }
 }
