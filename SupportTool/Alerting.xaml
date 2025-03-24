@@ -172,7 +172,7 @@
                                         VerticalAlignment="Center"
                                         Text="Name:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The name of the alert condition. This should be descriptive and indicate what the condition is monitoring." />
                                 </TextBox.Header>
                             </TextBox>
 
@@ -185,7 +185,7 @@
                                         VerticalAlignment="Center"
                                         Text="Severity:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The severity level of the alert (CRITICAL is default)." />
                                 </ComboBox.Header>
                             </ComboBox>
 
@@ -208,7 +208,7 @@
                                         VerticalAlignment="Center"
                                         Text="Runbook URL:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="A URL linking to a runbook, which is a set of instructions for responding to an incident triggered by this condition." />
                                 </TextBox.Header>
                             </TextBox>
 
@@ -221,7 +221,7 @@
                                         VerticalAlignment="Center"
                                         Text="Aggregation Method:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The method used to aggregate data from the NRQL query. This affects how the data is processed before evaluation." />
                                 </ComboBox.Header>
                             </ComboBox>
 
@@ -234,7 +234,7 @@
                                         VerticalAlignment="Center"
                                         Text="Aggregation Delay:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The delay before the condition starts evaluating data after it becomes active. This allows for initial data stabilization." />
                                 </NumberBox.Header>
                             </NumberBox>
 
@@ -247,7 +247,7 @@
                                         VerticalAlignment="Center"
                                         Text="Aggregation Window:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The time window over which data is aggregated before being evaluated against the threshold." />
                                 </NumberBox.Header>
                             </NumberBox>
 
@@ -260,7 +260,7 @@
                                         VerticalAlignment="Center"
                                         Text="Critical Operator:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The operator used to compare the aggregated data against the critical threshold." />
                                 </ComboBox.Header>
                             </ComboBox>
 
@@ -273,7 +273,7 @@
                                         VerticalAlignment="Center"
                                         Text="Critical Threshold:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="The value that triggers a critical alert." />
                                 </NumberBox.Header>
                             </NumberBox>
 
@@ -286,7 +286,7 @@
                                         VerticalAlignment="Center"
                                         Text="Critical Threshold Duration:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="How long the condition must be met to trigger an alert." />
                                 </NumberBox.Header>
                             </NumberBox>
 
@@ -299,7 +299,7 @@
                                         VerticalAlignment="Center"
                                         Text="Critical Threshold Occurrences:"
                                         TextDecorations="Underline"
-                                        ToolTipService.ToolTip="Provide a clear description of what this alert monitors" />
+                                        ToolTipService.ToolTip="How many times the condition must occur to trigger an alert." />
                                 </ComboBox.Header>
                             </ComboBox>
                         </StackPanel>

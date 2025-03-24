@@ -36,5 +36,20 @@ namespace SupportTool.Services
         {
             return _localSettings.Values.ContainsKey("NR_API_Key");
         }
+
+
+        public Dictionary<string, object> GetAllSettings()
+        {
+            var allSettings = new Dictionary<string, object>();
+            foreach (var key in _localSettings.Values.Keys)
+            {
+                allSettings.Add(key, _localSettings.Values[key]);
+            }
+            return allSettings;
+        }
+        public void RemoveAllSettings()
+        {
+            _localSettings.Values.Clear();
+        }
     }
 }

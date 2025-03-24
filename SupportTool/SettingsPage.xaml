@@ -54,39 +54,55 @@
                 </Expander.Content>
             </Expander>
             <Expander
-                x:Name="ExpanderSettings_XDD"
+                x:Name="ExpanderSettings_RemoveAll"
                 Grid.Row="0"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch">
                 <Expander.Header>
                     <StackPanel Orientation="Horizontal">
-                        <FontIcon Margin="16" Glyph="&#xF081;" />
+                        <FontIcon Margin="16" Glyph="&#xED62;" />
                         <StackPanel Padding="16">
                             <TextBlock
                                 Margin="0,0,0,6"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontSize="14"
-                                Text="New Relic Connection" />
+                                Text="Clear application settings" />
                             <TextBlock
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                Text="Set up New Relic API Key" />
+                                Text="Restore the app to the default settings" />
                         </StackPanel>
                     </StackPanel>
                 </Expander.Header>
                 <Expander.Content>
-                    <StackPanel HorizontalAlignment="Stretch">
-                        <TextBox
-                            Name="NR_API_KeyTextbox2"
-                            Margin="0,0,0,20"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Center"
-                            Header="New Relic API Key:"
-                            PlaceholderText="NRAK-1234567890"
-                            TextChanged="NR_API_Key_OnTextChanged" />
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            Margin="0,5,0,0"
+                            Text="Confirm clearing app settings" />
+                        <Button
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            Content="Clear settings">
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock
+                                            Margin="0,0,0,12"
+                                            Style="{ThemeResource BaseTextBlockStyle}"
+                                            Text="All settings will be removed. Do you want to continue?" />
+                                        <Button Click="DeleteConfirmation_Click" Content="Yes, clear the settings" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
                 </Expander.Content>
             </Expander>
         </StackPanel>

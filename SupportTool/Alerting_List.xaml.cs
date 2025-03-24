@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Input;
 using SupportTool.Models;
 using SupportTool.Dialogs;
 using SupportTool.CustomControls;
+using Windows.Storage;
 
 namespace SupportTool
 {
@@ -23,11 +24,21 @@ namespace SupportTool
         private readonly SettingsService _settings = new();
         private string _selectedStack = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
-
+        
         public Alerting_List()
         {
             InitializeComponent();
             InitializeControls();
+            PrintLocalStorageValues();
+        }
+
+        private void PrintLocalStorageValues()
+        {
+            var s = _settings.GetAllSettings();
+            foreach(var item in s)
+            {
+                Debug.WriteLine(item.ToString());
+            }
         }
 
         private void InitializeControls()

@@ -30,7 +30,7 @@ namespace SupportTool.Helpers
                 Name = $"{appName.Split('.')[0].ToUpper()} Error rate - {carrierName}",
                 Description = $"Error rate for {appName.Split('.')[0].ToUpper()} ({carrierName})",
                 Severity = "CRITICAL",
-                NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100 FROM Transaction WHERE appName = '{appName}' AND name not like '%.PrintParcel'",
+                NrqlQuery = $"SELECT filter(count(*), WHERE ExitStatus = 'Error')/ count(*) * 100 FROM Transaction WHERE appName = '{appName}' AND name like '%.PrintParcel' and CarrierName = '{carrierName}'",
                 RunbookUrl = "https://runbook.example.com/error-rate",
                 Enabled = true,
                 AggregationMethod = "EVENT_FLOW",

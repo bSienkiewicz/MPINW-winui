@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
+using SupportTool.Services;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
@@ -25,12 +26,11 @@ namespace SupportTool
 {
     public sealed partial class SettingsPage : Page
     {
-        private readonly ApplicationDataContainer _localSettings;
+        private readonly SettingsService _settings = new();
 
         public SettingsPage()
         {
             this.InitializeComponent();
-            _localSettings = ApplicationData.Current.LocalSettings;
             LoadApiKey();
         }
 
@@ -55,9 +55,10 @@ namespace SupportTool
 
         private void LoadApiKey()
         {
-            if (_localSettings.Values.TryGetValue("NR_API_Key", out var value))
+            string apiKey = _settings.GetSetting("NR_API_Key");
+            if (apiKey is not null)
             {
-                NR_API_KeyTextbox.Text = value?.ToString() ?? string.Empty;
+                NR_API_KeyTextbox.Text = apiKey ?? string.Empty;
             }
         }
 
@@ -67,7 +68,7 @@ namespace SupportTool
             bool isValid = ValidateAPIKey(apiKey);
             if (isValid)
             {
-                _localSettings.Values["NR_API_Key"] = apiKey;
+                _settings.SetSetting("NR_API_Key", apiKey);
                 NR_API_KeyTextbox.BorderBrush = null;
             }
             else
@@ -83,6 +84,11 @@ namespace SupportTool
 
             // Use Regex to check if the API key matches the pattern
             return System.Text.RegularExpressions.Regex.IsMatch(apiKey, pattern);
+        }
+
+        private void DeleteConfirmation_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.RemoveAllSettings();
         }
     }
 }
