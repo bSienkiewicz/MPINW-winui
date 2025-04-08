@@ -71,67 +71,6 @@ namespace SupportTool.Helpers
             return alerts;
         }
 
-        public List<NrqlAlert> ParseAlerts2(string content)
-        {
-            var alerts = new List<NrqlAlert>();
-
-            // Find the nr_nrql_alerts array using a more robust regex
-            var arrayMatch = Regex.Match(content, @"nr_nrql_alerts\s*=\s*\[(.*?)\](?=\s*$|\s*#|\s*\w+\s*=)", RegexOptions.Singleline);
-
-            if (!arrayMatch.Success)
-            {
-                return alerts;
-            }
-
-            string alertsContent = arrayMatch.Groups[1].Value;
-
-            // More sophisticated parsing of alert blocks
-            var blockPattern = @"(?:(?:#[^\n]*\n)*\s*\{[^{}]*?""name""[^{}]*?\})";
-            var alertBlocks = Regex.Matches(alertsContent, blockPattern, RegexOptions.Singleline);
-
-            foreach (Match match in alertBlocks)
-            {
-                var block = match.Value;
-
-                // Extract just the JSON-like portion between curly braces
-                var jsonBlock = Regex.Match(block, @"\{.*\}", RegexOptions.Singleline);
-                if (!jsonBlock.Success) continue;
-
-                var cleanBlock = jsonBlock.Value
-                    .Trim()
-                    .TrimStart('{')
-                    .TrimEnd('}')
-                    .TrimEnd(',');
-
-                if (string.IsNullOrWhiteSpace(cleanBlock))
-                    continue;
-
-                var alert = new NrqlAlert
-                {
-                    Name = ParseStringValue(cleanBlock, "name"),
-                    Description = ParseStringValue(cleanBlock, "description"),
-                    NrqlQuery = ParseStringValue(cleanBlock, "nrql_query"),
-                    RunbookUrl = ParseStringValue(cleanBlock, "runbook_url"),
-                    Severity = ParseStringValue(cleanBlock, "severity"),
-                    Enabled = ParseBoolValue(cleanBlock, "enabled"),
-                    AggregationMethod = ParseStringValue(cleanBlock, "aggregation_method"),
-                    AggregationWindow = ParseDoubleValue(cleanBlock, "aggregation_window"),
-                    AggregationDelay = ParseDoubleValue(cleanBlock, "aggregation_delay"),
-                    CriticalOperator = ParseStringValue(cleanBlock, "critical_operator"),
-                    CriticalThreshold = ParseDoubleValue(cleanBlock, "critical_threshold"),
-                    CriticalThresholdDuration = ParseDoubleValue(cleanBlock, "critical_threshold_duration"),
-                    CriticalThresholdOccurrences = ParseStringValue(cleanBlock, "critical_threshold_occurrences")
-                };
-
-                if (!string.IsNullOrWhiteSpace(alert.Name))
-                {
-                    alerts.Add(alert);
-                }
-            }
-
-            return alerts;
-        }
-
         private string ParseStringValue(string block, string key)
         {
             var pattern = $@"""{key}""\s*=\s*""([^""]*)""|""{key}""\s*=\s*([^,\r\n#]*?)(?=\s*(?:$|,|\r|\n|#))";
@@ -140,6 +79,7 @@ namespace SupportTool.Helpers
             if (!match.Success) return string.Empty;
 
             var value = (match.Groups[1].Value + match.Groups[2].Value).Trim().Trim('"');
+            value = Regex.Unescape(value);
 
             // Normalize specific fields
             return key switch
@@ -176,29 +116,49 @@ namespace SupportTool.Helpers
             var sb = new StringBuilder();
             sb.AppendLine("nr_nrql_alerts = [");
 
+            // Calculate the maximum key length for padding
+            int maxKeyLength = 0;
+            string[] keys = [
+                "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
+                "aggregation_method", "aggregation_window", "aggregation_delay",
+                "critical_operator", "critical_threshold", "critical_threshold_duration",
+                "critical_threshold_occurrences"
+            ];
+
+            // get the longest key to determine the space padding
+            foreach (var key in keys)
+            {
+                int keyLength = $"\"{key}\"".Length;
+                if (keyLength > maxKeyLength)
+                    maxKeyLength = keyLength;
+            }
+
+            int padLength = maxKeyLength + 1; // +1 extra space for the longest key
+
             foreach (var alert in alerts)
             {
                 sb.AppendLine("  {");
 
-                AppendIfNotEmpty(sb, "name", alert.Name, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "description", alert.Description, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "nrql_query", alert.NrqlQuery, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "runbook_url", alert.RunbookUrl, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "severity", alert.Severity, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "enabled", alert.Enabled.ToString().ToLower(), ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "aggregation_method", alert.AggregationMethod, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow.ToString(), ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "aggregation_delay", alert.AggregationDelay.ToString(), ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "critical_operator", alert.CriticalOperator, ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold.ToString(), ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "critical_threshold_duration", alert.CriticalThresholdDuration.ToString(), ignoreEmptyValues);
-                AppendIfNotEmpty(sb, "critical_threshold_occurrences", alert.CriticalThresholdOccurrences, ignoreEmptyValues);
+                AppendIfNotEmpty(sb, "name", alert.Name, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "description", alert.Description, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "nrql_query", alert.NrqlQuery, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "runbook_url", alert.RunbookUrl, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "severity", alert.Severity, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "enabled", alert.Enabled.ToString().ToLower(), ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "aggregation_method", alert.AggregationMethod, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow.ToString(), ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "aggregation_delay", alert.AggregationDelay.ToString(), ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "critical_operator", alert.CriticalOperator, ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold.ToString(), ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "critical_threshold_duration", alert.CriticalThresholdDuration.ToString(), ignoreEmptyValues, padLength);
+                AppendIfNotEmpty(sb, "critical_threshold_occurrences", alert.CriticalThresholdOccurrences, ignoreEmptyValues, padLength);
 
                 // if not last append comma
                 if (!Comparer.ReferenceEquals(alerts.Last(), alert))
                 {
                     sb.AppendLine("  },");
-                } else
+                }
+                else
                 {
                     sb.AppendLine("  }");
                 }
@@ -208,13 +168,17 @@ namespace SupportTool.Helpers
             return sb.ToString().Trim();
         }
 
-        public void AppendIfNotEmpty(StringBuilder sb, string key, string value, bool ignoreEmptyValues)
+        public void AppendIfNotEmpty(StringBuilder sb, string key, string value, bool ignoreEmptyValues, int padLength)
         {
             if (!ignoreEmptyValues || !string.IsNullOrWhiteSpace(value))
             {
                 // Escape special characters in the value string
                 string escapedValue = EscapeHclString(value);
-                sb.AppendLine($"    \"{key}\" = \"{escapedValue}\"");
+
+                // Pad the key with spaces to align the equal signs
+                string paddedKey = $"\"{key}\"".PadRight(padLength);
+
+                sb.AppendLine($"    {paddedKey} = \"{escapedValue}\"");
             }
         }
 
@@ -231,7 +195,6 @@ namespace SupportTool.Helpers
         {
             // Serialize the updated alerts to HCL format
             var updatedAlertsSection = SerializeAlerts(alerts, true);
-            Debug.WriteLine(updatedAlertsSection);
 
             //var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[((?:[^\[\]]|\[[^\[\]]*\])*)\]", RegexOptions.Singleline); - old regex in case this new one fucks something up
             var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[(.*)\](?=\s*$|\s*\w+\s*=)", RegexOptions.Singleline);

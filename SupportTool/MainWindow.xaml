@@ -40,16 +40,18 @@
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Alerting Manager" Tag="NRAlertsTable">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7BA;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
                 <NavigationViewItem Content="Alerting List" Tag="NRAlertsList">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xF0B5;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+
+                <!--<NavigationViewItem Content="Alerting Manager" Tag="NRAlertsTable">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>-->
 
                 <!--<NavigationViewItem Content="MPINW Tool" Tag="Page1">
                     <NavigationViewItem.Icon>

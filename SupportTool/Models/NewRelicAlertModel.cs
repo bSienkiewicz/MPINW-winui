@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SupportTool.Models
 {
-        public class NrqlAlert : INotifyPropertyChanged
+    public class NrqlAlert : INotifyPropertyChanged
     {
         private string _name;
         private string _description;
@@ -141,5 +141,12 @@ namespace SupportTool.Models
         {
             return $"Alert: {Name} - {Severity}";
         }
+    }
+
+    public class NRMetricsResult
+    {
+        public float MedianDuration { get; set; }
+        public int CreateCalls { get; set; }
+        public float CarrierPercentage { get; set; }
     }
 }

@@ -26,11 +26,8 @@ public sealed partial class MainWindow : Window
 {
     private readonly Dictionary<string, Type> _pageMapping = new Dictionary<string, Type>
         {
-            { "Page1", typeof(Page1) },
             { "Alerting", typeof(Alerting) },
-            { "NRAlertsTable", typeof(Alerting_Manager) },
-            { "NRAlertsList", typeof(Alerting_List) },
-            { "Page2", typeof(Page2) }
+            { "NRAlertsList", typeof(Alerting_List) }
         };
     public MainWindow()
     {
@@ -39,7 +36,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         ContentFrame.Navigated += OnNavigated;
         SetTitleBar(this.AppTitleBar);
-        this.ContentFrame.Navigate(typeof(Page1));
+        this.ContentFrame.Navigate(typeof(Alerting));
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)

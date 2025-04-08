@@ -25,8 +25,11 @@ namespace SupportTool.Helpers
         public static readonly string[] CriticalOperators = new[]
         {
         "ABOVE",
+        "ABOVE_OR_EQUALS",
         "BELOW",
-        "EQUALS"
+        "BELOW_OR_EQUALS",
+        "EQUALS",
+        "NOT_EQUALS"
     };
 
         public static readonly string[] ThresholdOccurrences = new[]

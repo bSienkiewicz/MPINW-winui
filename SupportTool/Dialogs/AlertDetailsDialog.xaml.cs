@@ -94,17 +94,22 @@ namespace SupportTool.Dialogs
             OnPropertyChanged(nameof(NewAlertData));
         }
 
-        private async void FetchMedianDurationButton_Click(object sender, RoutedEventArgs e)
+        private async void FetchMetricsButton_Click(object sender, RoutedEventArgs e)
         {
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource = new CancellationTokenSource();
 
-            MedianDurationButton.IsEnabled = false;
-            MedianDurationProgress.Visibility = Visibility.Visible;
-            var duration = await _newRelicApiService.FetchMedianDurationForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
-            var roundedDuration = Math.Round(duration, 3);
-            MedianDurationContent.Text = roundedDuration.ToString(CultureInfo.InvariantCulture);
-            MedianDurationProgress.Visibility = Visibility.Collapsed;
+            FetchMetricsButton.Visibility = Visibility.Collapsed;
+            MetricsFetchProgress.Visibility = Visibility.Visible;
+            NRMetricsResult metrics = await _newRelicApiService.FetchMetricsForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
+            double roundedDuration = Math.Round(metrics.MedianDuration, 3);
+            double calls = metrics.CreateCalls;
+            double carrierPercentage = metrics.CarrierPercentage;
+
+            string metricsText = $"{calls} calls\n{Math.Round(carrierPercentage, 1)}% of all carrier calls.\nMedian call duration - {roundedDuration}s";
+
+            NRMetrics.Text = metricsText.ToString(CultureInfo.InvariantCulture);
+            MetricsFetchProgress.Visibility = Visibility.Collapsed;
         }
 
         private void SaveButton_Click(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SupportTool.Helpers;
 using SupportTool.Models;
 using Windows.Storage;
@@ -177,7 +178,9 @@ namespace SupportTool.Services
 
                 AlertType.ErrorRate => alerts.Any(alert =>
                     alert.NrqlQuery.Contains($"{item.AppName}") &&
-                    alert.NrqlQuery.Contains("filter(count(*), WHERE ExitStatus = 'Error')/ count(*)")),
+                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&
+                    alert.NrqlQuery.Contains("percentage") &&
+                    alert.NrqlQuery.Contains("Error")),
 
                 _ => false
             };

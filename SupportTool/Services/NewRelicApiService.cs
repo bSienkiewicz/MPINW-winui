@@ -11,6 +11,7 @@ using Windows.Storage;
 using System.Diagnostics;
 using System.Threading;
 using System.Collections;
+using SupportTool.Models;
 
 namespace SupportTool.Services
 {
@@ -128,7 +129,7 @@ namespace SupportTool.Services
             return appNames;
         }
 
-        public async Task<float> FetchMedianDurationForAppNameAndCarrier(string AppName, string CarrierName, CancellationToken cancellationToken = default)
+        public async Task<NRMetricsResult> FetchMetricsForAppNameAndCarrier(string AppName, string CarrierName, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -145,23 +146,21 @@ namespace SupportTool.Services
                 string apiKey = value.ToString();
                 string url = "https://api.newrelic.com/graphql";
 
-                string query = $@"
-                    {{
+                string query = $@"{{
                         actor {{
                             account(id: 400000) {{
-                                nrql(query: ""FROM Transaction SELECT percentile(duration, 50) AS 'percentile' WHERE appName = '{AppName}' AND CarrierName = '{CarrierName}' SINCE 7 days ago"") {{
+                              nrql(query: ""FROM Transaction SELECT percentile(duration, 50) AS 'MedianDuration', count(*) AS 'CreateCalls', (filter(count(*), WHERE CarrierName = '{CarrierName}') * 100.0 / count(*)) AS 'CarrierPercentage' WHERE appName = '{AppName}' AND name = 'WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel' AND PrintOperation LIKE '%Create%' SINCE 7 days ago"") {{
                                     results
                                 }}
                             }}
                         }}
                     }}";
 
-                var requestBody = new { query = query };
+                var requestBody = new {query = query};
                 string jsonBody = JsonConvert.SerializeObject(requestBody);
 
                 using (HttpClient client = new HttpClient())
-                {
-                    var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
+                {var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
                     {
                         Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
                     };
@@ -176,24 +175,30 @@ namespace SupportTool.Services
                     }
 
                     var result = JsonConvert.DeserializeObject<JObject>(responseContent);
-                    var percentileValue = result?["data"]?["actor"]?["account"]?["nrql"]?["results"]?.FirstOrDefault()?["percentile"]?["50"];
+                    var data = result?["data"]?["actor"]?["account"]?["nrql"]?["results"]?.FirstOrDefault();
 
-                    if (percentileValue == null)
+                    if (data == null)
                     {
-                        throw new Exception("Invalid response format or missing percentile data.");
+                        Debug.WriteLine(result);
+                        throw new Exception("Invalid response format or missing data.");
                     }
 
-                    return percentileValue.Value<float>();
+                    return new NRMetricsResult
+                    {
+                        MedianDuration = data["MedianDuration"]?["50"]?.Value<float>() ?? 0f,
+                        CreateCalls = data["CreateCalls"]?.Value<int>() ?? 0,
+                        CarrierPercentage = data["CarrierPercentage"]?.Value<float>() ?? 0f
+                    };
                 }
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("FetchMedianDurationForAppNameAndCarrier was canceled.");
+                Debug.WriteLine("FetchMetricsForAppNameAndCarrier was canceled.");
                 throw;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in FetchMedianDurationForAppNameAndCarrier: {ex.Message}");
+                Debug.WriteLine($"Error in FetchMetricsForAppNameAndCarrier: {ex.Message}");
                 throw;
             }
         }
