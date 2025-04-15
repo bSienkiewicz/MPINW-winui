@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SupportTool.Models
 {
-    public class NrqlAlert : INotifyPropertyChanged
+    public class NrqlAlert : INotifyPropertyChanged, ICloneable
     {
         private string _name;
         private string _description;
@@ -140,6 +140,26 @@ namespace SupportTool.Models
         public override string ToString()
         {
             return $"Alert: {Name} - {Severity}";
+        }
+
+        public object Clone()
+        {
+            return new NrqlAlert
+            {
+                Name = this.Name,
+                Description = this.Description,
+                NrqlQuery = this.NrqlQuery,
+                RunbookUrl = this.RunbookUrl,
+                Severity = this.Severity,
+                Enabled = this.Enabled,
+                AggregationMethod = this.AggregationMethod,
+                AggregationWindow = this.AggregationWindow,
+                AggregationDelay = this.AggregationDelay,
+                CriticalOperator = this.CriticalOperator,
+                CriticalThreshold = this.CriticalThreshold,
+                CriticalThresholdDuration = this.CriticalThresholdDuration,
+                CriticalThresholdOccurrences = this.CriticalThresholdOccurrences
+            };
         }
     }
 

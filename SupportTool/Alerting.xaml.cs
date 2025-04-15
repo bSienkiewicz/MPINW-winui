@@ -13,6 +13,7 @@ using SupportTool.Services;
 using Windows.ApplicationModel.DataTransfer;
 using SupportTool.CustomControls;
 using SupportTool.Models;
+using Microsoft.UI.Xaml.Data;
 
 namespace SupportTool
 {
@@ -38,17 +39,32 @@ namespace SupportTool
         public string[] CriticalOperators => AlertConstants.CriticalOperators;
         public string[] ThresholdOccurrences => AlertConstants.ThresholdOccurrences;
 
-        private NrqlAlert _selectedAlert;
-        public NrqlAlert SelectedAlert
+        private NrqlAlert _originalAlert;
+        private NrqlAlert _workingCopy;
+
+        public NrqlAlert WorkingCopy
         {
-            get => _selectedAlert;
+            get => _workingCopy;
             set
             {
-                if (_selectedAlert != value)
-                {
-                    _selectedAlert = value;
-                    OnPropertyChanged(nameof(SelectedAlert));
-                }
+                _workingCopy = value;
+                OnPropertyChanged(nameof(WorkingCopy));
+            }
+        }
+
+        // This property manages the alert currently selected by the user
+        public NrqlAlert SelectedAlert
+        {
+            get => _originalAlert;
+            set
+            {
+                _originalAlert = value;
+
+                // Create a working copy for editing
+                _workingCopy = value != null ? (NrqlAlert)value.Clone() : new NrqlAlert();
+
+                OnPropertyChanged(nameof(SelectedAlert));
+                OnPropertyChanged(nameof(WorkingCopy));
             }
         }
 
@@ -204,71 +220,109 @@ namespace SupportTool
         {
             if (e.AddedItems.Count > 0)
             {
-                // Set the selected alerts to display its details
+                // Set the selected alert and create a working copy
                 SelectedAlert = (NrqlAlert)e.AddedItems[0];
+            }
+            else
+            {
+                SelectedAlert = null;
             }
         }
 
         private void SaveSelectedAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedAlert == null ||
+            if (_originalAlert == null || WorkingCopy == null ||
                 stacksComboBox.SelectedItem == null ||
                 AlertItems == null ||
                 _selectedStack == null) return;
 
-            var alerts = _alertService.GetAlertsForStack(_selectedStack);
-            var errors = _alertService.ValidateAlertInputs(_selectedAlert, alerts);
-            if (errors.Count > 0) // Validation failed
-            {
-                var errorMessage = string.Join("\n", errors);
+            // Force update all bindings from UI controls to WorkingCopy
+            BindingExpression[] bindingsToUpdate = {
+                NameTextBox.GetBindingExpression(TextBox.TextProperty)
+            };
 
+            foreach (var binding in bindingsToUpdate)
+            {
+                if (binding != null)
+                    binding.UpdateSource();
+            }
+
+            // Validate the working copy
+            var alerts = _alertService.GetAlertsForStack(_selectedStack);
+            var errors = _alertService.ValidateAlertInputs(WorkingCopy, alerts);
+            if (errors.Count > 0)
+            {
+                // Show validation errors and return
+                var errorMessage = string.Join("\n", errors);
                 var toast = new CustomToast();
                 ToastContainer.Children.Add(toast);
                 toast.ShowToast("Validation error", errorMessage, InfoBarSeverity.Error, 10);
                 return;
             }
 
-            var index = AlertItems.IndexOf(_selectedAlert);
+            // Copy the working copy values to the original
+            int index = AlertItems.IndexOf(_originalAlert);
             if (index != -1)
             {
-                AlertItems[index] = _selectedAlert;
+                // Update all properties
+                _originalAlert.Name = WorkingCopy.Name;
+                _originalAlert.Description = WorkingCopy.Description;
+                _originalAlert.NrqlQuery = WorkingCopy.NrqlQuery;
+                _originalAlert.RunbookUrl = WorkingCopy.RunbookUrl;
+                _originalAlert.Severity = WorkingCopy.Severity;
+                _originalAlert.Enabled = WorkingCopy.Enabled;
+                _originalAlert.AggregationMethod = WorkingCopy.AggregationMethod;
+                _originalAlert.AggregationWindow = WorkingCopy.AggregationWindow;
+                _originalAlert.AggregationDelay = WorkingCopy.AggregationDelay;
+                _originalAlert.CriticalOperator = WorkingCopy.CriticalOperator;
+                _originalAlert.CriticalThreshold = WorkingCopy.CriticalThreshold;
+                _originalAlert.CriticalThresholdDuration = WorkingCopy.CriticalThresholdDuration;
+                _originalAlert.CriticalThresholdOccurrences = WorkingCopy.CriticalThresholdOccurrences;
+
+                // Save to file
                 _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
 
-
-                // Show toast
+                // Show success toast
                 var toast = new CustomToast();
                 ToastContainer.Children.Add(toast);
                 toast.ShowToast("Save Successful", "The alert has been saved.", InfoBarSeverity.Success, 3);
             }
+            LoadStack();
         }
-
 
         private void CopyAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedAlert == null || _selectedStack == null) return;
+            if (_originalAlert == null || _selectedStack == null) return;
 
+            // Create a new alert based on the original (not the working copy)
             var alertCopy = new NrqlAlert
             {
-                Name = $"{_selectedAlert.Name} Copy",
-                Description = _selectedAlert.Description,
-                NrqlQuery = _selectedAlert.NrqlQuery,
-                RunbookUrl = _selectedAlert.RunbookUrl,
-                Severity = _selectedAlert.Severity,
-                Enabled = _selectedAlert.Enabled,
-                AggregationMethod = _selectedAlert.AggregationMethod,
-                AggregationWindow = _selectedAlert.AggregationWindow,
-                AggregationDelay = _selectedAlert.AggregationDelay,
-                CriticalOperator = _selectedAlert.CriticalOperator,
-                CriticalThreshold = _selectedAlert.CriticalThreshold,
-                CriticalThresholdDuration = _selectedAlert.CriticalThresholdDuration,
-                CriticalThresholdOccurrences = _selectedAlert.CriticalThresholdOccurrences
+                Name = $"{_originalAlert.Name} Copy",
+                Description = _originalAlert.Description,
+                NrqlQuery = _originalAlert.NrqlQuery,
+                RunbookUrl = _originalAlert.RunbookUrl,
+                Severity = _originalAlert.Severity,
+                Enabled = _originalAlert.Enabled,
+                AggregationMethod = _originalAlert.AggregationMethod,
+                AggregationWindow = _originalAlert.AggregationWindow,
+                AggregationDelay = _originalAlert.AggregationDelay,
+                CriticalOperator = _originalAlert.CriticalOperator,
+                CriticalThreshold = _originalAlert.CriticalThreshold,
+                CriticalThresholdDuration = _originalAlert.CriticalThresholdDuration,
+                CriticalThresholdOccurrences = _originalAlert.CriticalThresholdOccurrences
             };
 
+            // Add the copy to the collection
             AlertItems.Add(alertCopy);
-            AlertsListView.SelectedItem = alertCopy;
-            cloneButton.Flyout.Hide();
-            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
 
+            // Select the new alert in the ListView
+            AlertsListView.SelectedItem = alertCopy;
+
+            // Close the flyout
+            cloneButton.Flyout.Hide();
+
+            // Save to file
+            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
 
             // Show toast
             var toast = new CustomToast();
@@ -278,11 +332,20 @@ namespace SupportTool
 
         private void DeleteAlertButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedAlert == null || _selectedStack == null) return;
+            if (_originalAlert == null || _selectedStack == null) return;
 
-            AlertItems.Remove(_selectedAlert);
-            SelectedAlert = new NrqlAlert();
+            // Remove the original alert from the collection
+            AlertItems.Remove(_originalAlert);
+
+            // Clear the selection
+            _originalAlert = null;
+            WorkingCopy = new NrqlAlert();
+            AlertsListView.SelectedItem = null;
+
+            // Save to file
             _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+
+            // Close the flyout
             deleteButton.Flyout.Hide();
 
             // Show toast
@@ -297,11 +360,28 @@ namespace SupportTool
 
             var newAlert = new NrqlAlert
             {
-                Name = "New Alert", Description = "Alert description", NrqlQuery = "",
-                RunbookUrl = "", Severity = "CRITICAL", Enabled = true, AggregationMethod = "event_flow"
+                Name = "New Alert Name",
+                Description = "Alert description",
+                NrqlQuery = "SELECT * FROM Transaction",
+                RunbookUrl = "",
+                Severity = "CRITICAL",
+                Enabled = true,
+                AggregationMethod = "EVENT_FLOW",
+                AggregationDelay = 0,
+                AggregationWindow = 0,
+                CriticalOperator = "EQUALS",
+                CriticalThreshold = 0,
+                CriticalThresholdDuration = 0,
+                CriticalThresholdOccurrences = "ALL"
             };
+
+            // Add the new alert to the collection
             AlertItems.Add(newAlert);
+
+            // Select the new alert in the ListView
             AlertsListView.SelectedItem = newAlert;
+
+            // Save to file
             _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
 
             // Show toast
@@ -370,8 +450,17 @@ namespace SupportTool
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            SelectedAlert = new NrqlAlert();
-            AlertsListView.SelectedItem = null;
+            // Discard changes by recreating the working copy from the original
+            if (_originalAlert != null)
+            {
+                WorkingCopy = (NrqlAlert)_originalAlert.Clone();
+            }
+            else
+            {
+                _originalAlert = null;
+                WorkingCopy = new NrqlAlert();
+                AlertsListView.SelectedItem = null;
+            }
         }
 
         private void SortAlertsButton_Click(object sender, RoutedEventArgs e)

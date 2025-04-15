@@ -156,7 +156,7 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     RowSpacing="30"
-                    Visibility="{x:Bind SelectedAlert, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
+                    Visibility="{x:Bind WorkingCopy, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="auto" />
@@ -164,9 +164,9 @@
                     <ScrollView Grid.Row="0">
                         <StackPanel Padding="10" Spacing="10">
 
-                            <CheckBox Content="Enabled" IsChecked="{x:Bind SelectedAlert.Enabled, Mode=TwoWay}" />
+                            <CheckBox Content="Enabled" IsChecked="{x:Bind WorkingCopy.Enabled, Mode=TwoWay}" />
 
-                            <TextBox x:Name="NameTextBox" Text="{x:Bind SelectedAlert.Name, Mode=TwoWay}">
+                            <TextBox x:Name="NameTextBox" Text="{x:Bind WorkingCopy.Name, Mode=TwoWay}">
                                 <TextBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -179,7 +179,7 @@
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{x:Bind Severities}"
-                                SelectedItem="{x:Bind SelectedAlert.Severity, Mode=TwoWay}">
+                                SelectedItem="{x:Bind WorkingCopy.Severity, Mode=TwoWay}">
                                 <ComboBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -192,17 +192,17 @@
                             <TextBox
                                 AcceptsReturn="True"
                                 Header="Description:"
-                                Text="{x:Bind SelectedAlert.Description, Mode=TwoWay}"
+                                Text="{x:Bind WorkingCopy.Description, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
 
                             <TextBox
                                 MinHeight="100"
                                 AcceptsReturn="True"
                                 Header="NRQL Query:"
-                                Text="{x:Bind SelectedAlert.NrqlQuery, Mode=TwoWay}"
+                                Text="{x:Bind WorkingCopy.NrqlQuery, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
 
-                            <TextBox Text="{x:Bind SelectedAlert.RunbookUrl, Mode=TwoWay}">
+                            <TextBox Text="{x:Bind WorkingCopy.RunbookUrl, Mode=TwoWay}">
                                 <TextBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -215,7 +215,7 @@
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{x:Bind AggregationMethods}"
-                                SelectedItem="{x:Bind SelectedAlert.AggregationMethod, Mode=TwoWay}">
+                                SelectedItem="{x:Bind WorkingCopy.AggregationMethod, Mode=TwoWay}">
                                 <ComboBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -228,7 +228,7 @@
                             <NumberBox
                                 AcceptsExpression="True"
                                 Minimum="0"
-                                Value="{x:Bind SelectedAlert.AggregationDelay, Mode=TwoWay}">
+                                Value="{x:Bind WorkingCopy.AggregationDelay, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -241,7 +241,7 @@
                             <NumberBox
                                 AcceptsExpression="True"
                                 Minimum="0"
-                                Value="{x:Bind SelectedAlert.AggregationWindow, Mode=TwoWay}">
+                                Value="{x:Bind WorkingCopy.AggregationWindow, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -254,7 +254,7 @@
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{x:Bind CriticalOperators}"
-                                SelectedItem="{x:Bind SelectedAlert.CriticalOperator, Mode=TwoWay}">
+                                SelectedItem="{x:Bind WorkingCopy.CriticalOperator, Mode=TwoWay}">
                                 <ComboBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -267,7 +267,7 @@
                             <NumberBox
                                 AcceptsExpression="True"
                                 SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind SelectedAlert.CriticalThreshold, Mode=TwoWay}">
+                                Value="{x:Bind WorkingCopy.CriticalThreshold, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -280,7 +280,7 @@
                             <NumberBox
                                 AcceptsExpression="True"
                                 Minimum="0"
-                                Value="{x:Bind SelectedAlert.CriticalThresholdDuration, Mode=TwoWay}">
+                                Value="{x:Bind WorkingCopy.CriticalThresholdDuration, Mode=TwoWay}">
                                 <NumberBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -293,7 +293,7 @@
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{x:Bind ThresholdOccurrences}"
-                                SelectedItem="{x:Bind SelectedAlert.CriticalThresholdOccurrences, Mode=TwoWay}">
+                                SelectedItem="{x:Bind WorkingCopy.CriticalThresholdOccurrences, Mode=TwoWay}">
                                 <ComboBox.Header>
                                     <TextBlock
                                         VerticalAlignment="Center"
@@ -367,12 +367,9 @@
                                 x:Name="saveButton"
                                 Click="SaveSelectedAlertButton_Click"
                                 Style="{StaticResource AccentButtonStyle}">
-                                <Button.KeyboardAccelerators>
-                                    <KeyboardAccelerator Key="S" Modifiers="Control" />
-                                </Button.KeyboardAccelerators>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE74E;" />
-                                    <TextBlock Text="Save (Ctrl+S)" />
+                                    <TextBlock Text="Save alert" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="cancelButton" Click="CancelButton_Click">
