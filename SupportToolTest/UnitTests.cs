@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using SupportTool.Helpers;
+using SupportTool.Models;
 
 namespace SupportToolTest
 {
@@ -152,8 +153,8 @@ namespace SupportToolTest
             {
                 sb.AppendLine("  {");
 
-                _parser.AppendIfNotEmpty(sb, "name", EscapeHclString(alert.Name), ignoreEmptyValues);
-                _parser.AppendIfNotEmpty(sb, "nrql_query", EscapeHclString(alert.NrqlQuery), ignoreEmptyValues);
+                _parser.AppendIfNotEmpty(sb, "name", EscapeHclString(alert.Name), ignoreEmptyValues, 4);
+                _parser.AppendIfNotEmpty(sb, "nrql_query", EscapeHclString(alert.NrqlQuery), ignoreEmptyValues, 4);
 
                 sb.AppendLine("  },");
             }

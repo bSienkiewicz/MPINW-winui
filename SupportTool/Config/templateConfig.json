@@ -1,0 +1,30 @@
+{
+    "PrintDuration": {
+        "Name": "{appName} PrintParcel duration - {carrierName}",
+        "Description": "PrintParcel duration for {appName} ({carrierName})",
+        "Severity": "CRITICAL",
+        "NrqlQuery": "SELECT average(duration) FROM Transaction where appName = '{appName}' and name = 'WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel' and PrintOperation like '%Create%' and CarrierName = '{carrierName}'",
+        "RunbookUrl": "",
+        "Enabled": true,
+        "AggregationMethod": "EVENT_FLOW",
+        "AggregationDelay": 120,
+        "CriticalOperator": "ABOVE",
+        "CriticalThreshold": 0.5,
+        "CriticalThresholdDuration": 600,
+        "CriticalThresholdOccurrences": "ALL"
+    },
+    "ErrorRate": {
+        "Name": "{appName} Error rate - {carrierName}",
+        "Description": "Error rate for {appName} ({carrierName})",
+        "Severity": "CRITICAL",
+        "NrqlQuery": "SELECT percentage(count(*), where ExitStatus = 'Error') FROM Transaction WHERE appName = '{appName}' AND name like '%.PrintParcel' and CarrierName = '{carrierName}'",
+        "RunbookUrl": "",
+        "Enabled": true,
+        "AggregationMethod": "EVENT_FLOW",
+        "AggregationDelay": 120,
+        "CriticalOperator": "ABOVE",
+        "CriticalThreshold": 5,
+        "CriticalThresholdDuration": 300,
+        "CriticalThresholdOccurrences": "ALL"
+    }
+}

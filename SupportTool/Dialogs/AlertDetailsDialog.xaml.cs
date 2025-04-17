@@ -77,7 +77,7 @@ namespace SupportTool.Dialogs
 
         private void ApplyPrintDurationTemplate_Click(object sender, RoutedEventArgs e)
         {
-            NewAlertData = AlertTemplates.PrintDurationTemplate(AppName, CarrierName);
+            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", AppName, CarrierName);
 
             foreach (var property in NewAlertData.GetType().GetProperties())
             {
@@ -90,7 +90,7 @@ namespace SupportTool.Dialogs
 
         private void ApplyErrorRateTemplate_Click(object sender, RoutedEventArgs e)
         {
-            NewAlertData = AlertTemplates.ErrorRateTemplate(AppName, CarrierName);
+            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", AppName, CarrierName);
             OnPropertyChanged(nameof(NewAlertData));
         }
 
