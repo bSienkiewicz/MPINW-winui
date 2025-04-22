@@ -17,11 +17,11 @@ namespace SupportTool.Services
 {
     public class NewRelicApiService
     {
-        private readonly ApplicationDataContainer _localSettings;
+        private readonly SettingsService _settingsService;
 
         public NewRelicApiService()
         {
-            _localSettings = ApplicationData.Current.LocalSettings;
+            _settingsService = new SettingsService();
         }
 
         public async Task<List<AppNameItem>> FetchAppNamesAndCarriers(string stack, CancellationToken cancellationToken = default)
@@ -29,9 +29,10 @@ namespace SupportTool.Services
             var appNames = new List<AppNameItem>();
             try
             {
-                if (!_localSettings.Values.TryGetValue("NR_API_Key", out var value))
+                string apiKey = _settingsService.GetSetting("NR_API_Key");
+                if (string.IsNullOrEmpty(apiKey))
                 {
-                    throw new Exception("API key not found in local settings.");
+                    throw new Exception("API key not found in settings.");
                 }
 
                 if (string.IsNullOrEmpty(stack))
@@ -39,7 +40,6 @@ namespace SupportTool.Services
                     throw new Exception("Stack name is required.");
                 }
 
-                string apiKey = value.ToString();
                 string url = "https://api.newrelic.com/graphql";
                 string query = $@"  
                {{   
@@ -133,9 +133,10 @@ namespace SupportTool.Services
         {
             try
             {
-                if (!_localSettings.Values.TryGetValue("NR_API_Key", out var value))
+                string apiKey = _settingsService.GetSetting("NR_API_Key");
+                if (string.IsNullOrEmpty(apiKey))
                 {
-                    throw new Exception("API key not found in local settings.");
+                    throw new Exception("API key not found in settings.");
                 }
 
                 if (string.IsNullOrEmpty(AppName) || string.IsNullOrEmpty(CarrierName))
@@ -143,7 +144,6 @@ namespace SupportTool.Services
                     throw new Exception("App Name and Carrier Name are required.");
                 }
 
-                string apiKey = value.ToString();
                 string url = "https://api.newrelic.com/graphql";
 
                 string query = $@"{{

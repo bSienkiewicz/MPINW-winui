@@ -10,32 +10,32 @@ namespace SupportTool.Helpers
     {
         public static readonly string[] Severities = new[]
         {
-        "CRITICAL",
-        "WARNING",
-        "INFO"
-    };
+            "CRITICAL",
+            "WARNING",
+            "INFO"
+        };
 
         public static readonly string[] AggregationMethods = new[]
         {
-        "EVENT_FLOW",
-        "EVENT_TIMER",
-        "CADENCE"
-    };
+            "EVENT_FLOW",
+            "EVENT_TIMER",
+            "CADENCE"
+        };
 
         public static readonly string[] CriticalOperators = new[]
         {
-        "ABOVE",
-        "ABOVE_OR_EQUALS",
-        "BELOW",
-        "BELOW_OR_EQUALS",
-        "EQUALS",
-        "NOT_EQUALS"
-    };
+            "ABOVE",
+            "ABOVE_OR_EQUALS",
+            "BELOW",
+            "BELOW_OR_EQUALS",
+            "EQUALS",
+            "NOT_EQUALS"
+        };
 
         public static readonly string[] ThresholdOccurrences = new[]
         {
-        "ALL",
-        "AT_LEAST_ONCE"
-    };
+            "ALL",
+            "AT_LEAST_ONCE"
+        };
     }
 }

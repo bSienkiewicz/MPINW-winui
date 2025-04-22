@@ -172,14 +172,14 @@ namespace SupportTool.Services
             return alertType switch
             {
                 AlertType.PrintDuration => alerts.Any(alert =>
-                    alert.NrqlQuery.Contains($"{item.AppName}") &&
-                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&
-                    alert.NrqlQuery.Contains($"average(duration)")),
+                    alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
+                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
+                    alert.NrqlQuery.Contains($"average(duration)")),                                                        // Find average aggregate function
 
                 AlertType.ErrorRate => alerts.Any(alert =>
-                    alert.NrqlQuery.Contains($"{item.AppName}") &&
-                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&
-                    alert.NrqlQuery.Contains("percentage") &&
+                    alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
+                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
+                    alert.NrqlQuery.Contains("percentage") &&                                                               // Find percentage aggregate function
                     alert.NrqlQuery.Contains("Error")),
 
                 _ => false

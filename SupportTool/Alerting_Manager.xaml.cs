@@ -24,7 +24,7 @@ namespace SupportTool
         public ObservableCollection<AppNameItem> AppNames { get; } = new ObservableCollection<AppNameItem>();
         public ObservableCollection<CarrierItem> Carriers { get; } = new ObservableCollection<CarrierItem>();
 
-        private readonly ApplicationDataContainer _localSettings;
+        private readonly SettingsService _settingsService;
         private AppNameItem _selectedApp;
         private CarrierItem _selectedCarrier;
         private readonly NewRelicApiService _newRelicApiService;
@@ -36,8 +36,12 @@ namespace SupportTool
         public Alerting_Manager()
         {
             this.InitializeComponent();
-            _localSettings = ApplicationData.Current.LocalSettings;
-            _repositoryPath = _localSettings.Values["NRAlertsDir"] as string ?? string.Empty;
+            _settingsService = new SettingsService();
+
+            // Try to migrate settings from ApplicationDataContainer if running in packaged mode
+            _settingsService.MigrateFromApplicationDataContainer();
+
+            _repositoryPath = _settingsService.GetSetting("NRAlertsDir", string.Empty);
             AppNamesList.ItemsSource = AppNames;
             CarriersList.ItemsSource = Carriers;
             _newRelicApiService = new NewRelicApiService();
@@ -74,7 +78,7 @@ namespace SupportTool
 
         private bool IsApiKeyPresent()
         {
-            if (!_localSettings.Values.ContainsKey("NR_API_Key"))
+            if (!_settingsService.IsApiKeySet())
             {
                 InfoBar.IsOpen = true;
                 return false;
