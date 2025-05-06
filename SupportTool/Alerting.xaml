@@ -60,12 +60,6 @@
                     Width="200"
                     PlaceholderText="Select a stack..."
                     SelectionChanged="StackComboBox_SelectionChanged" />
-                <Button x:Name="selectFolderButton" Click="SelectFolderButton_Click">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE838;" />
-                        <TextBlock Text="Select Repository Folder" />
-                    </StackPanel>
-                </Button>
                 <Button
                     x:Name="openFolderButton"
                     Click="OpenFolderButton_Click"
@@ -317,9 +311,6 @@
                             Orientation="Horizontal"
                             Spacing="10">
                             <Button x:Name="cloneButton">
-                                <Button.KeyboardAccelerators>
-                                    <KeyboardAccelerator Key="C" Modifiers="Control" />
-                                </Button.KeyboardAccelerators>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xF584;" />
                                     <TextBlock Text="Duplicate" />

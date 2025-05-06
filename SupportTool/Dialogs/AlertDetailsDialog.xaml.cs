@@ -82,7 +82,6 @@ namespace SupportTool.Dialogs
             foreach (var property in NewAlertData.GetType().GetProperties())
             {
                 var value = property.GetValue(NewAlertData);
-                Debug.WriteLine($"Key: {property.Name}, Value: {value}, Type: {value?.GetType()}");
             }
 
             OnPropertyChanged(nameof(NewAlertData));

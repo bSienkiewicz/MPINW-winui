@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8" ?>
-
 <Page
     x:Class="SupportTool.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -10,41 +9,76 @@
     xmlns:tableView="using:WinUI.TableView"
     mc:Ignorable="d">
 
-
     <Grid Padding="20">
-        <StackPanel Spacing="10">
-            <TextBlock
-                Grid.Column="0"
-                Style="{StaticResource TitleTextBlockStyle}"
-                Text="App Settings" />
+        <StackPanel Spacing="12">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="App Settings" />
+
+            <!--  Repository location  -->
+            <Grid
+                x:Name="RepoDirectorySettingItem"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="4">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <FontIcon
+                        Margin="16,0,16,0"
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Glyph="&#xE8B7;" />
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="14" Text="Repository Location" />
+                        <TextBlock
+                            x:Name="RepoPathTextBlock"
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Select the main Alerting repository folder" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Button
+                    Grid.Column="1"
+                    Click="SelectFolderButton_Click"
+                    Content="Select Repository" />
+            </Grid>
+
+            <!--  API Input  -->
             <Expander
                 x:Name="ExpanderSettings_NRAPI"
-                Grid.Row="0"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch">
                 <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Margin="16" Glyph="&#xF081;" />
-                        <StackPanel Padding="16">
-                            <TextBlock
-                                Margin="0,0,0,6"
-                                HorizontalAlignment="Left"
+                    <Grid Padding="16">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,16,0"
                                 VerticalAlignment="Center"
-                                FontSize="14"
-                                Text="New Relic Connection" />
-                            <TextBlock
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Text="Set up New Relic API Key" />
+                                FontSize="20"
+                                Glyph="&#xF081;" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="14" Text="New Relic Connection" />
+                                <TextBlock
+                                    Margin="0,4,0,0"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Set up New Relic API Key" />
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Expander.Header>
                 <Expander.Content>
-                    <StackPanel HorizontalAlignment="Stretch">
+                    <StackPanel Padding="16" HorizontalAlignment="Stretch">
                         <TextBox
                             Name="NR_API_KeyTextbox"
-                            Margin="0,0,0,20"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
                             Header="New Relic API Key:"
@@ -53,38 +87,40 @@
                     </StackPanel>
                 </Expander.Content>
             </Expander>
+
+            <!--  Reset settings  -->
             <Expander
                 x:Name="ExpanderSettings_RemoveAll"
-                Grid.Row="0"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch">
                 <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Margin="16" Glyph="&#xED62;" />
-                        <StackPanel Padding="16">
-                            <TextBlock
-                                Margin="0,0,0,6"
-                                HorizontalAlignment="Left"
+                    <Grid Padding="16">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,0,16,0"
                                 VerticalAlignment="Center"
-                                FontSize="14"
-                                Text="Clear application settings" />
-                            <TextBlock
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Text="Restore the app to the default settings" />
+                                FontSize="20"
+                                Glyph="&#xED62;" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="14" Text="Clear application settings" />
+                                <TextBlock
+                                    Margin="0,4,0,0"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Restore the app to the default settings" />
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Expander.Header>
                 <Expander.Content>
-                    <Grid>
+                    <Grid Padding="16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock
                             Grid.Column="0"
-                            Margin="0,5,0,0"
+                            VerticalAlignment="Center"
                             Text="Confirm clearing app settings" />
                         <Button
                             Grid.Column="1"
@@ -106,5 +142,10 @@
                 </Expander.Content>
             </Expander>
         </StackPanel>
+        <Canvas
+            x:Name="ToastContainer"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="True" />
     </Grid>
 </Page>

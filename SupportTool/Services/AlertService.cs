@@ -166,7 +166,6 @@ namespace SupportTool.Services
                     .ToArray();
         }
 
-
         public bool HasAlert(List<NrqlAlert> alerts, AppCarrierItem item, AlertType alertType)
         {
             return alertType switch

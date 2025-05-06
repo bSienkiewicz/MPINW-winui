@@ -26,7 +26,6 @@ namespace SupportTool
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
 
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
-        private readonly string[] _requiredFolders = { ".github", "ansible", "metaform", "terraform" };
         private string? _selectedFolderPath;
         private string? _selectedStack;
         private string[] _availableStacks = [];
@@ -95,20 +94,16 @@ namespace SupportTool
             }
         }
 
+        public void RefreshStacks()
+        {
+            LoadDirectory();
+            LoadStack();
+        }
+
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         #region Directory Management
-
-        private async void SelectFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            var folder = await InitializeFolderPicker().PickSingleFolderAsync();
-            if (folder != null)
-            {
-                _selectedFolderPath = folder.Path;
-                ValidateAndUpdateUi(_selectedFolderPath);
-            }
-        }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
@@ -118,56 +113,6 @@ namespace SupportTool
             if (Directory.Exists(path))
             {
                 Process.Start("explorer.exe", path);
-            }
-        }
-
-        private FolderPicker InitializeFolderPicker()
-        {
-            var folderPicker = new FolderPicker
-            {
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary
-            };
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-            folderPicker.FileTypeFilter.Add("*");
-
-            return folderPicker;
-        }
-
-        private void ValidateAndUpdateUi(string folderPath)
-        {
-            var (isValid, _) = ValidateFolder(folderPath);
-
-            if (isValid)
-            {
-                infoBar.IsOpen = false;
-                SaveDirectory();
-                stacksComboBox.ItemsSource = _alertService.GetAlertStacksFromDirectories();
-            }
-            else
-            {
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Invalid repository structure", "Please select a correct folder", InfoBarSeverity.Error, 10);
-                DeleteDirectory();
-            }
-        }
-
-        private (bool IsValid, string[] MissingFolders) ValidateFolder(string folderPath)
-        {
-            try
-            {
-                var existingFolders = Directory.GetDirectories(folderPath)
-                    .Select(path => new DirectoryInfo(path).Name)
-                    .ToArray();
-
-                var missingFolders = _requiredFolders.Except(existingFolders).ToArray();
-                return (IsValid: !missingFolders.Any(), MissingFolders: missingFolders);
-            }
-            catch (Exception)
-            {
-                return (IsValid: false, MissingFolders: _requiredFolders);
             }
         }
 
@@ -427,23 +372,40 @@ namespace SupportTool
         #endregion
 
         #region Storage Operations
-
-        private void SaveDirectory() =>
-            _settings.SetSetting("NRAlertsDir", _selectedFolderPath);
-
-
-        private void DeleteDirectory() {
-            _settings.SetSetting("NRAlertsDir", string.Empty);
-            SelectedAlert = new NrqlAlert();
-            AlertItems.Clear();
-        }
-
         private void LoadDirectory()
         {
             _selectedFolderPath = _settings.GetSetting("NRAlertsDir");
+
             if (!string.IsNullOrEmpty(_selectedFolderPath))
             {
-                ValidateAndUpdateUi(_selectedFolderPath);
+                // Refresh available stacks when directory is loaded
+                _availableStacks = _alertService.GetAlertStacksFromDirectories();
+                stacksComboBox.ItemsSource = _availableStacks;
+
+                // Check if we have a previously selected stack
+                _selectedStack = _settings.GetSetting("SelectedStack");
+                if (!string.IsNullOrEmpty(_selectedStack) && _availableStacks.Contains(_selectedStack))
+                {
+                    stacksComboBox.SelectedItem = _selectedStack;
+                }
+                else if (_availableStacks.Length > 0)
+                {
+                    // Select first stack if no previous selection
+                    stacksComboBox.SelectedItem = _availableStacks[0];
+                }
+            }
+            else
+            {
+                // Clear the combobox if no directory is selected
+                _availableStacks = Array.Empty<string>();
+                stacksComboBox.ItemsSource = _availableStacks;
+
+                // Show message to user
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("No repository selected",
+                    "Please select a repository in Settings first",
+                    InfoBarSeverity.Warning, 5);
             }
         }
         #endregion

@@ -29,16 +29,6 @@ namespace SupportTool
         {
             InitializeComponent();
             InitializeControls();
-            PrintLocalStorageValues();
-        }
-
-        private void PrintLocalStorageValues()
-        {
-            var s = _settings.GetAllSettings();
-            foreach(var item in s)
-            {
-                Debug.WriteLine(item.ToString());
-            }
         }
 
         private void InitializeControls()
@@ -162,7 +152,6 @@ namespace SupportTool
         private void RefreshAlertStatus()
         {
             if (string.IsNullOrEmpty(_selectedStack)) return;
-            Debug.WriteLine("Refreshed UI");
 
             var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
 

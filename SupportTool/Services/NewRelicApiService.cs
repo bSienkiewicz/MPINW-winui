@@ -179,7 +179,6 @@ namespace SupportTool.Services
 
                     if (data == null)
                     {
-                        Debug.WriteLine(result);
                         throw new Exception("Invalid response format or missing data.");
                     }
 

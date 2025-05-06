@@ -60,7 +60,7 @@ namespace SupportTool.Helpers
                 Name = ReplaceTokens(t.Name, appName, carrierName),
                 Description = ReplaceTokens(t.Description, appName, carrierName),
                 Severity = t.Severity,
-                NrqlQuery = ReplaceTokens(t.NrqlQuery, appName, carrierName),
+                NrqlQuery = ReplaceTokens(t.NrqlQuery, appName, carrierName, false),
                 RunbookUrl = t.RunbookUrl,
                 Enabled = t.Enabled,
                 AggregationMethod = t.AggregationMethod,
@@ -72,11 +72,11 @@ namespace SupportTool.Helpers
             };
         }
 
-        private static string ReplaceTokens(string input, string appName, string carrierName)
+        private static string ReplaceTokens(string input, string appName, string carrierName, bool clean = true)
         {
-            string cleanApp = appName.Split('.')[0].ToUpper();
+            if (clean) appName = appName.Split('.')[0].ToUpper();
             return input
-                .Replace("{appName}", cleanApp)
+                .Replace("{appName}", appName)
                 .Replace("{carrierName}", carrierName);
         }
     }
