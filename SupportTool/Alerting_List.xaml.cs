@@ -18,13 +18,13 @@ namespace SupportTool
 {
     public sealed partial class Alerting_List : Page
     {
-        public ObservableCollection<AppCarrierItem> AppNames { get; } = new();
+        public ObservableCollection<CarrierItem> Carriers { get; } = new();
         private readonly NewRelicApiService _newRelicApiService = new();
         private readonly AlertService _alertService = new();
         private readonly SettingsService _settings = new();
         private string _selectedStack = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
-        
+
         public Alerting_List()
         {
             InitializeComponent();
@@ -33,7 +33,7 @@ namespace SupportTool
 
         private void InitializeControls()
         {
-            AppNamesList.ItemsSource = AppNames;
+            CarriersList.ItemsSource = Carriers;
 
             // Load available stacks into combo box
             var availableStacks = _alertService.GetAlertStacksFromDirectories();
@@ -55,7 +55,7 @@ namespace SupportTool
             {
                 stacksComboBox.SelectedItem = _selectedStack;
                 // Load data for the selected stack
-                _ = LoadAppNamesForStack(_selectedStack);
+                _ = LoadCarriersForStack(_selectedStack);
             }
         }
 
@@ -75,7 +75,7 @@ namespace SupportTool
         {
             if (e.AddedItems.Count > 0)
             {
-                AppNames.Clear();
+                Carriers.Clear();
 
                 // Cancel previous fetching operation
                 _cancellationTokenSource?.Cancel();
@@ -87,52 +87,50 @@ namespace SupportTool
 
                 if (IsApiKeyPresent() && _selectedStack != null)
                 {
-                    await LoadAppNamesForStack(_selectedStack, _cancellationTokenSource.Token);
+                    await LoadCarriersForStack(_selectedStack, _cancellationTokenSource.Token);
                 }
             }
         }
 
-        private async Task LoadAppNamesForStack(string stack, CancellationToken cancellationToken = default)
+        private async Task LoadCarriersForStack(string stack, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(stack)) return;
 
             try
             {
-                AppNameFetchingProgress.IsActive = true;
-                AppNameFetchingProgress.Visibility = Visibility.Visible;
+                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgress.Visibility = Visibility.Visible;
 
-                var appCarrierPairs = await _newRelicApiService.FetchAppNamesAndCarriers(stack, cancellationToken);
+                var uniqueCarriers = await _newRelicApiService.FetchCarriers(stack, cancellationToken);
                 var existingAlerts = _alertService.GetAlertsForStack(stack);
 
-                AppNames.Clear();
-                foreach (var app in appCarrierPairs)
+                Carriers.Clear();
+                foreach (var carrier in uniqueCarriers)
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    foreach (var carrier in app.Carriers)
+
+                    var item = new CarrierItem
                     {
-                        var item = new AppCarrierItem
-                        {
-                            AppName = app.AppName,
-                            CarrierName = carrier.CarrierName
-                        };
-                        item.HasPrintDurationAlert = _alertService.HasAlert(existingAlerts, item, AlertType.PrintDuration);
-                        item.HasErrorRateAlert = _alertService.HasAlert(existingAlerts, item, AlertType.ErrorRate);
-                        AppNames.Add(item);
-                    }
+                        CarrierName = carrier
+                    };
+                    item.HasPrintDurationAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
+                    item.HasErrorRateAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
+                    Carriers.Add(item);
                 }
             }
             catch (Exception ex)
             {
                 var toast = new CustomToast();
                 ToastContainer.Children.Add(toast);
-                toast.ShowToast("Error loading app-carrier data", $"{ex.Message}", InfoBarSeverity.Error, 10);
+                toast.ShowToast("Error loading carrier data", $"{ex.Message}", InfoBarSeverity.Error, 10);
             }
             finally
             {
-                AppNameFetchingProgress.IsActive = false;
-                AppNameFetchingProgress.Visibility = Visibility.Collapsed;
+                CarrierFetchingProgress.IsActive = false;
+                CarrierFetchingProgress.Visibility = Visibility.Collapsed;
             }
         }
+
 
         private async void FetchNRButton_Click(object sender, RoutedEventArgs e)
         {
@@ -140,7 +138,7 @@ namespace SupportTool
             {
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
-                await LoadAppNamesForStack(_selectedStack, _cancellationTokenSource.Token);
+                await LoadCarriersForStack(_selectedStack, _cancellationTokenSource.Token);
             }
         }
 
@@ -156,12 +154,12 @@ namespace SupportTool
             var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
 
             // Force UI update by re-adding items
-            for (int i = 0; i < AppNames.Count; i++)
+            for (int i = 0; i < Carriers.Count; i++)
             {
-                var item = AppNames[i];
+                var item = Carriers[i];
 
-                bool newPDStatus = _alertService.HasAlert(existingAlerts, item, AlertType.PrintDuration);
-                bool newERStatus = _alertService.HasAlert(existingAlerts, item, AlertType.ErrorRate);
+                bool newPDStatus = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
+                bool newERStatus = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
 
                 if (item.HasPrintDurationAlert != newPDStatus || item.HasErrorRateAlert != newERStatus)
                 {
@@ -169,15 +167,16 @@ namespace SupportTool
                     item.HasErrorRateAlert = newERStatus;
 
                     // This forces the UI to recognize the change
-                    AppNames[i] = item;
+                    Carriers[i] = item;
                 }
             }
         }
 
-        private async void AppNamesList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        private async void CarriersList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            var selectedApp = (AppCarrierItem)AppNamesList.SelectedItem;
-            var dialog = new AlertDetailsDialog(selectedApp, _selectedStack, _alertService);
+            if (CarriersList.SelectedItem is not CarrierItem selectedCarrier) return;
+
+            var dialog = new AlertDetailsDialog(selectedCarrier, _selectedStack, _alertService);
             dialog.AlertAdded += OnAlertAdded;
             await dialog.ShowAsync();
 

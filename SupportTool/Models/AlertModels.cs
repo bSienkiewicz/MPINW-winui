@@ -1,38 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace SupportTool.Models
 {
-    public class AppCarrierItem : INotifyPropertyChanged
+    // Existing model for app-carrier pair
+    public struct AppCarrierItem : IEquatable<AppCarrierItem>
     {
-        private string _appName;
-        private string _carrierName;
-        private bool _hasPrintDurationAlert = false;
-        private bool _hasErrorRateAlert = false;
+        public string AppName { get; set; }
+        public string CarrierName { get; set; }
+        public bool HasPrintDurationAlert { get; set; }
+        public bool HasErrorRateAlert { get; set; }
 
-        public string AppName
+        public bool Equals(AppCarrierItem other)
         {
-            get => _appName;
-            set
-            {
-                _appName = value;
-                OnPropertyChanged();
-                OnPropertyChanged();
-            }
+            return AppName == other.AppName && CarrierName == other.CarrierName;
         }
+
+        public override bool Equals(object obj)
+        {
+            return obj is AppCarrierItem other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(AppName, CarrierName);
+        }
+    }
+
+    // New model for carrier-only approach
+    public struct CarrierItem : IEquatable<CarrierItem>, INotifyPropertyChanged
+    {
+        private string _carrierName;
+        private bool _hasPrintDurationAlert;
+        private bool _hasErrorRateAlert;
 
         public string CarrierName
         {
             get => _carrierName;
             set
             {
-                _carrierName = value;
-                OnPropertyChanged();
+                if (_carrierName != value)
+                {
+                    _carrierName = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -54,25 +68,86 @@ namespace SupportTool.Models
             get => _hasErrorRateAlert;
             set
             {
-                _hasErrorRateAlert = value;
-                OnPropertyChanged();
+                if (_hasErrorRateAlert != value)
+                {
+                    _hasErrorRateAlert = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
-        public string ClientName => AppName?.Split('.')[0].ToUpper() ?? string.Empty;
-
-
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public bool Equals(CarrierItem other)
+        {
+            return CarrierName == other.CarrierName;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is CarrierItem other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return CarrierName?.GetHashCode() ?? 0;
+        }
+    }
+
+    // Other existing models
+    public class AppNameItem
+    {
+        public string AppName { get; set; }
+        public List<CarrierItem> Carriers { get; set; } = new List<CarrierItem>();
+    }
+
+    public class CarrierMetrics
+    {
+        public string CarrierName { get; set; }
+        public float MedianDuration { get; set; }
+        public int TotalCalls { get; set; }
+        public float ErrorRate { get; set; }
+        public List<string> TopApps { get; set; } = new List<string>();
     }
 
     public enum AlertType
     {
         PrintDuration,
         ErrorRate
+    }
+
+    public class NewRelicResponse
+    {
+        [JsonProperty("data")]
+        public Data Data { get; set; }
+    }
+
+    public class Data
+    {
+        [JsonProperty("actor")]
+        public Actor Actor { get; set; }
+    }
+
+    public class Actor
+    {
+        [JsonProperty("account")]
+        public Account Account { get; set; }
+    }
+
+    public class Account
+    {
+        [JsonProperty("nrql")]
+        public Nrql Nrql { get; set; }
+    }
+
+    public class Nrql
+    {
+        [JsonProperty("results")]
+        public List<Dictionary<string, object>> Results { get; set; }
     }
 }

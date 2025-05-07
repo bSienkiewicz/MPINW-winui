@@ -1,9 +1,9 @@
 {
     "PrintDuration": {
-        "Name": "{appName} PrintParcel duration - {carrierName}",
-        "Description": "PrintParcel duration for {appName} ({carrierName})",
+        "Name": "{carrierName} - Increased PrintParcel Duration",
+        "Description": "Faceted PrintParcel average duration for {carrierName}",
         "Severity": "CRITICAL",
-        "NrqlQuery": "SELECT average(duration) FROM Transaction where appName = '{appName}' and name = 'WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel' and PrintOperation like '%Create%' and CarrierName = '{carrierName}'",
+        "NrqlQuery": "SELECT average(duration) FROM Transaction where name = 'WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel' and PrintOperation like '%Create%' and CarrierName = '{carrierName}' facet appName",
         "RunbookUrl": "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/4314824909/Increased+print+duration",
         "Enabled": true,
         "AggregationMethod": "EVENT_FLOW",
@@ -11,13 +11,17 @@
         "CriticalOperator": "ABOVE",
         "CriticalThreshold": 0.5,
         "CriticalThresholdDuration": 600,
-        "CriticalThresholdOccurrences": "ALL"
+        "CriticalThresholdOccurrences": "ALL",
+        "ProposedValues": {
+            "FormulaMultiplier": 1.5,
+            "FormulaOffset": 3.0
+        }
     },
     "ErrorRate": {
-        "Name": "{appName} Error rate - {carrierName}",
-        "Description": "Error rate for {appName} ({carrierName})",
+        "Name": "{carrierName} - Increased Error Rate",
+        "Description": "Faceted Error Rate Percentage alert for {carrierName}",
         "Severity": "CRITICAL",
-        "NrqlQuery": "SELECT percentage(count(*), where ExitStatus = 'Error') FROM Transaction WHERE appName = '{appName}' AND name like '%.PrintParcel' and CarrierName = '{carrierName}'",
+        "NrqlQuery": "SELECT percentage(count(*), where ExitStatus = 'Error') FROM Transaction WHERE name like '%.PrintParcel' AND CarrierName = '{carrierName}' facet appName",
         "RunbookUrl": "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/4314432205/Increased+error+rate",
         "Enabled": true,
         "AggregationMethod": "EVENT_FLOW",

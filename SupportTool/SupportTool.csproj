@@ -70,9 +70,6 @@
     <Page Update="Alerting_List.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Alerting_Manager.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Update="SettingsPage.xaml">
       <SubType>Designer</SubType>
     </Page>

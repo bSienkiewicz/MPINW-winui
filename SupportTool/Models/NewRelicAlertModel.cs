@@ -166,7 +166,5 @@ namespace SupportTool.Models
     public class NRMetricsResult
     {
         public float MedianDuration { get; set; }
-        public int CreateCalls { get; set; }
-        public float CarrierPercentage { get; set; }
     }
 }

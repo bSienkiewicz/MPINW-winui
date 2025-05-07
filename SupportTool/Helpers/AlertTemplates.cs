@@ -46,7 +46,7 @@ namespace SupportTool.Helpers
             }
         }
 
-        public static NrqlAlert GetTemplate(string templateKey, string appName, string carrierName)
+        public static NrqlAlert GetTemplate(string templateKey, string carrierName)
         {
             LoadTemplates();
 
@@ -57,10 +57,10 @@ namespace SupportTool.Helpers
 
             return new NrqlAlert
             {
-                Name = ReplaceTokens(t.Name, appName, carrierName),
-                Description = ReplaceTokens(t.Description, appName, carrierName),
+                Name = ReplaceTokens(t.Name, carrierName),
+                Description = ReplaceTokens(t.Description, carrierName),
                 Severity = t.Severity,
-                NrqlQuery = ReplaceTokens(t.NrqlQuery, appName, carrierName, false),
+                NrqlQuery = ReplaceTokens(t.NrqlQuery, carrierName, false),
                 RunbookUrl = t.RunbookUrl,
                 Enabled = t.Enabled,
                 AggregationMethod = t.AggregationMethod,
@@ -72,11 +72,9 @@ namespace SupportTool.Helpers
             };
         }
 
-        private static string ReplaceTokens(string input, string appName, string carrierName, bool clean = true)
+        private static string ReplaceTokens(string input, string carrierName, bool clean = true)
         {
-            if (clean) appName = appName.Split('.')[0].ToUpper();
             return input
-                .Replace("{appName}", appName)
                 .Replace("{carrierName}", carrierName);
         }
     }

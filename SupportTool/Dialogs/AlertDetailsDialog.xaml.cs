@@ -12,6 +12,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Globalization;
 using SupportTool.CustomControls;
+using Microsoft.UI.Xaml.Media;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -45,11 +47,10 @@ namespace SupportTool.Dialogs
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public AlertDetailsDialog(AppCarrierItem item, string selectedStack, AlertService alertService)
+        public AlertDetailsDialog(CarrierItem item, string selectedStack, AlertService alertService)
         {
             InitializeComponent();
 
-            AppName = item.AppName;
             CarrierName = item.CarrierName;
             HasPrintDurationAlert = item.HasPrintDurationAlert;
             HasErrorRateAlert = item.HasErrorRateAlert;
@@ -77,7 +78,9 @@ namespace SupportTool.Dialogs
 
         private void ApplyPrintDurationTemplate_Click(object sender, RoutedEventArgs e)
         {
-            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", AppName, CarrierName);
+            FetchAverageDuration_Button.Visibility = Visibility.Visible;
+
+            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName);
 
             foreach (var property in NewAlertData.GetType().GetProperties())
             {
@@ -89,27 +92,30 @@ namespace SupportTool.Dialogs
 
         private void ApplyErrorRateTemplate_Click(object sender, RoutedEventArgs e)
         {
-            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", AppName, CarrierName);
+            FetchAverageDuration_Button.Visibility = Visibility.Collapsed;
+            ProposedThresholdText.Visibility = Visibility.Collapsed;
+
+            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", CarrierName);
             OnPropertyChanged(nameof(NewAlertData));
         }
 
-        private async void FetchMetricsButton_Click(object sender, RoutedEventArgs e)
-        {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource = new CancellationTokenSource();
+        //private async void FetchMetricsButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    _cancellationTokenSource?.Cancel();
+        //    _cancellationTokenSource = new CancellationTokenSource();
 
-            FetchMetricsButton.Visibility = Visibility.Collapsed;
-            MetricsFetchProgress.Visibility = Visibility.Visible;
-            NRMetricsResult metrics = await _newRelicApiService.FetchMetricsForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
-            double roundedDuration = Math.Round(metrics.MedianDuration, 3);
-            double calls = metrics.CreateCalls;
-            double carrierPercentage = metrics.CarrierPercentage;
+        //    FetchMetricsButton.Visibility = Visibility.Collapsed;
+        //    MetricsFetchProgress.Visibility = Visibility.Visible;
+        //    NRMetricsResult metrics = await _newRelicApiService.FetchMetricsForAppNameAndCarrier(AppName, CarrierName, _cancellationTokenSource.Token);
+        //    double roundedDuration = Math.Round(metrics.MedianDuration, 3);
+        //    double calls = metrics.CreateCalls;
+        //    double carrierPercentage = metrics.CarrierPercentage;
 
-            string metricsText = $"{calls} calls\n{Math.Round(carrierPercentage, 1)}% of all carrier calls.\nMedian call duration - {roundedDuration}s";
+        //    string metricsText = $"{calls} calls\n{Math.Round(carrierPercentage, 1)}% of all carrier calls.\nMedian call duration - {roundedDuration}s";
 
-            NRMetrics.Text = metricsText.ToString(CultureInfo.InvariantCulture);
-            MetricsFetchProgress.Visibility = Visibility.Collapsed;
-        }
+        //    NRMetrics.Text = metricsText.ToString(CultureInfo.InvariantCulture);
+        //    MetricsFetchProgress.Visibility = Visibility.Collapsed;
+        //}
 
         private void SaveButton_Click(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
@@ -141,6 +147,51 @@ namespace SupportTool.Dialogs
                 Debug.WriteLine(ex);
 
                 args.Cancel = true;
+            }
+        }
+
+        private async void FetchAverageDuration_Click(object sender, RoutedEventArgs e)
+        {
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource = new CancellationTokenSource();
+            FetchAverageDuration_Button.IsEnabled = false;
+            ProposedThresholdText.Visibility = Visibility.Visible;
+            ProposedThresholdText.Text = "Fetching data...";
+
+            try
+            {
+                float duration = await _newRelicApiService.FetchDurationForCarrier(CarrierName, _cancellationTokenSource.Token);
+
+                double proposedDuration = Math.Round((duration * 1.5 + 3) * 2.0) / 2.0;
+
+                string metricsText = $"Median call duration - {duration:F2}s. Proposed threshold - {proposedDuration:F2}";
+                ProposedThresholdText.Text = metricsText;
+
+                // Store proposed value for later use
+                ProposedThresholdText.Tag = proposedDuration;
+
+                // Make ProposedThresholdText clickable and add tooltip
+                ProposedThresholdText.IsTabStop = true;
+                ToolTipService.SetToolTip(ProposedThresholdText, "Click to use this value as threshold");
+            }
+            catch (Exception ex)
+            {
+                ProposedThresholdText.Text = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                FetchAverageDuration_Button.IsEnabled = true;
+            }
+        }
+
+        private void ProposedThresholdText_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            // Get the proposed value from the Tag property
+            if (ProposedThresholdText.Tag is double proposedValue)
+            {
+                // Set the value to the NumberBox
+                NewAlertData.CriticalThreshold = proposedValue;
+                OnPropertyChanged(nameof(NewAlertData));
             }
         }
     }

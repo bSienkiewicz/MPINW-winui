@@ -166,21 +166,37 @@ namespace SupportTool.Services
                     .ToArray();
         }
 
-        public bool HasAlert(List<NrqlAlert> alerts, AppCarrierItem item, AlertType alertType)
+
+        //public bool HasAlert(List<NrqlAlert> alerts, AppCarrierItem item, AlertType alertType)
+        //{
+        //    return alertType switch
+        //    {
+        //        AlertType.PrintDuration => alerts.Any(alert =>
+        //            alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
+        //            alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
+        //            alert.NrqlQuery.Contains($"average(duration)")),                                                        // Find average aggregate function
+
+        //        AlertType.ErrorRate => alerts.Any(alert =>
+        //            alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
+        //            alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
+        //            alert.NrqlQuery.Contains("percentage") &&                                                               // Find percentage aggregate function
+        //            alert.NrqlQuery.Contains("Error")),
+
+        //        _ => false
+        //    };
+        //}
+
+        public bool HasCarrierAlert(List<NrqlAlert> alerts, string carrier, AlertType alertType)
         {
             return alertType switch
             {
                 AlertType.PrintDuration => alerts.Any(alert =>
-                    alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
-                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
-                    alert.NrqlQuery.Contains($"average(duration)")),                                                        // Find average aggregate function
-
+                    alert.NrqlQuery.IndexOf($"{carrier}", StringComparison.OrdinalIgnoreCase) >= 0 &&                // Find CarrierName
+                    alert.NrqlQuery.Contains($"average(duration)")),                                                // Find average aggregate function
                 AlertType.ErrorRate => alerts.Any(alert =>
-                    alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
-                    alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
-                    alert.NrqlQuery.Contains("percentage") &&                                                               // Find percentage aggregate function
+                    alert.NrqlQuery.IndexOf($"{carrier}", StringComparison.OrdinalIgnoreCase) >= 0 &&                // Find CarrierName
+                    alert.NrqlQuery.Contains("percentage") &&                                                       // Find percentage aggregate function
                     alert.NrqlQuery.Contains("Error")),
-
                 _ => false
             };
         }

@@ -53,7 +53,7 @@
                 Grid.Column="0"
                 Margin="0,0,0,20"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="Alerting List" />
+                Text="Carrier Alerting" />
 
             <StackPanel
                 Grid.Column="2"
@@ -77,9 +77,7 @@
             </StackPanel>
         </Grid>
 
-
-
-        <!--  AppNames Column  -->
+        <!--  Carriers Column  -->
         <Grid
             Grid.Row="2"
             Grid.Column="0"
@@ -94,87 +92,66 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!--<SelectorBar x:Name="SelectorBar1">
-                <SelectorBarItem
-                    x:Name="SelectorBarItemRecent"
-                    Icon="List"
-                    Text="All PD/ER" />
-                <SelectorBarItem
-                    x:Name="SelectorBarItemShared"
-                    Icon="Important"
-                    IsSelected="True"
-                    Text="Missing" />
-                <SelectorBarItem
-                    x:Name="SelectorBarItemFavorites"
-                    Icon="Accept"
-                    Text="Existing" />
-            </SelectorBar>-->
+            <TextBlock
+                Grid.Row="0"
+                Margin="10,5,10,5"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Text="Double-click on a carrier to create or view alerts" />
 
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="3*" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="0"
                     HorizontalAlignment="Stretch"
-                    Content="Client Name"
+                    Content="Carrier Name"
                     CornerRadius="5,0,0,5" />
                 <Button
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
-                    Content="Carrier Name"
-                    CornerRadius="0,0,0,0" />
-                <Button
-                    Grid.Column="2"
-                    HorizontalAlignment="Stretch"
                     Content="PD Alert"
                     CornerRadius="0,0,0,0" />
                 <Button
-                    Grid.Column="3"
+                    Grid.Column="2"
                     HorizontalAlignment="Stretch"
                     Content="ER Alert"
                     CornerRadius="0,5,5,0" />
             </Grid>
 
             <ProgressRing
-                x:Name="AppNameFetchingProgress"
+                x:Name="CarrierFetchingProgress"
                 Grid.Row="2"
                 IsActive="True"
                 Visibility="Collapsed" />
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="AppNamesList" DoubleTapped="AppNamesList_DoubleTapped">
+                <ListView x:Name="CarriersList" DoubleTapped="CarriersList_DoubleTapped">
                     <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="models:AppCarrierItem">
+                        <DataTemplate x:DataType="models:CarrierItem">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="3*" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
-                                    Text="{Binding AppName}" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
                                     Text="{Binding CarrierName}" />
 
                                 <CheckBox
                                     x:Name="PDCheck"
-                                    Grid.Column="2"
+                                    Grid.Column="1"
                                     Content="Print Duration Alert"
                                     IsChecked="{x:Bind HasPrintDurationAlert}"
                                     IsEnabled="False" />
 
                                 <CheckBox
                                     x:Name="ERCheck"
-                                    Grid.Column="3"
+                                    Grid.Column="2"
                                     Content="Error Rate Alert"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
                                     IsEnabled="False" />
@@ -183,15 +160,6 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </ScrollViewer>
-
-            <TeachingTip
-                x:Name="AlertingListToast"
-                Title="Change themes without hassle"
-                CloseButtonContent="Got it!"
-                IsLightDismissEnabled="True"
-                PlacementMargin="20"
-                PreferredPlacement="Auto"
-                Subtitle="It's easier than ever to see control samples in both light and dark theme!" />
         </Grid>
 
         <Canvas
