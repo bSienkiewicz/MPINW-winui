@@ -154,6 +154,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <NumberBox
+                        x:Name="CriticalThresholdNumberBox"
                         Grid.Column="0"
                         HorizontalAlignment="Stretch"
                         AcceptsExpression="True"
@@ -168,11 +169,11 @@
                                     ToolTipService.ToolTip="The value that triggers a critical alert." />
                                 <TextBlock
                                     Name="ProposedThresholdText"
-                                    Margin="0,10,0,0"
+                                    Margin="10,5,0,5"
+                                    FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     Tapped="ProposedThresholdText_Tapped"
                                     Text="..."
-                                    TextDecorations="Underline"
                                     Visibility="Collapsed" />
                             </StackPanel>
                         </NumberBox.Header>

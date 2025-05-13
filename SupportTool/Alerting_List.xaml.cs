@@ -13,6 +13,7 @@ using SupportTool.Models;
 using SupportTool.Dialogs;
 using SupportTool.CustomControls;
 using Windows.Storage;
+using Microsoft.UI.Xaml.Media;
 
 namespace SupportTool
 {
@@ -24,6 +25,7 @@ namespace SupportTool
         private readonly SettingsService _settings = new();
         private string _selectedStack = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
+        private bool _isUpdatingHeaderCheckBox = false;
 
         public Alerting_List()
         {
@@ -111,12 +113,16 @@ namespace SupportTool
 
                     var item = new CarrierItem
                     {
-                        CarrierName = carrier
+                        CarrierName = carrier,
+                        IsSelected = false
                     };
                     item.HasPrintDurationAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
                     item.HasErrorRateAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
                     Carriers.Add(item);
                 }
+                
+                // Reset header checkbox state
+                UpdateSelectionStatus();
             }
             catch (Exception ex)
             {
@@ -130,7 +136,6 @@ namespace SupportTool
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
             }
         }
-
 
         private async void FetchNRButton_Click(object sender, RoutedEventArgs e)
         {
@@ -172,15 +177,73 @@ namespace SupportTool
             }
         }
 
-        private async void CarriersList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        private void HeaderCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (CarriersList.SelectedItem is not CarrierItem selectedCarrier) return;
+            if (_isUpdatingHeaderCheckBox) return;
 
-            var dialog = new AlertDetailsDialog(selectedCarrier, _selectedStack, _alertService);
-            dialog.AlertAdded += OnAlertAdded;
-            await dialog.ShowAsync();
+            bool isChecked = HeaderCheckBox.IsChecked ?? false;
+            foreach (var carrier in Carriers)
+            {
+                carrier.IsSelected = isChecked;
+            }
 
-            RefreshAlertStatus();
+            UpdateSelectionStatus();
+        }
+
+        private void CarrierCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
+        {
+            // Force immediate update of the header checkbox
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+            {
+                UpdateHeaderCheckBoxState();
+                UpdateSelectionStatus();
+            });
+        }
+
+        private void UpdateHeaderCheckBoxState()
+        {
+            if (Carriers.Count == 0) return;
+
+            _isUpdatingHeaderCheckBox = true;
+            try
+            {
+                bool allChecked = Carriers.All(c => c.IsSelected);
+                bool anyChecked = Carriers.Any(c => c.IsSelected);
+
+                if (allChecked)
+                {
+                    HeaderCheckBox.IsChecked = true;
+                }
+                else if (anyChecked)
+                {
+                    HeaderCheckBox.IsChecked = null; // Indeterminate state
+                }
+                else
+                {
+                    HeaderCheckBox.IsChecked = false;
+                }
+            }
+            finally
+            {
+                _isUpdatingHeaderCheckBox = false;
+            }
+        }
+
+        private void UpdateSelectionStatus()
+        {
+            int selectedCount = Carriers.Count(c => c.IsSelected);
+        }
+
+        private async void CarrierItem_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is CarrierItem selectedCarrier)
+            {
+                var dialog = new AlertDetailsDialog(selectedCarrier, _selectedStack, _alertService);
+                dialog.AlertAdded += OnAlertAdded;
+                await dialog.ShowAsync();
+
+                RefreshAlertStatus();
+            }
         }
 
         private void OnAlertAdded()

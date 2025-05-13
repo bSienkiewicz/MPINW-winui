@@ -38,11 +38,11 @@ namespace SupportTool.Dialogs
         private readonly ContentDialog _dialog;
         private readonly AlertService _alertService;
         private readonly NewRelicApiService _newRelicApiService = new();
-        private CancellationTokenSource _cancellationTokenSource;
-        private readonly string _selectedStack; 
+        private CancellationTokenSource? _cancellationTokenSource; // Initialize to null for clarity
+        private readonly string _selectedStack;
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -57,23 +57,38 @@ namespace SupportTool.Dialogs
             _selectedStack = selectedStack;
             _alertService = alertService;
 
-            _dialog = new ContentDialog
+            // It's good practice to ensure MainWindow and its Content are not null
+            if (App.MainWindow?.Content?.XamlRoot != null)
             {
-                Content = this,
-                XamlRoot = App.MainWindow.Content.XamlRoot,
-                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
-                Width = 1000,
-                CloseButtonText = "Close",
-                PrimaryButtonText = "Save",
-                DefaultButton = ContentDialogButton.Primary
-            };
-
-            _dialog.PrimaryButtonClick += SaveButton_Click;
+                _dialog = new ContentDialog
+                {
+                    Content = this,
+                    XamlRoot = App.MainWindow.Content.XamlRoot,
+                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+                    Width = 1000,
+                    CloseButtonText = "Close",
+                    PrimaryButtonText = "Save",
+                    DefaultButton = ContentDialogButton.Primary
+                };
+                _dialog.PrimaryButtonClick += SaveButton_Click;
+            }
+            else
+            {
+                Debug.WriteLine("Error: Could not create ContentDialog, XamlRoot is null.");
+                _dialog = null!;
+            }
         }
 
         public async Task ShowAsync()
         {
-            await _dialog.ShowAsync();
+            if (_dialog != null)
+            {
+                await _dialog.ShowAsync();
+            }
+            else
+            {
+                Debug.WriteLine("Error: Dialog cannot be shown because it was not initialized properly.");
+            }
         }
 
         private void ApplyPrintDurationTemplate_Click(object sender, RoutedEventArgs e)
@@ -81,11 +96,6 @@ namespace SupportTool.Dialogs
             FetchAverageDuration_Button.Visibility = Visibility.Visible;
 
             NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName);
-
-            foreach (var property in NewAlertData.GetType().GetProperties())
-            {
-                var value = property.GetValue(NewAlertData);
-            }
 
             OnPropertyChanged(nameof(NewAlertData));
         }
@@ -123,7 +133,7 @@ namespace SupportTool.Dialogs
             {
                 var alerts = _alertService.GetAlertsForStack(_selectedStack);
                 var errors = _alertService.ValidateAlertInputs(NewAlertData, alerts, checkForDuplicates: true);
-                if (errors.Count > 0)
+                if (errors.Any())
                 {
                     var errorMessage = string.Join("\n", errors);
                     var toast = new CustomToast();
@@ -133,19 +143,37 @@ namespace SupportTool.Dialogs
                     return;
                 }
 
-                if (!alerts.Contains(NewAlertData))
+                if (!alerts.Contains(NewAlertData)) // Assuming NrqlAlert has proper equality comparison or this is intended reference check
                 {
                     alerts.Add(NewAlertData);
                     _alertService.SaveAlertsToFile(_selectedStack, alerts);
                     AlertAdded?.Invoke();
 
-                    _dialog.Hide();
+                    _dialog?.Hide(); // Dialog might be null if initialization failed
+                }
+                else
+                {
+                    // Handle case where alert might be considered a duplicate (if Contains is not sufficient)
+                    Debug.WriteLine("Information: Alert not added as it's considered a duplicate or already exists.");
+                    var toast = new CustomToast();
+                    if (ToastContainer != null)
+                    {
+                        ToastContainer.Children.Add(toast);
+                        toast.ShowToast("Information", "This alert already exists or is a duplicate.", InfoBarSeverity.Informational, 5);
+                    }
+                    args.Cancel = true;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Debug.WriteLine($"SaveButton_Click Error: {ex}");
 
+                var toast = new CustomToast();
+                if (ToastContainer != null)
+                {
+                    ToastContainer.Children.Add(toast);
+                    toast.ShowToast("Save Error", $"An unexpected error occurred: {ex.Message}", InfoBarSeverity.Error, 10);
+                }
                 args.Cancel = true;
             }
         }
@@ -156,31 +184,101 @@ namespace SupportTool.Dialogs
             _cancellationTokenSource = new CancellationTokenSource();
             FetchAverageDuration_Button.IsEnabled = false;
             ProposedThresholdText.Visibility = Visibility.Visible;
-            ProposedThresholdText.Text = "Fetching data...";
+            ProposedThresholdText.Text = "Fetching statistics...";
 
             try
             {
-                float duration = await _newRelicApiService.FetchDurationForCarrier(CarrierName, _cancellationTokenSource.Token);
+                if (string.IsNullOrWhiteSpace(CarrierName))
+                {
+                    ProposedThresholdText.Text = "Error: Carrier name is not set.";
+                    return;
+                }
 
-                double proposedDuration = Math.Round((duration * 1.5 + 3) * 2.0) / 2.0;
+                // Fetch statistics (Average and StdDev)
+                CarrierDurationStatistics stats = await _newRelicApiService.FetchDurationStatisticsForCarrierAsync(CarrierName, _cancellationTokenSource.Token);
 
-                string metricsText = $"Median call duration - {duration:F2}s. Proposed threshold - {proposedDuration:F2}";
-                ProposedThresholdText.Text = metricsText;
+                if (!stats.HasData)
+                {
+                    Debug.WriteLine(stats.ToString());
+                    ProposedThresholdText.Text = $"No performance data found for {CarrierName}. Cannot propose threshold.";
+                    return;
+                }
 
-                // Store proposed value for later use
-                ProposedThresholdText.Tag = proposedDuration;
+                // Get calculation method and parameters from config
+                string? method = AlertTemplates.GetConfigValue<string>("PrintDuration.ProposedValues.Method");
 
-                // Make ProposedThresholdText clickable and add tooltip
+                if (method == "StdDev")
+                {
+                    float? k = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.StdDevMultiplier");
+                    float? minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
+                    float? maxThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MaximumAbsoluteThreshold");
+                    float? minStdDev = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumStdDev");
+
+                    if (!k.HasValue)
+                    {
+                        ProposedThresholdText.Text = "Error: 'StdDevMultiplier' missing in config.";
+                        return;
+                    }
+
+                    float actualStdDev = stats.StandardDeviation;
+                    if (minStdDev.HasValue && actualStdDev < minStdDev.Value)
+                    {
+                        actualStdDev = minStdDev.Value; // Use minimum configured stddev if actual is too low
+                    }
+
+                    double proposedDuration = stats.AverageDuration + (k.Value * actualStdDev);
+
+                    // Apply min/max caps for the proposed duration
+                    if (minThreshold.HasValue && proposedDuration < minThreshold.Value)
+                    {
+                        proposedDuration = minThreshold.Value;
+                    }
+                    if (maxThreshold.HasValue && proposedDuration > maxThreshold.Value)
+                    {
+                        proposedDuration = maxThreshold.Value;
+                    }
+
+                    // Round to nearest 0.5 (or desired precision)
+                    proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0; // Rounds to nearest 0.5
+
+                    string metricsText = $"Avg: {stats.AverageDuration:F2}s, StdDev: {stats.StandardDeviation:F2}s (using {actualStdDev:F2}s).\nProposed threshold: {proposedDuration:F2}s";
+                    ProposedThresholdText.Text = metricsText;
+                    ProposedThresholdText.Tag = proposedDuration;
+                }
+                else
+                {
+                    // Fallback or handle other methods if you implement them
+                    // For now, just use the old method if "StdDev" isn't specified or parameters are missing.
+                    // This part can be removed if you only want to support StdDev for now.
+                    float durationMultiplier = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaMultiplier") ?? 1.5f;
+                    float durationOffset = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaOffset") ?? 3.0f;
+                    double proposedDurationFallback = Math.Round(stats.AverageDuration * durationMultiplier + durationOffset, 2); // Rounds to 2 decimal places
+                    // Round to nearest 0.5
+                    proposedDurationFallback = Math.Round(proposedDurationFallback * 2.0) / 2.0;
+
+
+                    string metricsText = $"Avg: {stats.AverageDuration:F2}s.\nProposed threshold (fallback formula): {proposedDurationFallback:F2}s";
+                    ProposedThresholdText.Text = metricsText;
+                    ProposedThresholdText.Tag = proposedDurationFallback;
+                }
+
                 ProposedThresholdText.IsTabStop = true;
-                ToolTipService.SetToolTip(ProposedThresholdText, "Click to use this value as threshold");
+                ToolTipService.SetToolTip(ProposedThresholdText, "Click to use this value as threshold.");
+
+            }
+            catch (OperationCanceledException)
+            {
+                ProposedThresholdText.Text = "Operation cancelled.";
             }
             catch (Exception ex)
             {
                 ProposedThresholdText.Text = $"Error: {ex.Message}";
+                Debug.WriteLine($"FetchAverageDuration_Click Error: {ex}");
             }
             finally
             {
                 FetchAverageDuration_Button.IsEnabled = true;
+                FetchAverageDuration_Button.Focus(FocusState.Programmatic);
             }
         }
 
@@ -192,6 +290,7 @@ namespace SupportTool.Dialogs
                 // Set the value to the NumberBox
                 NewAlertData.CriticalThreshold = proposedValue;
                 OnPropertyChanged(nameof(NewAlertData));
+                CriticalThresholdNumberBox.Focus(FocusState.Programmatic);
             }
         }
     }

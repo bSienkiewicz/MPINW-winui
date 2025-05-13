@@ -100,22 +100,29 @@
 
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30" />
                     <ColumnDefinition Width="3*" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                 </Grid.ColumnDefinitions>
-                <Button
+                <CheckBox
+                    x:Name="HeaderCheckBox"
                     Grid.Column="0"
+                    Checked="HeaderCheckBox_CheckedChanged"
+                    ToolTipService.ToolTip="Select/Deselect All Carriers"
+                    Unchecked="HeaderCheckBox_CheckedChanged" />
+                <Button
+                    Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     Content="Carrier Name"
                     CornerRadius="5,0,0,5" />
                 <Button
-                    Grid.Column="1"
+                    Grid.Column="2"
                     HorizontalAlignment="Stretch"
                     Content="PD Alert"
                     CornerRadius="0,0,0,0" />
                 <Button
-                    Grid.Column="2"
+                    Grid.Column="3"
                     HorizontalAlignment="Stretch"
                     Content="ER Alert"
                     CornerRadius="0,5,5,0" />
@@ -128,30 +135,32 @@
                 Visibility="Collapsed" />
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="CarriersList" DoubleTapped="CarriersList_DoubleTapped">
+                <ListView x:Name="CarriersList" SelectionMode="Single">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:CarrierItem">
-                            <Grid>
+                            <Grid DoubleTapped="CarrierItem_DoubleTapped">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="3*" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding CarrierName}" />
-
                                 <CheckBox
-                                    x:Name="PDCheck"
+                                    Grid.Column="0"
+                                    Checked="CarrierCheckBox_CheckedChanged"
+                                    IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                                    Unchecked="CarrierCheckBox_CheckedChanged" />
+                                <TextBlock
                                     Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind CarrierName}" />
+                                <CheckBox
+                                    Grid.Column="2"
                                     Content="Print Duration Alert"
                                     IsChecked="{x:Bind HasPrintDurationAlert}"
                                     IsEnabled="False" />
-
                                 <CheckBox
-                                    x:Name="ERCheck"
-                                    Grid.Column="2"
+                                    Grid.Column="3"
                                     Content="Error Rate Alert"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
                                     IsEnabled="False" />
@@ -161,6 +170,7 @@
                 </ListView>
             </ScrollViewer>
         </Grid>
+
 
         <Canvas
             x:Name="ToastContainer"

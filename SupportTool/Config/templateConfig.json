@@ -13,8 +13,13 @@
         "CriticalThresholdDuration": 600,
         "CriticalThresholdOccurrences": "ALL",
         "ProposedValues": {
-            "FormulaMultiplier": 1.5,
-            "FormulaOffset": 3.0
+            "__comment": "Proposed value calculation = `AverageWebDuration + (StdDevMultiplier * ActualStdDev)`. MinimumStdDev prevents stable carriers from alerting too often. Thresholds keep the duration in a reasonable timeframe",
+            "Method": "StdDev",
+            "StdDevMultiplier": 3.0,
+            "MinimumAbsoluteThreshold": 3.0,
+            "MaximumAbsoluteThreshold": 10.0,
+            "MinimumStdDev": 1.0,
+            "SamplingDays": 7
         }
     },
     "ErrorRate": {

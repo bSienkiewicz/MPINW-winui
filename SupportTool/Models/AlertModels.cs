@@ -31,11 +31,25 @@ namespace SupportTool.Models
     }
 
     // New model for carrier-only approach
-    public struct CarrierItem : IEquatable<CarrierItem>, INotifyPropertyChanged
+    public class CarrierItem : IEquatable<CarrierItem>, INotifyPropertyChanged
     {
         private string _carrierName;
         private bool _hasPrintDurationAlert;
         private bool _hasErrorRateAlert;
+        private bool _isSelected;
+
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged(nameof(IsSelected));
+                }
+            }
+        }
 
         public string CarrierName
         {
@@ -78,7 +92,7 @@ namespace SupportTool.Models
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
