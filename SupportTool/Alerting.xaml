@@ -156,6 +156,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="auto" />
                     </Grid.RowDefinitions>
+
                     <ScrollView Grid.Row="0">
                         <StackPanel Padding="10" Spacing="10">
 
@@ -171,6 +172,19 @@
                                 </TextBox.Header>
                             </TextBox>
 
+                            <TextBox
+                                AcceptsReturn="True"
+                                Header="Description:"
+                                Text="{x:Bind WorkingCopy.Description, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+
+                            <TextBox
+                                MinHeight="100"
+                                AcceptsReturn="True"
+                                Header="NRQL Query:"
+                                Text="{x:Bind WorkingCopy.NrqlQuery, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 ItemsSource="{x:Bind Severities}"
@@ -184,18 +198,99 @@
                                 </ComboBox.Header>
                             </ComboBox>
 
-                            <TextBox
-                                AcceptsReturn="True"
-                                Header="Description:"
-                                Text="{x:Bind WorkingCopy.Description, Mode=TwoWay}"
-                                TextWrapping="Wrap" />
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind CriticalOperators}"
+                                SelectedItem="{x:Bind WorkingCopy.CriticalOperator, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Operator:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The operator used to compare the aggregated data against the critical threshold." />
+                                </ComboBox.Header>
+                            </ComboBox>
 
-                            <TextBox
-                                MinHeight="100"
-                                AcceptsReturn="True"
-                                Header="NRQL Query:"
-                                Text="{x:Bind WorkingCopy.NrqlQuery, Mode=TwoWay}"
-                                TextWrapping="Wrap" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox
+                                    x:Name="CriticalThresholdNumberBox"
+                                    Grid.Column="0"
+                                    HorizontalAlignment="Stretch"
+                                    AcceptsExpression="True"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind WorkingCopy.CriticalThreshold, Mode=TwoWay}">
+                                    <NumberBox.Header>
+                                        <StackPanel Orientation="Vertical">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock
+                                                    x:Name="CritaicalThresholdBlock"
+                                                    VerticalAlignment="Center"
+                                                    Text="Critical Threshold:"
+                                                    TextDecorations="Underline"
+                                                    ToolTipService.ToolTip="The value that triggers a critical alert." />
+                                                <ProgressRing
+                                                    x:Name="FetchProgressRing"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Margin="20,0,0,0"
+                                                    IsActive="{x:Bind IsFetchingDuration, Mode=OneWay}"
+                                                    Visibility="{x:Bind IsFetchingDuration, Mode=OneWay}" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Name="ProposedThresholdText"
+                                                Margin="10,5,0,5"
+                                                FontSize="12"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Tapped="ProposedThresholdText_Tapped"
+                                                Text="..."
+                                                Visibility="Collapsed" />
+                                        </StackPanel>
+                                    </NumberBox.Header>
+                                </NumberBox>
+                                <Button
+                                    x:Name="FetchDurationButton"
+                                    Grid.Column="1"
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Bottom"
+                                    Click="FetchDurationButton_Click"
+                                    IsEnabled="{x:Bind IsFetchDurationEnabled, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Fetch suggested duration threshold for this carrier"
+                                    Visibility="{x:Bind ShowFetchDurationButton, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE9D2;" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.CriticalThresholdDuration, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Duration:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="How long the condition must be met to trigger an alert." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind ThresholdOccurrences}"
+                                SelectedItem="{x:Bind WorkingCopy.CriticalThresholdOccurrences, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Occurrences:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="How many times the condition must occur to trigger an alert." />
+                                </ComboBox.Header>
+                            </ComboBox>
 
                             <TextBox Text="{x:Bind WorkingCopy.RunbookUrl, Mode=TwoWay}">
                                 <TextBox.Header>
@@ -245,58 +340,6 @@
                                         ToolTipService.ToolTip="The time window over which data is aggregated before being evaluated against the threshold." />
                                 </NumberBox.Header>
                             </NumberBox>
-
-                            <ComboBox
-                                HorizontalAlignment="Stretch"
-                                ItemsSource="{x:Bind CriticalOperators}"
-                                SelectedItem="{x:Bind WorkingCopy.CriticalOperator, Mode=TwoWay}">
-                                <ComboBox.Header>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Text="Critical Operator:"
-                                        TextDecorations="Underline"
-                                        ToolTipService.ToolTip="The operator used to compare the aggregated data against the critical threshold." />
-                                </ComboBox.Header>
-                            </ComboBox>
-
-                            <NumberBox
-                                AcceptsExpression="True"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind WorkingCopy.CriticalThreshold, Mode=TwoWay}">
-                                <NumberBox.Header>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Text="Critical Threshold:"
-                                        TextDecorations="Underline"
-                                        ToolTipService.ToolTip="The value that triggers a critical alert." />
-                                </NumberBox.Header>
-                            </NumberBox>
-
-                            <NumberBox
-                                AcceptsExpression="True"
-                                Minimum="0"
-                                Value="{x:Bind WorkingCopy.CriticalThresholdDuration, Mode=TwoWay}">
-                                <NumberBox.Header>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Text="Critical Threshold Duration:"
-                                        TextDecorations="Underline"
-                                        ToolTipService.ToolTip="How long the condition must be met to trigger an alert." />
-                                </NumberBox.Header>
-                            </NumberBox>
-
-                            <ComboBox
-                                HorizontalAlignment="Stretch"
-                                ItemsSource="{x:Bind ThresholdOccurrences}"
-                                SelectedItem="{x:Bind WorkingCopy.CriticalThresholdOccurrences, Mode=TwoWay}">
-                                <ComboBox.Header>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Text="Critical Threshold Occurrences:"
-                                        TextDecorations="Underline"
-                                        ToolTipService.ToolTip="How many times the condition must occur to trigger an alert." />
-                                </ComboBox.Header>
-                            </ComboBox>
 
                             <Expander
                                 Margin="0,50,0,0"

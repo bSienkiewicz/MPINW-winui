@@ -15,6 +15,7 @@ using SupportTool.CustomControls;
 using SupportTool.Models;
 using Microsoft.UI.Xaml.Data;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SupportTool
 {
@@ -29,6 +30,7 @@ namespace SupportTool
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
         private string? _selectedFolderPath;
         private string? _selectedStack;
+        private NewRelicApiService _newRelicApiService = new();
         private string[] _availableStacks = [];
         private readonly AlertService _alertService = new();
         private readonly SettingsService _settings = new();
@@ -42,12 +44,47 @@ namespace SupportTool
         private NrqlAlert _originalAlert;
         private NrqlAlert _workingCopy;
 
+        private bool _showFetchDurationButton = false;
+        private bool _isFetchDurationEnabled = true;
+        private bool _isFetchingDuration = false;
+
+        public bool ShowFetchDurationButton
+        {
+            get => _showFetchDurationButton;
+            set
+            {
+                _showFetchDurationButton = value;
+                OnPropertyChanged(nameof(ShowFetchDurationButton));
+            }
+        }
+
+        public bool IsFetchDurationEnabled
+        {
+            get => _isFetchDurationEnabled;
+            set
+            {
+                _isFetchDurationEnabled = value;
+                OnPropertyChanged(nameof(IsFetchDurationEnabled));
+            }
+        }
+
+        public bool IsFetchingDuration
+        {
+            get => _isFetchingDuration;
+            set
+            {
+                _isFetchingDuration = value;
+                OnPropertyChanged(nameof(IsFetchingDuration));
+            }
+        }
+
         public NrqlAlert WorkingCopy
         {
             get => _workingCopy;
             set
             {
                 _workingCopy = value;
+                UpdateFetchDurationButtonVisibility();
                 OnPropertyChanged(nameof(WorkingCopy));
             }
         }
@@ -63,6 +100,9 @@ namespace SupportTool
                 
                 // Populate additional fields for UI
                 PopulateAdditionalFields();
+                
+                // Update fetch button visibility
+                UpdateFetchDurationButtonVisibility();
                 
                 OnPropertyChanged(nameof(SelectedAlert));
                 OnPropertyChanged(nameof(WorkingCopy));
@@ -531,6 +571,104 @@ namespace SupportTool
             if (sender is Button button && button.DataContext is AdditionalField field)
             {
                 AdditionalFields.Remove(field);
+            }
+        }
+
+        private void UpdateFetchDurationButtonVisibility()
+        {
+            if (_workingCopy == null)
+            {
+                ShowFetchDurationButton = false;
+                return;
+            }
+
+            // Check if NRQL contains 'average(duration)' and title contains carrier name
+            bool hasAverageDuration = _workingCopy.NrqlQuery?.ToLower().Contains("average(duration)") == true;
+            bool hasCarrierInTitle = !string.IsNullOrEmpty(ExtractCarrierFromTitle(_workingCopy.Name));
+            
+            ShowFetchDurationButton = hasAverageDuration && hasCarrierInTitle;
+        }
+
+        private string ExtractCarrierFromTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                return string.Empty;
+
+            // Extract carrier name from format "Carrier - Description"
+            int dashIndex = title.IndexOf(" - ");
+            if (dashIndex > 0)
+            {
+                return title.Substring(0, dashIndex).Trim();
+            }
+
+            return string.Empty;
+        }
+
+        private async void FetchDurationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsFetchingDuration || _workingCopy == null) return;
+
+            string carrierName = ExtractCarrierFromTitle(_workingCopy.Name);
+            if (string.IsNullOrEmpty(carrierName))
+            {
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Error", "Could not extract carrier name from title", InfoBarSeverity.Error, 5);
+                return;
+            }
+
+            try
+            {
+                IsFetchingDuration = true;
+                IsFetchDurationEnabled = false;
+                CriticalThresholdNumberBox.Focus(FocusState.Programmatic);
+
+                // Use NewRelicApiService directly
+                var statistics = await _newRelicApiService.FetchDurationStatisticsForCarrierAsync(carrierName);
+                
+                // Use the same calculation logic as other places
+                double suggestedThreshold = AlertService.CalculateSuggestedThreshold(statistics);
+                
+                // Set the suggested threshold
+                _workingCopy.CriticalThreshold = suggestedThreshold;
+                OnPropertyChanged(nameof(WorkingCopy));
+
+                // Show the suggested value in the UI like AlertDetailsDialog does
+                ProposedThresholdText.Text = $"Avg: {statistics.AverageDuration:F2}s, StdDev: {statistics.StandardDeviation:F2}s.\nProposed threshold: {suggestedThreshold:F2}s";
+                ProposedThresholdText.Tag = suggestedThreshold;
+                ProposedThresholdText.Visibility = Visibility.Visible;
+
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Success", 
+                    $"Suggested threshold for {carrierName}: {suggestedThreshold:F2}s", 
+                    InfoBarSeverity.Success, 5);
+            }
+            catch (Exception ex)
+            {
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Error", 
+                    $"Failed to fetch duration data: {ex.Message}", 
+                    InfoBarSeverity.Error, 5);
+            }
+            finally
+            {
+                FetchAverageDuration_Button.IsEnabled = true;
+                IsFetchingDuration = false;
+                IsFetchDurationEnabled = true;
+            }
+        }
+
+        private void ProposedThresholdText_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            // Get the proposed value from the Tag property
+            if (ProposedThresholdText.Tag is double proposedValue)
+            {
+                // Set the value to the NumberBox
+                _workingCopy.CriticalThreshold = proposedValue;
+                OnPropertyChanged(nameof(_workingCopy));
+                CriticalThresholdNumberBox.Focus(FocusState.Programmatic);
             }
         }
     }

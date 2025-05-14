@@ -17,6 +17,8 @@ using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Microsoft.UI;
+using System.Threading.Tasks;
+using System.Threading;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,14 +31,37 @@ public sealed partial class MainWindow : Window
             { "Alerting", typeof(Alerting) },
             { "NRAlertsList", typeof(Alerting_List) }
         };
+    private CancellationTokenSource _cancellationTokenSource = new();
+
     public MainWindow()
     {
         this.InitializeComponent();
+        InitializeServices();
+        _ = LoadConfigurationAsync();
         TrySetMicaBackdrop(false);
         ExtendsContentIntoTitleBar = true;
         ContentFrame.Navigated += OnNavigated;
         SetTitleBar(this.AppTitleBar);
         this.ContentFrame.Navigate(typeof(Alerting));
+    }
+
+    private void InitializeServices()
+    {
+        // Initialize any necessary services
+    }
+
+    private async Task LoadConfigurationAsync()
+    {
+        try
+        {
+            var config = await _configurationService.LoadConfigurationAsync();
+            // Update UI with configuration
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to load configuration: {ex.Message}", "Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)
@@ -104,5 +129,12 @@ public sealed partial class MainWindow : Window
             Right = AppTitleBar.Margin.Right,
             Bottom = AppTitleBar.Margin.Bottom
         };
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        base.OnClosed(e);
     }
 }

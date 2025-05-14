@@ -183,8 +183,8 @@ namespace SupportTool.Dialogs
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource = new CancellationTokenSource();
             FetchAverageDuration_Button.IsEnabled = false;
-            ProposedThresholdText.Visibility = Visibility.Visible;
-            ProposedThresholdText.Text = "Fetching statistics...";
+            FetchProgressRing.IsActive = true;
+            FetchProgressRing.Visibility = Visibility.Visible;
 
             try
             {
@@ -194,8 +194,11 @@ namespace SupportTool.Dialogs
                     return;
                 }
 
-                // Fetch statistics (Average and StdDev)
+                CriticalThresholdNumberBox.Focus(FocusState.Programmatic);
+
+                // Fetch statistics
                 CarrierDurationStatistics stats = await _newRelicApiService.FetchDurationStatisticsForCarrierAsync(CarrierName, _cancellationTokenSource.Token);
+
 
                 if (!stats.HasData)
                 {
@@ -204,67 +207,16 @@ namespace SupportTool.Dialogs
                     return;
                 }
 
-                // Get calculation method and parameters from config
-                string? method = AlertTemplates.GetConfigValue<string>("PrintDuration.ProposedValues.Method");
-
-                if (method == "StdDev")
-                {
-                    float? k = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.StdDevMultiplier");
-                    float? minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
-                    float? maxThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MaximumAbsoluteThreshold");
-                    float? minStdDev = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumStdDev");
-
-                    if (!k.HasValue)
-                    {
-                        ProposedThresholdText.Text = "Error: 'StdDevMultiplier' missing in config.";
-                        return;
-                    }
-
-                    float actualStdDev = stats.StandardDeviation;
-                    if (minStdDev.HasValue && actualStdDev < minStdDev.Value)
-                    {
-                        actualStdDev = minStdDev.Value; // Use minimum configured stddev if actual is too low
-                    }
-
-                    double proposedDuration = stats.AverageDuration + (k.Value * actualStdDev);
-
-                    // Apply min/max caps for the proposed duration
-                    if (minThreshold.HasValue && proposedDuration < minThreshold.Value)
-                    {
-                        proposedDuration = minThreshold.Value;
-                    }
-                    if (maxThreshold.HasValue && proposedDuration > maxThreshold.Value)
-                    {
-                        proposedDuration = maxThreshold.Value;
-                    }
-
-                    // Round to nearest 0.5 (or desired precision)
-                    proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0; // Rounds to nearest 0.5
-
-                    string metricsText = $"Avg: {stats.AverageDuration:F2}s, StdDev: {stats.StandardDeviation:F2}s (using {actualStdDev:F2}s).\nProposed threshold: {proposedDuration:F2}s";
-                    ProposedThresholdText.Text = metricsText;
-                    ProposedThresholdText.Tag = proposedDuration;
-                }
-                else
-                {
-                    // Fallback or handle other methods if you implement them
-                    // For now, just use the old method if "StdDev" isn't specified or parameters are missing.
-                    // This part can be removed if you only want to support StdDev for now.
-                    float durationMultiplier = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaMultiplier") ?? 1.5f;
-                    float durationOffset = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaOffset") ?? 3.0f;
-                    double proposedDurationFallback = Math.Round(stats.AverageDuration * durationMultiplier + durationOffset, 2); // Rounds to 2 decimal places
-                    // Round to nearest 0.5
-                    proposedDurationFallback = Math.Round(proposedDurationFallback * 2.0) / 2.0;
-
-
-                    string metricsText = $"Avg: {stats.AverageDuration:F2}s.\nProposed threshold (fallback formula): {proposedDurationFallback:F2}s";
-                    ProposedThresholdText.Text = metricsText;
-                    ProposedThresholdText.Tag = proposedDurationFallback;
-                }
+                // Use the centralized calculation logic
+                double proposedDuration = AlertService.CalculateSuggestedThreshold(stats);
+                
+                string metricsText = $"Avg: {stats.AverageDuration:F2}s, StdDev: {stats.StandardDeviation:F2}s.\nProposed threshold: {proposedDuration:F2}s";
+                ProposedThresholdText.Text = metricsText;
+                ProposedThresholdText.Tag = proposedDuration;
+                ProposedThresholdText.Visibility = Visibility.Visible;
 
                 ProposedThresholdText.IsTabStop = true;
                 ToolTipService.SetToolTip(ProposedThresholdText, "Click to use this value as threshold.");
-
             }
             catch (OperationCanceledException)
             {
@@ -278,7 +230,8 @@ namespace SupportTool.Dialogs
             finally
             {
                 FetchAverageDuration_Button.IsEnabled = true;
-                FetchAverageDuration_Button.Focus(FocusState.Programmatic);
+                FetchProgressRing.IsActive = false;
+                FetchProgressRing.Visibility = Visibility.Collapsed;
             }
         }
 

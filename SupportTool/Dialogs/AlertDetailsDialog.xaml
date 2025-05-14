@@ -163,12 +163,20 @@
                         Value="{x:Bind NewAlertData.CriticalThreshold, Mode=TwoWay}">
                         <NumberBox.Header>
                             <StackPanel Orientation="Vertical">
-                                <TextBlock
-                                    x:Name="CritaicalThresholdBlock"
-                                    VerticalAlignment="Center"
-                                    Text="Critical Threshold:"
-                                    TextDecorations="Underline"
-                                    ToolTipService.ToolTip="The value that triggers a critical alert." />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        x:Name="CritaicalThresholdBlock"
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The value that triggers a critical alert." />
+                                    <ProgressRing
+                                        x:Name="FetchProgressRing"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="20,0,0,0"
+                                        Visibility="Collapsed" />
+                                </StackPanel>
                                 <TextBlock
                                     Name="ProposedThresholdText"
                                     Margin="10,5,0,5"

@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SupportTool.Helpers;
 using SupportTool.Models;
 using Windows.Storage;
+using System.Threading.Tasks;
 
 namespace SupportTool.Services
 {
@@ -19,6 +20,7 @@ namespace SupportTool.Services
         private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
         private readonly string[] _requiredFolders = [".github", "ansible", "metaform", "terraform"];
         private readonly SettingsService _settings = new();
+        private readonly NewRelicApiService _newRelicApiService = new();
 
         public AlertService()
         {
@@ -166,26 +168,6 @@ namespace SupportTool.Services
                     .ToArray();
         }
 
-
-        //public bool HasAlert(List<NrqlAlert> alerts, AppCarrierItem item, AlertType alertType)
-        //{
-        //    return alertType switch
-        //    {
-        //        AlertType.PrintDuration => alerts.Any(alert =>
-        //            alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
-        //            alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
-        //            alert.NrqlQuery.Contains($"average(duration)")),                                                        // Find average aggregate function
-
-        //        AlertType.ErrorRate => alerts.Any(alert =>
-        //            alert.NrqlQuery.IndexOf($"{item.AppName.Split(".")[0]}", StringComparison.OrdinalIgnoreCase) >= 0 &&    // Find AppName
-        //            alert.NrqlQuery.Contains($"{item.CarrierName}") &&                                                      // Find CarrierName
-        //            alert.NrqlQuery.Contains("percentage") &&                                                               // Find percentage aggregate function
-        //            alert.NrqlQuery.Contains("Error")),
-
-        //        _ => false
-        //    };
-        //}
-
         public bool HasCarrierAlert(List<NrqlAlert> alerts, string carrier, AlertType alertType)
         {
             return alertType switch
@@ -218,5 +200,58 @@ namespace SupportTool.Services
             CriticalThresholdOccurrences = alert.CriticalThresholdOccurrences,
             AdditionalFields = new Dictionary<string, object>(alert.AdditionalFields)
         };
+
+        public static double CalculateSuggestedThreshold(CarrierDurationStatistics stats)
+        {
+            // Get calculation method and parameters from config
+            string? method = AlertTemplates.GetConfigValue<string>("PrintDuration.ProposedValues.Method");
+
+            if (method == "StdDev")
+            {
+                float? k = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.StdDevMultiplier");
+                float? minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
+                float? maxThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MaximumAbsoluteThreshold");
+                float? minStdDev = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumStdDev");
+
+                if (!k.HasValue)
+                {
+                    throw new InvalidOperationException("'StdDevMultiplier' missing in config.");
+                }
+
+                float actualStdDev = stats.StandardDeviation;
+                if (minStdDev.HasValue && actualStdDev < minStdDev.Value)
+                {
+                    actualStdDev = minStdDev.Value; // Use minimum configured stddev if actual is too low
+                }
+
+                double proposedDuration = stats.AverageDuration + (k.Value * actualStdDev);
+
+                // Apply min/max caps for the proposed duration
+                if (minThreshold.HasValue && proposedDuration < minThreshold.Value)
+                {
+                    proposedDuration = minThreshold.Value;
+                }
+                if (maxThreshold.HasValue && proposedDuration > maxThreshold.Value)
+                {
+                    proposedDuration = maxThreshold.Value;
+                }
+
+                // Round to nearest 0.5
+                proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0;
+                
+                return proposedDuration;
+            }
+            else
+            {
+                // Fallback method
+                float durationMultiplier = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaMultiplier") ?? 1.5f;
+                float durationOffset = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.FormulaOffset") ?? 3.0f;
+                double proposedDurationFallback = Math.Round(stats.AverageDuration * durationMultiplier + durationOffset, 2);
+                // Round to nearest 0.5
+                proposedDurationFallback = Math.Round(proposedDurationFallback * 2.0) / 2.0;
+                
+                return proposedDurationFallback;
+            }
+        }
     }
 }

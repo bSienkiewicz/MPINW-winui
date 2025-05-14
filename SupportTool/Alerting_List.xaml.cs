@@ -295,39 +295,18 @@ namespace SupportTool
                     {
                         var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName);
                         
-                        // If we have statistics for this carrier, calculate the threshold
+                        // If we have statistics for this carrier, calculate the threshold using centralized logic
                         if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)
                         {
-                            string? method = AlertTemplates.GetConfigValue<string>("PrintDuration.ProposedValues.Method");
-                            if (method == "StdDev")
+                            try
                             {
-                                float? k = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.StdDevMultiplier");
-                                float? minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
-                                float? maxThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MaximumAbsoluteThreshold");
-                                float? minStdDev = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumStdDev");
-
-                                if (k.HasValue)
-                                {
-                                    float actualStdDev = stats.StandardDeviation;
-                                    if (minStdDev.HasValue && actualStdDev < minStdDev.Value)
-                                    {
-                                        actualStdDev = minStdDev.Value;
-                                    }
-
-                                    double proposedDuration = stats.AverageDuration + (k.Value * actualStdDev);
-
-                                    if (minThreshold.HasValue && proposedDuration < minThreshold.Value)
-                                    {
-                                        proposedDuration = minThreshold.Value;
-                                    }
-                                    if (maxThreshold.HasValue && proposedDuration > maxThreshold.Value)
-                                    {
-                                        proposedDuration = maxThreshold.Value;
-                                    }
-
-                                    proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0;
-                                    printDurationAlert.CriticalThreshold = proposedDuration;
-                                }
+                                double suggestedThreshold = AlertService.CalculateSuggestedThreshold(stats);
+                                printDurationAlert.CriticalThreshold = suggestedThreshold;
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Could not calculate threshold for {carrier.CarrierName}: {ex.Message}");
+                                // Continue with default threshold from template
                             }
                         }
 
