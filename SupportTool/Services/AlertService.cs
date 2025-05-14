@@ -215,7 +215,8 @@ namespace SupportTool.Services
             CriticalOperator = alert.CriticalOperator,
             CriticalThreshold = alert.CriticalThreshold,
             CriticalThresholdDuration = alert.CriticalThresholdDuration,
-            CriticalThresholdOccurrences = alert.CriticalThresholdOccurrences
+            CriticalThresholdOccurrences = alert.CriticalThresholdOccurrences,
+            AdditionalFields = new Dictionary<string, object>(alert.AdditionalFields)
         };
     }
 }

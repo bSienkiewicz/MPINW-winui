@@ -20,21 +20,18 @@ namespace SupportTool.Helpers
             if (!arrayMatch.Success)
             {
                 Debug.WriteLine("NRQL alerts array 'nr_nrql_alerts = [...]' not found in HCL content.");
-                return alerts; // Return empty list if the main array isn't found
+                return alerts;
             }
             string alertsContent = arrayMatch.Groups[1].Value;
 
-            // Regex to find individual alert blocks { ... } within the array,
-            // allowing for preceding comments (#)
             var blockPattern = @"(?:#[^\n]*\n)*\s*\{(?<blockContent>[^{}]*)\}";
             var alertBlocks = Regex.Matches(alertsContent, blockPattern, RegexOptions.Singleline);
 
             foreach (Match match in alertBlocks)
             {
-                // Using named group "blockContent" if the pattern supports it, otherwise Group 1
                 var blockContent = match.Groups["blockContent"].Success ? match.Groups["blockContent"].Value : match.Groups[1].Value;
 
-                if (string.IsNullOrWhiteSpace(blockContent) || !blockContent.Contains("\"name\"")) // Basic check for valid block
+                if (string.IsNullOrWhiteSpace(blockContent) || !blockContent.Contains("\"name\""))
                     continue;
 
                 var alert = new NrqlAlert
@@ -46,7 +43,6 @@ namespace SupportTool.Helpers
                     Severity = ParseStringValue(blockContent, "severity"),
                     Enabled = ParseBoolValue(blockContent, "enabled"),
                     AggregationMethod = ParseStringValue(blockContent, "aggregation_method"),
-                    // Parse numeric values using helper, store as double
                     AggregationWindow = ParseDoubleValue(blockContent, "aggregation_window"),
                     AggregationDelay = ParseDoubleValue(blockContent, "aggregation_delay"),
                     CriticalOperator = ParseStringValue(blockContent, "critical_operator"),
@@ -55,13 +51,81 @@ namespace SupportTool.Helpers
                     CriticalThresholdOccurrences = ParseStringValue(blockContent, "critical_threshold_occurrences")
                 };
 
-                // Add only if the alert has a name (basic validation)
+                // Parse additional fields
+                ParseAdditionalFields(blockContent, alert);
+
                 if (!string.IsNullOrWhiteSpace(alert.Name))
                 {
                     alerts.Add(alert);
                 }
             }
             return alerts;
+        }
+
+        private void ParseAdditionalFields(string blockContent, NrqlAlert alert)
+        {
+            // Known fields that are already parsed
+            var knownFields = new HashSet<string>
+            {
+                "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
+                "aggregation_method", "aggregation_window", "aggregation_delay",
+                "critical_operator", "critical_threshold", "critical_threshold_duration",
+                "critical_threshold_occurrences"
+            };
+
+            // Find all key-value pairs in the block
+            var pattern = @"""([^""]+)""\s*=\s*([^,\n]+)";
+            var matches = Regex.Matches(blockContent, pattern);
+
+            foreach (Match match in matches)
+            {
+                var key = match.Groups[1].Value;
+                var rawValue = match.Groups[2].Value.Trim();
+
+                // Skip known fields
+                if (knownFields.Contains(key))
+                    continue;
+
+                // Parse the value based on its format
+                object value = ParseAdditionalFieldValue(rawValue);
+                alert.AdditionalFields[key] = value;
+            }
+        }
+
+        private object ParseAdditionalFieldValue(string rawValue)
+        {
+            // Remove quotes if present
+            if (rawValue.StartsWith("\"") && rawValue.EndsWith("\""))
+            {
+                return rawValue.Substring(1, rawValue.Length - 2);
+            }
+
+            // Try to parse as boolean
+            if (rawValue.ToLowerInvariant() == "true" || rawValue.ToLowerInvariant() == "false")
+            {
+                return bool.Parse(rawValue);
+            }
+
+            // Try to parse as number
+            if (double.TryParse(rawValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
+            {
+                return doubleValue;
+            }
+
+            // Try to parse as integer
+            if (int.TryParse(rawValue, NumberStyles.Any, CultureInfo.InvariantCulture, out int intValue))
+            {
+                return intValue;
+            }
+
+            // Handle null
+            if (rawValue.ToLowerInvariant() == "null")
+            {
+                return null;
+            }
+
+            // Return as string if nothing else matches
+            return rawValue;
         }
 
         private string ParseStringValue(string blockContent, string key)
@@ -102,8 +166,6 @@ namespace SupportTool.Helpers
             return value == "true";
         }
 
-
-
         private double ParseDoubleValue(string blockContent, string key)
         {
             var value = ParseStringValue(blockContent, key);
@@ -115,7 +177,7 @@ namespace SupportTool.Helpers
             var sb = new StringBuilder();
             sb.AppendLine("nr_nrql_alerts = [");
 
-            int maxKeyLength = CalculateMaxKeyLength();
+            int maxKeyLength = CalculateMaxKeyLength(alerts);
             int padLength = maxKeyLength + 1; // Padding for alignment
 
             for (int i = 0; i < alerts.Count; i++)
@@ -123,62 +185,103 @@ namespace SupportTool.Helpers
                 var alert = alerts[i];
                 sb.AppendLine("  {");
 
-                // Use appropriate Append methods based on required *output* type and model type
+                // Serialize known fields
                 AppendStringIfNotEmpty(sb, "name", alert.Name, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "description", alert.Description, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "nrql_query", alert.NrqlQuery, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "runbook_url", alert.RunbookUrl, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "severity", alert.Severity, ignoreEmptyValues, padLength);
-                AppendBooleanIfNotEmpty(sb, "enabled", alert.Enabled, ignoreEmptyValues, padLength); // Handles bool
+                AppendBooleanIfNotEmpty(sb, "enabled", alert.Enabled, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "aggregation_method", alert.AggregationMethod, ignoreEmptyValues, padLength);
-
-                // aggregation_window: Saved as string (input is double)
                 AppendStringIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow.ToString(CultureInfo.InvariantCulture), ignoreEmptyValues, padLength);
-
-                // aggregation_delay: Saved as number (input is double)
                 AppendNumericIfNotEmpty(sb, "aggregation_delay", alert.AggregationDelay, ignoreEmptyValues, padLength, "double");
-
                 AppendStringIfNotEmpty(sb, "critical_operator", alert.CriticalOperator, ignoreEmptyValues, padLength);
-
-                // critical_threshold: Saved as int or float (input is double)
                 AppendNumericIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold, ignoreEmptyValues, padLength, "threshold");
-
-                // critical_threshold_duration: Saved as int (input is double)
                 AppendNumericIfNotEmpty(sb, "critical_threshold_duration", alert.CriticalThresholdDuration, ignoreEmptyValues, padLength, "duration");
-
                 AppendStringIfNotEmpty(sb, "critical_threshold_occurrences", alert.CriticalThresholdOccurrences, ignoreEmptyValues, padLength);
+
+                // Serialize additional fields
+                SerializeAdditionalFields(sb, alert.AdditionalFields, ignoreEmptyValues = false, padLength);
 
                 sb.Append("  }");
                 if (i < alerts.Count - 1)
                 {
-                    sb.AppendLine(","); // Add comma for all but the last alert
+                    sb.AppendLine(",");
                 }
                 else
                 {
-                    sb.AppendLine(); // Newline after the last alert
+                    sb.AppendLine();
                 }
             }
 
             sb.AppendLine("]");
-            return sb.ToString().Trim(); // Trim trailing whitespace
+            return sb.ToString().Trim();
         }
 
-        private int CalculateMaxKeyLength()
+        private void SerializeAdditionalFields(StringBuilder sb, Dictionary<string, object> additionalFields, bool ignoreEmptyValues, int padLength)
         {
-            // List of keys expected in the HCL output
-            string[] keys = [
-                "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
-                 "aggregation_method", "aggregation_window", "aggregation_delay",
-                 "critical_operator", "critical_threshold", "critical_threshold_duration",
-                 "critical_threshold_occurrences"
-            ];
-            int maxKeyLength = 0;
-            foreach (var key in keys)
+            foreach (var kvp in additionalFields)
             {
-                // Length includes the quotes around the key
+                var key = kvp.Key;
+                var value = kvp.Value;
+
+                if (value == null)
+                {
+                    if (!ignoreEmptyValues)
+                    {
+                        string paddedKey = $"\"{key}\"".PadRight(padLength);
+                        sb.AppendLine($"    {paddedKey} = null");
+                    }
+                }
+                else if (value is string stringValue)
+                {
+                    AppendStringIfNotEmpty(sb, key, stringValue, ignoreEmptyValues, padLength);
+                }
+                else if (value is bool boolValue)
+                {
+                    AppendBooleanIfNotEmpty(sb, key, boolValue, ignoreEmptyValues, padLength);
+                }
+                else if (value is double || value is float || value is int || value is long)
+                {
+                    AppendNumericIfNotEmpty(sb, key, value, ignoreEmptyValues, padLength);
+                }
+                else
+                {
+                    // Fallback: convert to string
+                    AppendStringIfNotEmpty(sb, key, value.ToString(), ignoreEmptyValues, padLength);
+                }
+            }
+        }
+
+        private int CalculateMaxKeyLength(List<NrqlAlert> alerts)
+        {
+            // Include known keys
+            string[] knownKeys = [
+                "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
+                "aggregation_method", "aggregation_window", "aggregation_delay",
+                "critical_operator", "critical_threshold", "critical_threshold_duration",
+                "critical_threshold_occurrences"
+            ];
+
+            int maxKeyLength = 0;
+            
+            // Check known keys
+            foreach (var key in knownKeys)
+            {
                 int keyLength = $"\"{key}\"".Length;
                 if (keyLength > maxKeyLength) maxKeyLength = keyLength;
             }
+
+            // Check additional fields
+            foreach (var alert in alerts)
+            {
+                foreach (var key in alert.AdditionalFields.Keys)
+                {
+                    int keyLength = $"\"{key}\"".Length;
+                    if (keyLength > maxKeyLength) maxKeyLength = keyLength;
+                }
+            }
+
             return maxKeyLength;
         }
 

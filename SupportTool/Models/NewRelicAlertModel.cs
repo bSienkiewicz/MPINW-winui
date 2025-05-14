@@ -23,6 +23,7 @@ namespace SupportTool.Models
         private double _criticalThresholdDuration;
         private string _criticalThresholdOccurrences;
         private bool _valueChanged;
+        private Dictionary<string, object> _additionalFields = new Dictionary<string, object>();
 
         public string Name
         {
@@ -114,6 +115,12 @@ namespace SupportTool.Models
             }
         }
 
+        public Dictionary<string, object> AdditionalFields
+        {
+            get => _additionalFields;
+            set => SetProperty(ref _additionalFields, value ?? new Dictionary<string, object>());
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual bool SetProperty<T>(ref T storage, T value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
@@ -158,7 +165,8 @@ namespace SupportTool.Models
                 CriticalOperator = this.CriticalOperator,
                 CriticalThreshold = this.CriticalThreshold,
                 CriticalThresholdDuration = this.CriticalThresholdDuration,
-                CriticalThresholdOccurrences = this.CriticalThresholdOccurrences
+                CriticalThresholdOccurrences = this.CriticalThresholdOccurrences,
+                AdditionalFields = new Dictionary<string, object>(this.AdditionalFields)
             };
         }
     }
