@@ -35,12 +35,12 @@
             PaneDisplayMode="Left"
             SelectionChanged="NavView_SelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Alerting" Tag="Alerting">
+                <NavigationViewItem Content="Alert Manager" Tag="Alerting">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Alerting List" Tag="NRAlertsList">
+                <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xF0B5;" />
                     </NavigationViewItem.Icon>

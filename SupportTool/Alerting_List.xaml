@@ -53,7 +53,7 @@
                 Grid.Column="0"
                 Margin="0,0,0,20"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="Carrier Alert Audit" />
+                Text="Alert Audit" />
 
             <StackPanel
                 Grid.Column="2"
