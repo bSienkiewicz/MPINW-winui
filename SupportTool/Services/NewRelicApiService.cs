@@ -151,7 +151,7 @@ namespace SupportTool.Services
                 string query = $@"{{
                     actor {{
                         account(id: 400000) {{
-                            nrql(query: ""SELECT average(webDuration) AS 'AvgDuration', stddev(webDuration) AS 'StdDevDuration' FROM Transaction WHERE name LIKE '%.PrintParcel' AND CarrierName = '{carrierName}' AND PrintOperation LIKE '%Create%' SINCE {samplingDays} days ago"") {{
+                            nrql(query: ""SELECT average(duration) AS 'AvgDuration', stddev(duration) AS 'StdDevDuration' FROM Transaction WHERE name LIKE '%.PrintParcel' AND CarrierName = '{carrierName}' AND PrintOperation LIKE '%Create%' SINCE {samplingDays} days ago LIMIT MAX"") {{
                                 results
                             }}
                         }}
@@ -233,7 +233,7 @@ namespace SupportTool.Services
                 string query = $@"{{
                     actor {{
                         account(id: 400000) {{
-                            nrql(query: ""SELECT average(webDuration) AS 'AvgDuration', stddev(webDuration) AS 'StdDevDuration' FROM Transaction WHERE name LIKE '%.PrintParcel' AND CarrierName in ('{carriersList}') AND PrintOperation LIKE '%Create%' SINCE {samplingDays} days ago FACET CarrierName LIMIT MAX"") {{
+                            nrql(query: ""SELECT average(duration) AS 'AvgDuration', stddev(duration) AS 'StdDevDuration' FROM Transaction WHERE name LIKE '%.PrintParcel' AND CarrierName in ('{carriersList}') AND PrintOperation LIKE '%Create%' SINCE {samplingDays} days ago FACET CarrierName LIMIT MAX"") {{
                                 results
                             }}
                         }}

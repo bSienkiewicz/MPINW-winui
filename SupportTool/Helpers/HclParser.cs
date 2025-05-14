@@ -294,7 +294,6 @@ namespace SupportTool.Helpers
 
         public string ReplaceNrqlAlertsSection(string originalContent, List<NrqlAlert> alerts)
         {
-            // Serialize the new list of alerts (ignoring empty values for cleaner output)
             var updatedAlertsSection = SerializeAlerts(alerts, true);
 
             // Regex to find the existing nr_nrql_alerts block. Same pattern as in ParseAlerts.
