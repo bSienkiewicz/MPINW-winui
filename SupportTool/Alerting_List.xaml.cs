@@ -14,6 +14,8 @@ using SupportTool.Dialogs;
 using SupportTool.CustomControls;
 using Windows.Storage;
 using Microsoft.UI.Xaml.Media;
+using System.Collections.Generic;
+using SupportTool.Helpers;
 
 namespace SupportTool
 {
@@ -232,6 +234,142 @@ namespace SupportTool
         private void UpdateSelectionStatus()
         {
             int selectedCount = Carriers.Count(c => c.IsSelected);
+        }
+
+        private async void BatchAddButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!IsApiKeyPresent() || string.IsNullOrEmpty(_selectedStack))
+            {
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Error", "Please ensure API key is set and a stack is selected", InfoBarSeverity.Error, 5);
+                return;
+            }
+
+            var selectedCarriers = Carriers.Where(c => c.IsSelected).ToList();
+            if (!selectedCarriers.Any())
+            {
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Information", "Please select at least one carrier", InfoBarSeverity.Informational, 5);
+                return;
+            }
+
+            try
+            {
+                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgress.Visibility = Visibility.Visible;
+
+                var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
+                var alertsToAdd = new List<NrqlAlert>();
+                int addedCount = 0;
+
+                // First, collect carriers that need PrintDuration alerts
+                var carriersNeedingPrintDuration = selectedCarriers
+                    .Where(c => !c.HasPrintDurationAlert)
+                    .Select(c => c.CarrierName)
+                    .ToList();
+
+                // Fetch statistics for all carriers needing PrintDuration alerts in one request
+                Dictionary<string, CarrierDurationStatistics> durationStats = new();
+                if (carriersNeedingPrintDuration.Any())
+                {
+                    durationStats = await _newRelicApiService.FetchDurationStatisticsForCarriersAsync(carriersNeedingPrintDuration);
+                }
+
+                foreach (var carrier in selectedCarriers)
+                {
+                    // Check and add Error Rate alert if missing
+                    if (!carrier.HasErrorRateAlert)
+                    {
+                        var errorRateAlert = AlertTemplates.GetTemplate("ErrorRate", carrier.CarrierName);
+                        if (!_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.ErrorRate))
+                        {
+                            alertsToAdd.Add(errorRateAlert);
+                            addedCount++;
+                        }
+                    }
+
+                    // Check and add Print Duration alert if missing
+                    if (!carrier.HasPrintDurationAlert)
+                    {
+                        var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName);
+                        
+                        // If we have statistics for this carrier, calculate the threshold
+                        if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)
+                        {
+                            string? method = AlertTemplates.GetConfigValue<string>("PrintDuration.ProposedValues.Method");
+                            if (method == "StdDev")
+                            {
+                                float? k = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.StdDevMultiplier");
+                                float? minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
+                                float? maxThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MaximumAbsoluteThreshold");
+                                float? minStdDev = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumStdDev");
+
+                                if (k.HasValue)
+                                {
+                                    float actualStdDev = stats.StandardDeviation;
+                                    if (minStdDev.HasValue && actualStdDev < minStdDev.Value)
+                                    {
+                                        actualStdDev = minStdDev.Value;
+                                    }
+
+                                    double proposedDuration = stats.AverageDuration + (k.Value * actualStdDev);
+
+                                    if (minThreshold.HasValue && proposedDuration < minThreshold.Value)
+                                    {
+                                        proposedDuration = minThreshold.Value;
+                                    }
+                                    if (maxThreshold.HasValue && proposedDuration > maxThreshold.Value)
+                                    {
+                                        proposedDuration = maxThreshold.Value;
+                                    }
+
+                                    proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0;
+                                    printDurationAlert.CriticalThreshold = proposedDuration;
+                                }
+                            }
+                        }
+
+                        if (!_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.PrintDuration))
+                        {
+                            alertsToAdd.Add(printDurationAlert);
+                            addedCount++;
+                        }
+                    }
+                }
+
+                if (alertsToAdd.Any())
+                {
+                    // Add all new alerts to existing ones
+                    existingAlerts.AddRange(alertsToAdd);
+                    _alertService.SaveAlertsToFile(_selectedStack, existingAlerts);
+
+                    var toast = new CustomToast();
+                    ToastContainer.Children.Add(toast);
+                    toast.ShowToast("Success", $"Added {addedCount} missing alerts", InfoBarSeverity.Success, 5);
+
+                    // Refresh the alert status display
+                    RefreshAlertStatus();
+                }
+                else
+                {
+                    var toast = new CustomToast();
+                    ToastContainer.Children.Add(toast);
+                    toast.ShowToast("Information", "No missing alerts to add", InfoBarSeverity.Informational, 5);
+                }
+            }
+            catch (Exception ex)
+            {
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Error", $"Failed to add alerts: {ex.Message}", InfoBarSeverity.Error, 10);
+            }
+            finally
+            {
+                CarrierFetchingProgress.IsActive = false;
+                CarrierFetchingProgress.Visibility = Visibility.Collapsed;
+            }
         }
 
         private async void CarrierItem_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)

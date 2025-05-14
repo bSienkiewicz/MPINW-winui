@@ -147,10 +147,7 @@ namespace SupportTool.Services
                 }
                 int samplingDays = AlertTemplates.GetConfigValue<int>("PrintDuration.ProposedValues.SamplingDays");
 
-
                 string url = "https://api.newrelic.com/graphql";
-                // NRQL to get average (median) and standard deviation of webDuration
-                // Using webDuration as it's often more relevant for user-perceived latency. Adjust if 'duration' is more appropriate.
                 string query = $@"{{
                     actor {{
                         account(id: 400000) {{
@@ -178,28 +175,27 @@ namespace SupportTool.Services
                         throw new Exception($"HTTP Error: {response.StatusCode}, Response: {responseContent}");
                     }
 
-                    var result = JsonConvert.DeserializeObject<JObject>(responseContent);
+                    var jsonResult = JsonConvert.DeserializeObject<JObject>(responseContent);
 
-                    if (result?["errors"] != null && result["errors"].Any())
+                    if (jsonResult?["errors"] != null && jsonResult["errors"].Any())
                     {
-                        var errorMessage = result["errors"][0]?["message"]?.ToString() ?? "Unknown API error";
+                        var errorMessage = jsonResult["errors"][0]?["message"]?.ToString() ?? "Unknown API error";
                         throw new Exception($"API Error: {errorMessage}");
                     }
 
-                    var resultsArray = result?["data"]?["actor"]?["account"]?["nrql"]?["results"];
+                    var resultsArray = jsonResult?["data"]?["actor"]?["account"]?["nrql"]?["results"];
                     if (resultsArray == null || !resultsArray.Any())
                     {
                         Debug.WriteLine($"No results found in the response for carrier {carrierName}.");
-                        return statistics; // Returns statistics with HasData = false
+                        return statistics;
                     }
 
                     var firstResult = resultsArray.First();
-                    // New Relic's average() function returns a single value, not an object like percentile() or median() sometimes do.
-                    // Same for stddev().
                     statistics.AverageDuration = firstResult["AvgDuration"]?.ToObject<float>() ?? 0f;
                     statistics.StandardDeviation = firstResult["StdDevDuration"]?.ToObject<float>() ?? 0f;
-                    statistics.HasData = true; // Mark that we got data
+                    statistics.HasData = true;
 
+                    Debug.WriteLine($"Carrier: {carrierName}, Avg: {statistics.AverageDuration}, StdDev: {statistics.StandardDeviation}");
                     return statistics;
                 }
             }
@@ -211,8 +207,99 @@ namespace SupportTool.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in FetchDurationStatisticsForCarrierAsync for {carrierName}: {ex.Message}");
-                // Return statistics with HasData = false, or rethrow depending on desired error handling
-                return statistics; // Or throw;
+                return statistics;
+            }
+        }
+
+        public async Task<Dictionary<string, CarrierDurationStatistics>> FetchDurationStatisticsForCarriersAsync(List<string> carrierNames, CancellationToken cancellationToken = default)
+        {
+            var statistics = new Dictionary<string, CarrierDurationStatistics>();
+            try
+            {
+                string apiKey = _settingsService.GetSetting("NR_API_Key");
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    throw new Exception("API key not found in settings.");
+                }
+                if (carrierNames == null || !carrierNames.Any())
+                {
+                    throw new ArgumentException("Carrier names list cannot be empty.", nameof(carrierNames));
+                }
+
+                int samplingDays = AlertTemplates.GetConfigValue<int>("PrintDuration.ProposedValues.SamplingDays");
+                string carriersList = string.Join("', '", carrierNames.Select(c => c.Replace("'", "\\'")));
+
+                string url = "https://api.newrelic.com/graphql";
+                string query = $@"{{
+                    actor {{
+                        account(id: 400000) {{
+                            nrql(query: ""SELECT average(webDuration) AS 'AvgDuration', stddev(webDuration) AS 'StdDevDuration' FROM Transaction WHERE name LIKE '%.PrintParcel' AND CarrierName in ('{carriersList}') AND PrintOperation LIKE '%Create%' SINCE {samplingDays} days ago FACET CarrierName LIMIT MAX"") {{
+                                results
+                            }}
+                        }}
+                    }}
+                }}";
+
+                using (HttpClient client = new HttpClient())
+                {
+                    var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
+                    {
+                        Content = new StringContent(JsonConvert.SerializeObject(new { query }), Encoding.UTF8, "application/json")
+                    };
+                    requestMessage.Headers.Add("X-Api-Key", apiKey);
+
+                    HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"FetchDurationStatisticsForCarriersAsync API response: {responseContent}");
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception($"HTTP Error: {response.StatusCode}, Response: {responseContent}");
+                    }
+
+                    var jsonResult = JsonConvert.DeserializeObject<JObject>(responseContent);
+
+                    if (jsonResult?["errors"] != null && jsonResult["errors"].Any())
+                    {
+                        var errorMessage = jsonResult["errors"][0]?["message"]?.ToString() ?? "Unknown API error";
+                        throw new Exception($"API Error: {errorMessage}");
+                    }
+
+                    var resultsArray = jsonResult?["data"]?["actor"]?["account"]?["nrql"]?["results"];
+                    if (resultsArray == null || !resultsArray.Any())
+                    {
+                        Debug.WriteLine("No results found in the response for any carrier.");
+                        return statistics;
+                    }
+
+                    foreach (var resultItem in resultsArray)
+                    {
+                        string resultCarrierName = resultItem["CarrierName"]?.ToString();
+                        if (string.IsNullOrEmpty(resultCarrierName)) continue;
+
+                        var carrierStats = new CarrierDurationStatistics
+                        {
+                            AverageDuration = resultItem["AvgDuration"]?.ToObject<float>() ?? 0f,
+                            StandardDeviation = resultItem["StdDevDuration"]?.ToObject<float>() ?? 0f,
+                            HasData = true
+                        };
+
+                        Debug.WriteLine($"Carrier: {resultCarrierName}, Avg: {carrierStats.AverageDuration}, StdDev: {carrierStats.StandardDeviation}");
+                        statistics[resultCarrierName] = carrierStats;
+                    }
+
+                    return statistics;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("FetchDurationStatisticsForCarriersAsync was canceled.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in FetchDurationStatisticsForCarriersAsync: {ex.Message}");
+                return statistics;
             }
         }
     }
