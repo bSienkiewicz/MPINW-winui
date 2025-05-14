@@ -42,36 +42,61 @@
         </InfoBar>
 
         <!--  Header  -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="3">
+        <Grid Grid.Row="1" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <TextBlock
                 Grid.Column="0"
-                Margin="0,0,0,20"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="Carrier Alerting" />
+                Text="Alerting" />
 
             <StackPanel
                 Grid.Column="2"
                 VerticalAlignment="Center"
                 Orientation="Horizontal"
                 Spacing="10">
+                <Button
+                    x:Name="batchAddButton"
+                    Click="BatchAddButton_Click"
+                    IsEnabled="{x:Bind HasSelectedCarriers, Mode=OneWay}"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <FontIcon Glyph="&#xE710;" />
+                        <TextBlock Text="Add Missing Alerts" />
+                    </StackPanel>
+                </Button>
                 <ComboBox
                     x:Name="stacksComboBox"
                     Width="200"
                     PlaceholderText="Select a stack..."
                     SelectionChanged="StackComboBox_SelectionChanged" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="4"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
                 <Button
-                    x:Name="FetchNRButton"
-                    Click="FetchNRButton_Click"
-                    Style="{StaticResource AccentButtonStyle}">
+                    x:Name="refreshAlertsButton"
+                    Click="refreshAlertsButton_Click"
+                    ToolTipService.ToolTip="Refresh alert list">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xEBD3;" />
-                        <TextBlock Text="Fetch" />
+                        <FontIcon Glyph="&#xE72C;" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="openFolderButton"
+                    Click="OpenFolderButton_Click"
+                    ToolTipService.ToolTip="Open the alerts folder">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8DA;" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -164,17 +189,6 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </ScrollViewer>
-            <Button
-                x:Name="BatchAddButton"
-                Grid.Column="3"
-                Margin="10,0,0,0"
-                Click="BatchAddButton_Click"
-                Style="{StaticResource AccentButtonStyle}">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE710;" />
-                    <TextBlock Text="Add Missing Alerts" />
-                </StackPanel>
-            </Button>
         </Grid>
 
 

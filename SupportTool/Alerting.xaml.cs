@@ -14,6 +14,7 @@ using Windows.ApplicationModel.DataTransfer;
 using SupportTool.CustomControls;
 using SupportTool.Models;
 using Microsoft.UI.Xaml.Data;
+using System.Collections.Generic;
 
 namespace SupportTool
 {
@@ -58,14 +59,17 @@ namespace SupportTool
             set
             {
                 _originalAlert = value;
-
-                // Create a working copy for editing
                 _workingCopy = value != null ? (NrqlAlert)value.Clone() : new NrqlAlert();
-
+                
+                // Populate additional fields for UI
+                PopulateAdditionalFields();
+                
                 OnPropertyChanged(nameof(SelectedAlert));
                 OnPropertyChanged(nameof(WorkingCopy));
             }
         }
+
+        public ObservableCollection<AdditionalField> AdditionalFields { get; } = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -181,16 +185,8 @@ namespace SupportTool
                 AlertItems == null ||
                 _selectedStack == null) return;
 
-            // Force update all bindings from UI controls to WorkingCopy
-            BindingExpression[] bindingsToUpdate = {
-                NameTextBox.GetBindingExpression(TextBox.TextProperty)
-            };
-
-            foreach (var binding in bindingsToUpdate)
-            {
-                if (binding != null)
-                    binding.UpdateSource();
-            }
+            // Sync additional fields before validation
+            SyncAdditionalFieldsToWorkingCopy();
 
             // Validate the working copy
             var alerts = _alertService.GetAlertsForStack(_selectedStack);
@@ -199,39 +195,35 @@ namespace SupportTool
             {
                 // Show validation errors and return
                 var errorMessage = string.Join("\n", errors);
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Validation error", errorMessage, InfoBarSeverity.Error, 10);
+                ToastContainer.Children.Add(new CustomToast());
+                new CustomToast().ShowToast("Validation error", errorMessage, InfoBarSeverity.Error, 10);
                 return;
             }
 
-            // Copy the working copy values to the original
-            int index = AlertItems.IndexOf(_originalAlert);
-            if (index != -1)
-            {
-                // Update all properties
-                _originalAlert.Name = WorkingCopy.Name;
-                _originalAlert.Description = WorkingCopy.Description;
-                _originalAlert.NrqlQuery = WorkingCopy.NrqlQuery;
-                _originalAlert.RunbookUrl = WorkingCopy.RunbookUrl;
-                _originalAlert.Severity = WorkingCopy.Severity;
-                _originalAlert.Enabled = WorkingCopy.Enabled;
-                _originalAlert.AggregationMethod = WorkingCopy.AggregationMethod;
-                _originalAlert.AggregationWindow = WorkingCopy.AggregationWindow;
-                _originalAlert.AggregationDelay = WorkingCopy.AggregationDelay;
-                _originalAlert.CriticalOperator = WorkingCopy.CriticalOperator;
-                _originalAlert.CriticalThreshold = WorkingCopy.CriticalThreshold;
-                _originalAlert.CriticalThresholdDuration = WorkingCopy.CriticalThresholdDuration;
-                _originalAlert.CriticalThresholdOccurrences = WorkingCopy.CriticalThresholdOccurrences;
+            // Update all properties including additional fields
+            _originalAlert.Name = WorkingCopy.Name;
+            _originalAlert.Description = WorkingCopy.Description;
+            _originalAlert.NrqlQuery = WorkingCopy.NrqlQuery;
+            _originalAlert.RunbookUrl = WorkingCopy.RunbookUrl;
+            _originalAlert.Severity = WorkingCopy.Severity;
+            _originalAlert.Enabled = WorkingCopy.Enabled;
+            _originalAlert.AggregationMethod = WorkingCopy.AggregationMethod;
+            _originalAlert.AggregationWindow = WorkingCopy.AggregationWindow;
+            _originalAlert.AggregationDelay = WorkingCopy.AggregationDelay;
+            _originalAlert.CriticalOperator = WorkingCopy.CriticalOperator;
+            _originalAlert.CriticalThreshold = WorkingCopy.CriticalThreshold;
+            _originalAlert.CriticalThresholdDuration = WorkingCopy.CriticalThresholdDuration;
+            _originalAlert.CriticalThresholdOccurrences = WorkingCopy.CriticalThresholdOccurrences;
+            _originalAlert.AdditionalFields = new Dictionary<string, object>(WorkingCopy.AdditionalFields);
 
-                // Save to file
-                _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+            // Save to file
+            _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
 
-                // Show success toast
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Save Successful", "The alert has been saved.", InfoBarSeverity.Success, 3);
-            }
+            // Show success toast
+            var toast = new CustomToast();
+            ToastContainer.Children.Add(toast);
+            toast.ShowToast("Save Successful", "The alert has been saved.", InfoBarSeverity.Success, 3);
+
             LoadStack();
         }
 
@@ -412,15 +404,16 @@ namespace SupportTool
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            // Discard changes by recreating the working copy from the original
             if (_originalAlert != null)
             {
                 WorkingCopy = (NrqlAlert)_originalAlert.Clone();
+                PopulateAdditionalFields(); // Refresh additional fields
             }
             else
             {
                 _originalAlert = null;
                 WorkingCopy = new NrqlAlert();
+                AdditionalFields.Clear();
                 AlertsListView.SelectedItem = null;
             }
         }
@@ -446,6 +439,99 @@ namespace SupportTool
             SelectedAlert = new NrqlAlert();
             AlertsListView.SelectedItem = null;
             LoadStack();
+        }
+
+        private void PopulateAdditionalFields()
+        {
+            AdditionalFields.Clear();
+            if (_workingCopy?.AdditionalFields != null)
+            {
+                foreach (var kvp in _workingCopy.AdditionalFields)
+                {
+                    AdditionalFields.Add(new AdditionalField
+                    {
+                        Key = kvp.Key,
+                        Value = FormatValueForDisplay(kvp.Value)
+                    });
+                }
+            }
+        }
+
+        private string FormatValueForDisplay(object value)
+        {
+            return value switch
+            {
+                null => "null",
+                string str => $"\"{str}\"", // Add quotes around strings
+                bool b => b.ToString().ToLowerInvariant(),
+                _ => value.ToString()
+            };
+        }
+
+        private void SyncAdditionalFieldsToWorkingCopy()
+        {
+            if (_workingCopy == null) return;
+            
+            _workingCopy.AdditionalFields.Clear();
+            foreach (var field in AdditionalFields)
+            {
+                if (!string.IsNullOrWhiteSpace(field.Key))
+                {
+                    _workingCopy.AdditionalFields[field.Key] = ParseFieldValue(field.Value);
+                }
+            }
+        }
+
+        private object ParseFieldValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Trim() == "null")
+                return null;
+
+            value = value.Trim();
+
+            // If it's quoted, treat as string
+            if (value.StartsWith("\"") && value.EndsWith("\""))
+            {
+                return value.Substring(1, value.Length - 2);
+            }
+
+            // Try to parse as bool
+            if (value.ToLowerInvariant() == "true" || value.ToLowerInvariant() == "false")
+            {
+                return bool.Parse(value);
+            }
+
+            // Try to parse as int
+            if (int.TryParse(value, out int intValue))
+            {
+                return intValue;
+            }
+
+            // Try to parse as double
+            if (double.TryParse(value, out double doubleValue))
+            {
+                return doubleValue;
+            }
+
+            // Default to string without quotes
+            return value;
+        }
+
+        private void AddAdditionalField_Click(object sender, RoutedEventArgs e)
+        {
+            AdditionalFields.Add(new AdditionalField
+            {
+                Key = "new_field",
+                Value = "\"\""
+            });
+        }
+
+        private void RemoveAdditionalField_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is AdditionalField field)
+            {
+                AdditionalFields.Remove(field);
+            }
         }
     }
 }

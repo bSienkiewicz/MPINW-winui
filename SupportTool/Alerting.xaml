@@ -15,6 +15,7 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
         <converters:NullableIntConverter x:Key="NullableIntConverter" />
         <converters:NullableDoubleConverter x:Key="NullableDoubleConverter" />
+        <converters:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter" />
     </Page.Resources>
 
     <Grid x:Name="RootGrid" Padding="24">
@@ -296,6 +297,102 @@
                                         ToolTipService.ToolTip="How many times the condition must occur to trigger an alert." />
                                 </ComboBox.Header>
                             </ComboBox>
+
+                            <Expander
+                                Margin="0,50,0,0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch"
+                                Header="Additional Fields"
+                                IsExpanded="False">
+                                <StackPanel Spacing="10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            Text="Fields not part of the standard alert structure. Use quotes for strings, e.g., &quot;value&quot;"
+                                            TextWrapping="Wrap" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Click="AddAdditionalField_Click"
+                                            Style="{StaticResource AccentButtonStyle}">
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <FontIcon Glyph="&#xE710;" />
+                                                <TextBlock Text="Add Field" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{x:Bind AdditionalFields, Mode=OneWay}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Spacing="5" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AdditionalField">
+                                                <Border
+                                                    Margin="0,0,0,5"
+                                                    Padding="12"
+                                                    HorizontalAlignment="Stretch"
+                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4">
+                                                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBox
+                                                            Grid.Column="0"
+                                                            HorizontalAlignment="Stretch"
+                                                            Header="Key"
+                                                            PlaceholderText="field_name"
+                                                            Text="{x:Bind Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                        <TextBox
+                                                            Grid.Column="1"
+                                                            HorizontalAlignment="Stretch"
+                                                            Header="Value"
+                                                            PlaceholderText="value (use quotes for strings)"
+                                                            Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                        <Button
+                                                            Grid.Column="2"
+                                                            Margin="0,0,0,3"
+                                                            VerticalAlignment="Bottom"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="RemoveAdditionalField_Click">
+                                                            <FontIcon Glyph="&#xE738;" />
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="No additional fields"
+                                        Visibility="{x:Bind AdditionalFields.Count, Mode=OneWay, Converter={StaticResource EmptyToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
                     </ScrollView>
 
