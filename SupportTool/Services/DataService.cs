@@ -38,20 +38,9 @@ namespace SupportTool.Services
             return default(T);
         }
 
-        // Helper methods specific to your app
-        //public void SaveAppNames(ObservableCollection<AppNameItem> appNames)
-        //{
-        //    SetData("AppNames", appNames);
-        //}
-
         public void SaveStacks(string[] stacks)
         {
             SetData("Stacks", stacks);
         }
-
-        //public ObservableCollection<AppNameItem> GetAppNames()
-        //{
-        //    return GetData<ObservableCollection<AppNameItem>>("AppNames") ?? new ObservableCollection<AppNameItem>();
-        //}
     }
 }

@@ -397,7 +397,7 @@ namespace SupportTool.Helpers
 
         public string ReplaceNrqlAlertsSection(string originalContent, List<NrqlAlert> alerts)
         {
-            var updatedAlertsSection = SerializeAlerts(alerts, true);
+            var updatedAlertsSection = SerializeAlerts(alerts, false);
 
             // Regex to find the existing nr_nrql_alerts block. Same pattern as in ParseAlerts.
             var regex = new Regex(@"nr_nrql_alerts\s*=\s*\[.*?\](?=\s*(?:$|\w+\s*=))", RegexOptions.Singleline);

@@ -48,6 +48,17 @@ namespace SupportTool
         private bool _isFetchDurationEnabled = true;
         private bool _isFetchingDuration = false;
 
+        private int _additionalFieldsCount = 0;
+        public int AdditionalFieldsCount
+        {
+            get => _additionalFieldsCount;
+            set
+            {
+                _additionalFieldsCount = value;
+                OnPropertyChanged(nameof(AdditionalFieldsCount));
+            }
+        }
+
         public bool ShowFetchDurationButton
         {
             get => _showFetchDurationButton;
@@ -495,6 +506,7 @@ namespace SupportTool
                     });
                 }
             }
+            AdditionalFieldsCount = AdditionalFields.Count;
         }
 
         private string FormatValueForDisplay(object value)
@@ -564,6 +576,7 @@ namespace SupportTool
                 Key = "new_field",
                 Value = "\"\""
             });
+            AdditionalFieldsCount = AdditionalFields.Count;
         }
 
         private void RemoveAdditionalField_Click(object sender, RoutedEventArgs e)
@@ -571,6 +584,7 @@ namespace SupportTool
             if (sender is Button button && button.DataContext is AdditionalField field)
             {
                 AdditionalFields.Remove(field);
+                AdditionalFieldsCount = AdditionalFields.Count;
             }
         }
 
@@ -654,7 +668,7 @@ namespace SupportTool
             }
             finally
             {
-                FetchAverageDuration_Button.IsEnabled = true;
+                FetchDurationButton.IsEnabled = true;
                 IsFetchingDuration = false;
                 IsFetchDurationEnabled = true;
             }

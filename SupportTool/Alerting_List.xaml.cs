@@ -257,6 +257,7 @@ namespace SupportTool
 
             try
             {
+                BatchAddButton.IsEnabled = false;
                 CarrierFetchingProgress.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
@@ -282,7 +283,7 @@ namespace SupportTool
                     // Check and add Error Rate alert if missing
                     if (!carrier.HasErrorRateAlert)
                     {
-                        var errorRateAlert = AlertTemplates.GetTemplate("ErrorRate", carrier.CarrierName);
+                        var errorRateAlert = AlertTemplates.GetTemplate("ErrorRate", carrier.CarrierName, _selectedStack);
                         if (!_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.ErrorRate))
                         {
                             alertsToAdd.Add(errorRateAlert);
@@ -293,7 +294,7 @@ namespace SupportTool
                     // Check and add Print Duration alert if missing
                     if (!carrier.HasPrintDurationAlert)
                     {
-                        var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName);
+                        var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName, _selectedStack);
                         
                         // If we have statistics for this carrier, calculate the threshold using centralized logic
                         if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)

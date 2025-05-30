@@ -95,7 +95,7 @@ namespace SupportTool.Dialogs
         {
             FetchAverageDuration_Button.Visibility = Visibility.Visible;
 
-            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName);
+            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName, _selectedStack);
 
             OnPropertyChanged(nameof(NewAlertData));
         }
@@ -105,7 +105,7 @@ namespace SupportTool.Dialogs
             FetchAverageDuration_Button.Visibility = Visibility.Collapsed;
             ProposedThresholdText.Visibility = Visibility.Collapsed;
 
-            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", CarrierName);
+            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", CarrierName, _selectedStack);
             OnPropertyChanged(nameof(NewAlertData));
         }
 

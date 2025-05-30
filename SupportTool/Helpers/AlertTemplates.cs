@@ -170,7 +170,7 @@ namespace SupportTool.Helpers
             }
         }
 
-        public static NrqlAlert GetTemplate(string templateKey, string carrierName)
+        public static NrqlAlert GetTemplate(string templateKey, string carrierName, string stack)
         {
             LoadTemplates();
 
@@ -197,10 +197,10 @@ namespace SupportTool.Helpers
 
             return new NrqlAlert
             {
-                Name = ReplaceTokens(t.Name, carrierName),
-                Description = ReplaceTokens(t.Description, carrierName),
+                Name = ReplaceTokens(t.Name, carrierName, stack),
+                Description = ReplaceTokens(t.Description, carrierName, stack),
                 Severity = t.Severity,
-                NrqlQuery = ReplaceTokens(t.NrqlQuery, carrierName, false),
+                NrqlQuery = ReplaceTokens(t.NrqlQuery, carrierName, stack, false),
                 RunbookUrl = t.RunbookUrl,
                 Enabled = t.Enabled,
                 AggregationMethod = t.AggregationMethod,
@@ -212,10 +212,11 @@ namespace SupportTool.Helpers
             };
         }
 
-        private static string ReplaceTokens(string? input, string carrierName, bool clean = true)
+        private static string ReplaceTokens(string? input, string carrierName, string stack, bool clean = true)
         {
             if (string.IsNullOrEmpty(input)) return "";
-            return input.Replace("{carrierName}", carrierName);
+            return input.Replace("{carrierName}", carrierName)
+                        .Replace("{stack}", stack);
         }
     }
 }

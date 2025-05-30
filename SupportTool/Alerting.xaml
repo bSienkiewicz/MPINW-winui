@@ -109,11 +109,15 @@
                     <Button
                         Grid.Column="1"
                         Click="AddNewAlertButton_Click"
-                        Style="{StaticResource AccentButtonStyle}">
+                        Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Add new empty alert">
                         <FontIcon Glyph="&#xE710;" />
                     </Button>
 
-                    <Button Grid.Column="2" Click="SortAlertsButton_Click">
+                    <Button
+                        Grid.Column="2"
+                        Click="SortAlertsButton_Click"
+                        ToolTipService.ToolTip="Sort alerts alphabetically">
                         <FontIcon Glyph="&#xE84A;" />
                     </Button>
                 </Grid>
@@ -345,8 +349,13 @@
                                 Margin="0,50,0,0"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Stretch"
-                                Header="Additional Fields"
                                 IsExpanded="False">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <InfoBadge x:Name="infoBadge1" Value="{x:Bind AdditionalFieldsCount, Mode=OneWay}" />
+                                        <TextBlock Text="Additional Fields" />
+                                    </StackPanel>
+                                </Expander.Header>
                                 <StackPanel Spacing="10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -467,10 +476,7 @@
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
-                            <Button
-                                x:Name="deleteButton"
-                                Background="IndianRed"
-                                Foreground="Black">
+                            <Button x:Name="deleteButton">
                                 <FontIcon Glyph="&#xE74D;" />
                                 <Button.Flyout>
                                     <Flyout>
