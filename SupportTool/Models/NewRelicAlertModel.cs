@@ -22,6 +22,9 @@ namespace SupportTool.Models
         private double _criticalThreshold;
         private double _criticalThresholdDuration;
         private string _criticalThresholdOccurrences;
+        private double _expirationDuration;
+        private bool _closeViolationsOnExpiration;
+
         private bool _valueChanged;
         private Dictionary<string, object> _additionalFields = new Dictionary<string, object>();
 
@@ -103,6 +106,17 @@ namespace SupportTool.Models
             set => SetProperty(ref _criticalThresholdOccurrences, value);
         }
 
+        public double ExpirationDuration
+        {
+            get => _expirationDuration;
+            set => SetProperty(ref _expirationDuration, value);
+        }
+
+        public bool CloseViolationsOnExpiration
+        {
+            get => _closeViolationsOnExpiration;
+            set => SetProperty(ref _closeViolationsOnExpiration, value);
+        }
         public bool ValueChanged
         {
             get => _valueChanged;
@@ -166,6 +180,8 @@ namespace SupportTool.Models
                 CriticalThreshold = this.CriticalThreshold,
                 CriticalThresholdDuration = this.CriticalThresholdDuration,
                 CriticalThresholdOccurrences = this.CriticalThresholdOccurrences,
+                ExpirationDuration = this.ExpirationDuration,
+                CloseViolationsOnExpiration = this.CloseViolationsOnExpiration,
                 AdditionalFields = new Dictionary<string, object>(this.AdditionalFields)
             };
         }

@@ -265,6 +265,8 @@ namespace SupportTool
             _originalAlert.CriticalThreshold = WorkingCopy.CriticalThreshold;
             _originalAlert.CriticalThresholdDuration = WorkingCopy.CriticalThresholdDuration;
             _originalAlert.CriticalThresholdOccurrences = WorkingCopy.CriticalThresholdOccurrences;
+            _originalAlert.ExpirationDuration = WorkingCopy.ExpirationDuration;
+            _originalAlert.CloseViolationsOnExpiration = WorkingCopy.CloseViolationsOnExpiration;
             _originalAlert.AdditionalFields = new Dictionary<string, object>(WorkingCopy.AdditionalFields);
 
             // Save to file

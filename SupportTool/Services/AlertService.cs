@@ -198,6 +198,8 @@ namespace SupportTool.Services
             CriticalThreshold = alert.CriticalThreshold,
             CriticalThresholdDuration = alert.CriticalThresholdDuration,
             CriticalThresholdOccurrences = alert.CriticalThresholdOccurrences,
+            ExpirationDuration = alert.ExpirationDuration,
+            CloseViolationsOnExpiration = alert.CloseViolationsOnExpiration,
             AdditionalFields = new Dictionary<string, object>(alert.AdditionalFields)
         };
 

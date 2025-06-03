@@ -19,18 +19,20 @@ namespace SupportTool.Helpers
     // This is still useful if you want to get a whole template object
     public class TemplateData
     {
-        public string Name { get; set; } = ""; // Initialize with default value
-        public string Description { get; set; } = ""; // Initialize with default value
-        public string Severity { get; set; } = ""; // Initialize with default value
-        public string NrqlQuery { get; set; } = ""; // Initialize with default value
-        public string RunbookUrl { get; set; } = ""; // Initialize with default value
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Severity { get; set; } = "";
+        public string NrqlQuery { get; set; } = "";
+        public string RunbookUrl { get; set; } = "";
         public bool Enabled { get; set; }
-        public string AggregationMethod { get; set; } = ""; // Initialize with default value
+        public string AggregationMethod { get; set; } = "";
         public int AggregationDelay { get; set; }
-        public string CriticalOperator { get; set; } = ""; // Initialize with default value
+        public string CriticalOperator { get; set; } = "";
         public double CriticalThreshold { get; set; }
         public int CriticalThresholdDuration { get; set; }
-        public string CriticalThresholdOccurrences { get; set; } = ""; // Initialize with default value
+        public string CriticalThresholdOccurrences { get; set; } = "";
+        public double ExpirationDuration { get; set; }
+        public bool CloseViolationsOnExpiration { get; set; }
         public ProposedValuesData? ProposedValues { get; set; } // Nullable if not all templates have it
     }
 
@@ -206,9 +208,11 @@ namespace SupportTool.Helpers
                 AggregationMethod = t.AggregationMethod,
                 AggregationDelay = t.AggregationDelay,
                 CriticalOperator = t.CriticalOperator,
-                CriticalThreshold = t.CriticalThreshold, // This comes from TemplateData
+                CriticalThreshold = t.CriticalThreshold,
                 CriticalThresholdDuration = t.CriticalThresholdDuration,
-                CriticalThresholdOccurrences = t.CriticalThresholdOccurrences
+                CriticalThresholdOccurrences = t.CriticalThresholdOccurrences,
+                ExpirationDuration = t.ExpirationDuration,
+                CloseViolationsOnExpiration = t.CloseViolationsOnExpiration,
             };
         }
 

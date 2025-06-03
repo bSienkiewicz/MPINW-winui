@@ -48,7 +48,9 @@ namespace SupportTool.Helpers
                     CriticalOperator = ParseStringValue(blockContent, "critical_operator"),
                     CriticalThreshold = ParseDoubleValue(blockContent, "critical_threshold"),
                     CriticalThresholdDuration = ParseDoubleValue(blockContent, "critical_threshold_duration"),
-                    CriticalThresholdOccurrences = ParseStringValue(blockContent, "critical_threshold_occurrences")
+                    CriticalThresholdOccurrences = ParseStringValue(blockContent, "critical_threshold_occurrences"),
+                    ExpirationDuration = ParseDoubleValue(blockContent, "expiration_duration"),
+                    CloseViolationsOnExpiration = ParseBoolValue(blockContent, "close_violations_on_expiration"),
                 };
 
                 // Parse additional fields
@@ -70,7 +72,7 @@ namespace SupportTool.Helpers
                 "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
                 "aggregation_method", "aggregation_window", "aggregation_delay",
                 "critical_operator", "critical_threshold", "critical_threshold_duration",
-                "critical_threshold_occurrences"
+                "critical_threshold_occurrences", "expiration_duration", "close_violations_on_expiration"
             };
 
             // Find all key-value pairs in the block
@@ -172,6 +174,15 @@ namespace SupportTool.Helpers
             return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result) ? result : 0.0;
         }
 
+        /// <summary>
+        /// Serializes a list of alerts to HCL format.
+        /// </summary>
+        /// <param name="alerts">The list of alerts to serialize</param>
+        /// <param name="ignoreEmptyValues">If true, fields with empty/null values will be omitted from the output.
+        /// Note: This does not affect the special handling of Loss of Signal fields, which are omitted when:
+        /// - close_violations_on_expiration is false
+        /// - expiration_duration is 0</param>
+        /// <returns>The serialized HCL string</returns>
         public string SerializeAlerts(List<NrqlAlert> alerts, bool ignoreEmptyValues)
         {
             var sb = new StringBuilder();
@@ -199,6 +210,8 @@ namespace SupportTool.Helpers
                 AppendNumericIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold, ignoreEmptyValues, padLength, "threshold");
                 AppendNumericIfNotEmpty(sb, "critical_threshold_duration", alert.CriticalThresholdDuration, ignoreEmptyValues, padLength, "duration");
                 AppendStringIfNotEmpty(sb, "critical_threshold_occurrences", alert.CriticalThresholdOccurrences, ignoreEmptyValues, padLength);
+                AppendNumericIfNotEmpty(sb, "expiration_duration", alert.ExpirationDuration, ignoreEmptyValues, padLength, "duration");
+                AppendBooleanIfNotEmpty(sb, "close_violations_on_expiration", alert.CloseViolationsOnExpiration, ignoreEmptyValues, padLength);
 
                 // Serialize additional fields
                 SerializeAdditionalFields(sb, alert.AdditionalFields, ignoreEmptyValues = false, padLength);
@@ -260,7 +273,7 @@ namespace SupportTool.Helpers
                 "name", "description", "nrql_query", "runbook_url", "severity", "enabled",
                 "aggregation_method", "aggregation_window", "aggregation_delay",
                 "critical_operator", "critical_threshold", "critical_threshold_duration",
-                "critical_threshold_occurrences"
+                "critical_threshold_occurrences", "expiration_duration", "close_violations_on_expiration"
             ];
 
             int maxKeyLength = 0;
@@ -295,15 +308,44 @@ namespace SupportTool.Helpers
             }
         }
 
+        /// <summary>
+        /// Appends a boolean value to the HCL output if it should be included.
+        /// </summary>
+        /// <param name="sb">The StringBuilder to append to</param>
+        /// <param name="key">The field name</param>
+        /// <param name="value">The boolean value</param>
+        /// <param name="ignoreEmptyValues">If true, null values will be omitted (not applicable for booleans)</param>
+        /// <param name="padLength">The length to pad the key for alignment</param>
+        /// <remarks>
+        /// Special handling: The close_violations_on_expiration field is omitted when its value is false,
+        /// regardless of the ignoreEmptyValues parameter.
+        /// </remarks>
         private void AppendBooleanIfNotEmpty(StringBuilder sb, string key, bool value, bool ignoreEmptyValues, int padLength)
         {
-            // Note: Booleans usually aren't "empty". If 'false' should always be included,
-            // remove the 'ignoreEmptyValues' check logic if it were added.
+            // Skip writing close_violations_on_expiration if it's false
+            if (key == "close_violations_on_expiration" && !value)
+            {
+                return;
+            }
+
             string stringValue = value.ToString().ToLowerInvariant();
             string paddedKey = $"\"{key}\"".PadRight(padLength);
             sb.AppendLine($"    {paddedKey} = {stringValue}");
         }
 
+        /// <summary>
+        /// Appends a numeric value to the HCL output if it should be included.
+        /// </summary>
+        /// <param name="sb">The StringBuilder to append to</param>
+        /// <param name="key">The field name</param>
+        /// <param name="value">The numeric value</param>
+        /// <param name="ignoreEmptyValues">If true, null values will be omitted</param>
+        /// <param name="padLength">The length to pad the key for alignment</param>
+        /// <param name="numericTypeHint">A hint about the type of number being written (threshold, duration, or double)</param>
+        /// <remarks>
+        /// Special handling: The expiration_duration field is omitted when its value is 0,
+        /// regardless of the ignoreEmptyValues parameter.
+        /// </remarks>
         private void AppendNumericIfNotEmpty(StringBuilder sb, string key, object value, bool ignoreEmptyValues, int padLength, string numericTypeHint = "double")
         {
             // Handle null input
@@ -334,6 +376,11 @@ namespace SupportTool.Helpers
                 return; // Skip this key if conversion fails
             }
 
+            // Skip writing expiration_duration if it's 0
+            if (key == "expiration_duration" && dblValue == 0)
+            {
+                return;
+            }
 
             string stringValue;
 

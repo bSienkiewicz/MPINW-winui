@@ -255,6 +255,23 @@ namespace SupportTool
                 return;
             }
 
+            // Create and show confirmation dialog
+            var dialog = new ContentDialog
+            {
+                Title = "Confirm Adding Alerts",
+                Content = $"Are you sure you want to add missing alerts for {selectedCarriers.Count} selected carrier(s)?",
+                PrimaryButtonText = "Yes, add alerts",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = RootGrid.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
             try
             {
                 BatchAddButton.IsEnabled = false;

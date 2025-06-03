@@ -272,7 +272,23 @@
                             VerticalAlignment="Center"
                             Text="Aggregation Window:"
                             TextDecorations="Underline"
-                            ToolTipService.ToolTip="he time window over which data is aggregated before being evaluated against the threshold." />
+                            ToolTipService.ToolTip="The time window over which data is aggregated before being evaluated against the threshold." />
+                    </NumberBox.Header>
+                </NumberBox>
+
+
+                <CheckBox Content="Loss Of Signal Enabled" IsChecked="{x:Bind NewAlertData.CloseViolationsOnExpiration, Mode=TwoWay}" />
+
+                <NumberBox
+                    AcceptsExpression="True"
+                    Minimum="0"
+                    Value="{x:Bind NewAlertData.ExpirationDuration, Mode=TwoWay}">
+                    <NumberBox.Header>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="Loss Of Signal Duration:"
+                            TextDecorations="Underline"
+                            ToolTipService.ToolTip="The amount of time (in seconds) to wait before considering the signal expired." />
                     </NumberBox.Header>
                 </NumberBox>
             </StackPanel>

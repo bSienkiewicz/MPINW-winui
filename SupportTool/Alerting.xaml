@@ -345,6 +345,31 @@
                                 </NumberBox.Header>
                             </NumberBox>
 
+                            <CheckBox IsChecked="{x:Bind WorkingCopy.CloseViolationsOnExpiration, Mode=TwoWay}">
+                                <CheckBox.Content>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Loss Of Signal Enabled"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Whether to close all open incidents when the signal expires." />
+                                </CheckBox.Content>
+                            </CheckBox>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.ExpirationDuration, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Loss Of Signal Duration:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The amount of time (in seconds) to wait before considering the signal expired." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <!--  Additional Fields Expander  -->
+
                             <Expander
                                 Margin="0,50,0,0"
                                 HorizontalAlignment="Stretch"

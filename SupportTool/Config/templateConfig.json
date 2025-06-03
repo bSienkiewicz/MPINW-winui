@@ -10,8 +10,10 @@
         "AggregationDelay": 120,
         "CriticalOperator": "ABOVE",
         "CriticalThreshold": 0.5,
-        "CriticalThresholdDuration": 600,
+        "CriticalThresholdDuration": 300,
         "CriticalThresholdOccurrences": "ALL",
+        "ExpirationDuration": 1200,
+        "CloseViolationsOnExpiration": true,
         "ProposedValues": {
             "__comment": "Proposed value calculation = `AverageWebDuration + (StdDevMultiplier * ActualStdDev)`. MinimumStdDev prevents stable carriers from alerting too often. Thresholds keep the duration in a reasonable timeframe",
             "Method": "StdDev",
@@ -34,6 +36,8 @@
         "CriticalOperator": "ABOVE",
         "CriticalThreshold": 5,
         "CriticalThresholdDuration": 300,
-        "CriticalThresholdOccurrences": "ALL"
+        "CriticalThresholdOccurrences": "ALL",
+        "ExpirationDuration": 1200,
+        "CloseViolationsOnExpiration": true
     }
 }
