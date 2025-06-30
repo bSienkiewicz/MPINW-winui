@@ -204,7 +204,7 @@ namespace SupportTool.Helpers
                 AppendStringIfNotEmpty(sb, "severity", alert.Severity, ignoreEmptyValues, padLength);
                 AppendBooleanIfNotEmpty(sb, "enabled", alert.Enabled, ignoreEmptyValues, padLength);
                 AppendStringIfNotEmpty(sb, "aggregation_method", alert.AggregationMethod, ignoreEmptyValues, padLength);
-                AppendStringIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow.ToString(CultureInfo.InvariantCulture), ignoreEmptyValues, padLength);
+                AppendNumericIfNotEmpty(sb, "aggregation_window", alert.AggregationWindow, ignoreEmptyValues, padLength);
                 AppendNumericIfNotEmpty(sb, "aggregation_delay", alert.AggregationDelay, ignoreEmptyValues, padLength, "double");
                 AppendStringIfNotEmpty(sb, "critical_operator", alert.CriticalOperator, ignoreEmptyValues, padLength);
                 AppendNumericIfNotEmpty(sb, "critical_threshold", alert.CriticalThreshold, ignoreEmptyValues, padLength, "threshold");

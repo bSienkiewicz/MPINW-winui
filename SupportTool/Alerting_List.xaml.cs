@@ -364,6 +364,7 @@ namespace SupportTool
             }
             finally
             {
+                BatchAddButton.IsEnabled = true;
                 CarrierFetchingProgress.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
             }
