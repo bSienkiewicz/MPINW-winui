@@ -211,6 +211,7 @@ namespace SupportTool
             {
                 _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
                 ShowToast("Thresholds Applied", "Selected thresholds have been updated and saved.", InfoBarSeverity.Success, 4);
+                LoadAlertsForStack();
             }
             AlertFetchingProgress.IsActive = false;
             AlertFetchingProgress.Visibility = Visibility.Collapsed;
