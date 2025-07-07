@@ -4,6 +4,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml.Media;
+using SupportTool.Helpers;
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
 
 namespace SupportTool.Models
 {
@@ -24,6 +28,8 @@ namespace SupportTool.Models
         private string _criticalThresholdOccurrences;
         private double _expirationDuration;
         private bool _closeViolationsOnExpiration;
+        private double? _proposedThreshold;
+        private bool _isSelectedForUpdate;
 
         private bool _valueChanged;
         private Dictionary<string, object> _additionalFields = new Dictionary<string, object>();
@@ -91,7 +97,13 @@ namespace SupportTool.Models
         public double CriticalThreshold
         {
             get => _criticalThreshold;
-            set => SetProperty(ref _criticalThreshold, value);
+            set
+            {
+                if (SetProperty(ref _criticalThreshold, value))
+                {
+                    OnPropertyChanged(nameof(NeedsUpdate));
+                }
+            }
         }
 
         public double CriticalThresholdDuration
@@ -117,6 +129,19 @@ namespace SupportTool.Models
             get => _closeViolationsOnExpiration;
             set => SetProperty(ref _closeViolationsOnExpiration, value);
         }
+
+        public double? ProposedThreshold
+        {
+            get => _proposedThreshold;
+            set
+            {
+                if (SetProperty(ref _proposedThreshold, value))
+                {
+                    OnPropertyChanged(nameof(NeedsUpdate));
+                }
+            }
+        }
+
         public bool ValueChanged
         {
             get => _valueChanged;
@@ -133,6 +158,26 @@ namespace SupportTool.Models
         {
             get => _additionalFields;
             set => SetProperty(ref _additionalFields, value ?? new Dictionary<string, object>());
+        }
+
+        public bool NeedsUpdate
+        {
+            get
+            {
+                if (ProposedThreshold.HasValue)
+                {
+                    double diff = Math.Abs(CriticalThreshold - ProposedThreshold.Value);
+                    double threshold = AlertTemplates.GetThresholdDifference();
+                    return diff >= threshold;
+                }
+                return false;
+            }
+        }
+
+        public bool IsSelectedForUpdate
+        {
+            get => _isSelectedForUpdate;
+            set => SetProperty(ref _isSelectedForUpdate, value);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -182,8 +227,19 @@ namespace SupportTool.Models
                 CriticalThresholdOccurrences = this.CriticalThresholdOccurrences,
                 ExpirationDuration = this.ExpirationDuration,
                 CloseViolationsOnExpiration = this.CloseViolationsOnExpiration,
-                AdditionalFields = new Dictionary<string, object>(this.AdditionalFields)
+                ProposedThreshold = this.ProposedThreshold,
+                AdditionalFields = new Dictionary<string, object>(this.AdditionalFields),
+                IsSelectedForUpdate = this.IsSelectedForUpdate
             };
+        }
+
+        public string GetVerificationNrql(string stack)
+        {
+            var carrier = SupportTool.Services.AlertService.ExtractCarrierFromTitle(Name);
+            var threshold = ProposedThreshold.HasValue ? ProposedThreshold.Value : 0;
+            var oldThreshold = CriticalThreshold;
+            // Use the same NRQL as in the template, but fill in the values
+            return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrier}' timeseries max since 7 days ago";
         }
     }
 

@@ -255,22 +255,19 @@ namespace SupportTool
                 return;
             }
 
-            // Create and show confirmation dialog
-            var dialog = new ContentDialog
+            var optionsDialog = new BatchAddOptionsDialog
             {
-                Title = "Confirm Adding Alerts",
-                Content = $"Are you sure you want to add missing alerts for {selectedCarriers.Count} selected carrier(s)?",
-                PrimaryButtonText = "Yes, add alerts",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = RootGrid.XamlRoot
             };
 
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
+            var optionsResult = await optionsDialog.ShowAsync();
+            if (optionsResult != ContentDialogResult.Primary)
             {
                 return;
             }
+
+            string namePrefix = optionsDialog.NamePrefix;
+            string facetBy = optionsDialog.FacetBy;
 
             try
             {
@@ -300,7 +297,7 @@ namespace SupportTool
                     // Check and add Error Rate alert if missing
                     if (!carrier.HasErrorRateAlert)
                     {
-                        var errorRateAlert = AlertTemplates.GetTemplate("ErrorRate", carrier.CarrierName, _selectedStack);
+                        var errorRateAlert = AlertTemplates.GetTemplate("ErrorRate", carrier.CarrierName, _selectedStack, namePrefix, facetBy);
                         if (!_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.ErrorRate))
                         {
                             alertsToAdd.Add(errorRateAlert);
@@ -311,8 +308,8 @@ namespace SupportTool
                     // Check and add Print Duration alert if missing
                     if (!carrier.HasPrintDurationAlert)
                     {
-                        var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName, _selectedStack);
-                        
+                        var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName, _selectedStack, namePrefix, facetBy);
+
                         // If we have statistics for this carrier, calculate the threshold using centralized logic
                         if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)
                         {
@@ -364,9 +361,9 @@ namespace SupportTool
             }
             finally
             {
-                BatchAddButton.IsEnabled = true;
                 CarrierFetchingProgress.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
+                BatchAddButton.IsEnabled = true;
             }
         }
 

@@ -598,33 +598,18 @@ namespace SupportTool
                 return;
             }
 
-            // Check if NRQL contains 'average(duration)' and title contains carrier name
+            // Check if NRQL contains 'average(duration)' and title contains carrier name  
             bool hasAverageDuration = _workingCopy.NrqlQuery?.ToLower().Contains("average(duration)") == true;
-            bool hasCarrierInTitle = !string.IsNullOrEmpty(ExtractCarrierFromTitle(_workingCopy.Name));
-            
+            bool hasCarrierInTitle = !string.IsNullOrEmpty(AlertService.ExtractCarrierFromTitle(_workingCopy.Name));
+
             ShowFetchDurationButton = hasAverageDuration && hasCarrierInTitle;
-        }
-
-        private string ExtractCarrierFromTitle(string title)
-        {
-            if (string.IsNullOrEmpty(title))
-                return string.Empty;
-
-            // Extract carrier name from format "Carrier - Description"
-            int dashIndex = title.IndexOf(" - ");
-            if (dashIndex > 0)
-            {
-                return title.Substring(0, dashIndex).Trim();
-            }
-
-            return string.Empty;
         }
 
         private async void FetchDurationButton_Click(object sender, RoutedEventArgs e)
         {
             if (IsFetchingDuration || _workingCopy == null) return;
 
-            string carrierName = ExtractCarrierFromTitle(_workingCopy.Name);
+            string carrierName = AlertService.ExtractCarrierFromTitle(_workingCopy.Name);
             if (string.IsNullOrEmpty(carrierName))
             {
                 var toast = new CustomToast();

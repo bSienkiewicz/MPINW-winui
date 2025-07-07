@@ -255,5 +255,30 @@ namespace SupportTool.Services
                 return proposedDurationFallback;
             }
         }
+
+        public static bool IsAlertPrintDuration(NrqlAlert workingCopy)
+        {
+
+            bool hasAverageDuration = workingCopy.NrqlQuery?.ToLower().Contains("average(duration)") == true;
+            bool hasPrintParcel = workingCopy.Name?.ToLower().Contains("printparcel") == true;
+            bool hasCarrierInTitle = !string.IsNullOrEmpty(ExtractCarrierFromTitle(workingCopy.Name));
+
+            return hasAverageDuration && hasCarrierInTitle && hasPrintParcel;
+        }
+
+        public static string ExtractCarrierFromTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                return string.Empty;
+
+            // Extract carrier name from format "Carrier - Description"  
+            int dashIndex = title.IndexOf(" - ");
+            if (dashIndex > 0)
+            {
+                return title.Substring(0, dashIndex).Trim();
+            }
+
+            return string.Empty;
+        }
     }
 }

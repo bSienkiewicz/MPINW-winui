@@ -45,6 +45,11 @@
                         <FontIcon Glyph="&#xF0B5;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Threshold Manager" Tag="NRThresholdManager">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xF0B5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
 
                 <!--<NavigationViewItem Content="Alerting Manager" Tag="NRAlertsTable">

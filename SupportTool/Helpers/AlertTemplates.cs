@@ -172,37 +172,29 @@ namespace SupportTool.Helpers
             }
         }
 
-        public static NrqlAlert GetTemplate(string templateKey, string carrierName, string stack)
+        public static NrqlAlert GetTemplate(string templateName, string carrierName, string stack, string namepath, string facetBy)
         {
-            LoadTemplates();
-
-            if (rawTemplates == null || !rawTemplates.TryGetValue(templateKey, out JsonElement templateElement))
+            if (rawTemplates == null)
             {
-                throw new ArgumentException($"Template '{templateKey}' not found in rawTemplates.");
+                Console.WriteLine("Error: Templates not loaded.");
+                return new NrqlAlert();
             }
 
-            TemplateData? t;
-            try
+            if (!rawTemplates.TryGetValue(templateName, out JsonElement templateElement))
             {
-                t = templateElement.Deserialize<TemplateData>();
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException($"Could not deserialize template data for '{templateKey}'. JSON Error: {ex.Message}", ex);
+                Console.WriteLine($"Warning: Template '{templateName}' not found in configuration.");
+                return new NrqlAlert();
             }
 
-            if (t == null)
-            {
-                throw new InvalidOperationException($"Deserialized TemplateData for '{templateKey}' is null.");
-            }
-
+            var t = JsonSerializer.Deserialize<TemplateData>(templateElement.GetRawText());
+            if (t == null) return new NrqlAlert(); // Should not happen if JSON is valid
 
             return new NrqlAlert
             {
-                Name = ReplaceTokens(t.Name, carrierName, stack),
-                Description = ReplaceTokens(t.Description, carrierName, stack),
+                Name = ReplaceTokens(t.Name, carrierName, stack, namepath, facetBy),
+                Description = ReplaceTokens(t.Description, carrierName, stack, namepath, facetBy),
                 Severity = t.Severity,
-                NrqlQuery = ReplaceTokens(t.NrqlQuery, carrierName, stack, false),
+                NrqlQuery = ReplaceTokens(t.NrqlQuery, carrierName, stack, namepath, facetBy, false),
                 RunbookUrl = t.RunbookUrl,
                 Enabled = t.Enabled,
                 AggregationMethod = t.AggregationMethod,
@@ -216,11 +208,40 @@ namespace SupportTool.Helpers
             };
         }
 
-        private static string ReplaceTokens(string? input, string carrierName, string stack, bool clean = true)
+        private static string ReplaceTokens(string? input, string carrierName, string stack, string namepath, string facetBy, bool clean = true)
         {
             if (string.IsNullOrEmpty(input)) return "";
+
+            string facet = string.Empty;
+            if (!string.IsNullOrEmpty(facetBy) && facetBy != "None")
+            {
+                facet = $"FACET {facetBy}";
+            }
+
             return input.Replace("{carrierName}", carrierName)
-                        .Replace("{stack}", stack);
+                        .Replace("{stack}", stack)
+                        .Replace("{namepath}", namepath)
+                        .Replace("{facet}", facet)
+                        .TrimEnd();
+        }
+
+        public static double GetThresholdDifference()
+        {
+            try
+            {
+                var configPath = Path.Combine("Config", "generalConfig.json");
+                if (File.Exists(configPath))
+                {
+                    var json = File.ReadAllText(configPath);
+                    var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("ThresholdDifference", out var prop))
+                    {
+                        return prop.GetDouble();
+                    }
+                }
+            }
+            catch { }
+            return 3.0;
         }
     }
 }

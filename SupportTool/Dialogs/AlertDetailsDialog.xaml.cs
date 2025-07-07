@@ -95,7 +95,9 @@ namespace SupportTool.Dialogs
         {
             FetchAverageDuration_Button.Visibility = Visibility.Visible;
 
-            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName, _selectedStack);
+            string namepath = "WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel";
+
+            NewAlertData = AlertTemplates.GetTemplate("PrintDuration", CarrierName, _selectedStack, namepath, "BusinessUnit");
 
             OnPropertyChanged(nameof(NewAlertData));
         }
@@ -105,7 +107,8 @@ namespace SupportTool.Dialogs
             FetchAverageDuration_Button.Visibility = Visibility.Collapsed;
             ProposedThresholdText.Visibility = Visibility.Collapsed;
 
-            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", CarrierName, _selectedStack);
+            string namepath = "WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel";
+            NewAlertData = AlertTemplates.GetTemplate("ErrorRate", CarrierName, _selectedStack, namepath, "BusinessUnit");
             OnPropertyChanged(nameof(NewAlertData));
         }
 

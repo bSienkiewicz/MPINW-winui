@@ -27,8 +27,10 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, Type> _pageMapping = new Dictionary<string, Type>
         {
             { "Alerting", typeof(Alerting) },
-            { "NRAlertsList", typeof(Alerting_List) }
+            { "NRAlertsList", typeof(Alerting_List) },
+        {"NRThresholdManager", typeof(ThresholdManager) }
         };
+
     public MainWindow()
     {
         this.InitializeComponent();
