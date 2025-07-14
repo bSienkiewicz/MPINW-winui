@@ -238,8 +238,9 @@ namespace SupportTool.Models
             var carrier = SupportTool.Services.AlertService.ExtractCarrierFromTitle(Name);
             var threshold = ProposedThreshold.HasValue ? ProposedThreshold.Value : 0;
             var oldThreshold = CriticalThreshold;
+            int samplingDays = AlertTemplates.GetConfigValue<int>("PrintDuration.ProposedValues.SamplingDays");
             // Use the same NRQL as in the template, but fill in the values
-            return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrier}' timeseries max since 7 days ago";
+            return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrier}' timeseries max since {samplingDays} days ago";
         }
     }
 

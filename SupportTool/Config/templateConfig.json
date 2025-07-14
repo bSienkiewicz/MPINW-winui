@@ -3,8 +3,8 @@
         "Name": "{carrierName} - Increased PrintParcel Duration",
         "Description": "Faceted PrintParcel average duration for {carrierName}",
         "Severity": "CRITICAL",
-        "NrqlQuery": "SELECT average(duration) FROM Transaction WHERE name = '{namepath}' AND CarrierName = '{carrierName}' AND host like '%-{stack}-%' {facet}",
-        "RunbookUrl": "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/4314432205/Increased+error+rate",
+        "NrqlQuery": "SELECT average(duration) FROM Transaction WHERE name = '{namepath}' AND PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrierName}' {facet}",
+        "RunbookUrl": "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/4314824909/Increased+print+duration",
         "Enabled": true,
         "AggregationMethod": "EVENT_FLOW",
         "AggregationDelay": 120,
@@ -16,11 +16,11 @@
         "CloseViolationsOnExpiration": true,
         "ProposedValues": {
             "Method": "StdDev",
-            "StdDevMultiplier": 3.0,
+            "StdDevMultiplier": 2.0,
             "MinimumAbsoluteThreshold": 3.0,
-            "MaximumAbsoluteThreshold": 10.0,
+            "MaximumAbsoluteThreshold": 8.0,
             "MinimumStdDev": 1.0,
-            "SamplingDays": 7
+            "SamplingDays": 14
         }
     },
     "ErrorRate": {

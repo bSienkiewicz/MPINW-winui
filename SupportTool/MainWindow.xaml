@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:SupportTool"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="MPINW"
+    Title="Support Tool"
     mc:Ignorable="d">
     <Grid>
 
@@ -19,7 +19,7 @@
                 Width="16"
                 Height="16"
                 HorizontalAlignment="Left"
-                Source="/Assets/WindowIcon.ico" />
+                Source="/Assets/mainlogo.ico" />
             <TextBlock
                 x:Name="AppTitleBarText"
                 Margin="28,0,0,0"
@@ -35,20 +35,25 @@
             PaneDisplayMode="Left"
             SelectionChanged="NavView_SelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Alert Manager" Tag="Alerting">
+                <NavigationViewItem
+                    Content="Alerting"
+                    IsExpanded="True"
+                    Tag="Alerting">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xF0B5;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="Threshold Manager" Tag="NRThresholdManager">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xF0B5;" />
-                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xF0B5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="Threshold Manager" Tag="NRThresholdManager">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xECC5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
 
 

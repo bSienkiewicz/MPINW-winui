@@ -90,6 +90,7 @@
                 Background="{ThemeResource LayerFillColorDefaultBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid
@@ -122,8 +123,14 @@
                     </Button>
                 </Grid>
 
-                <ScrollView
+                <TextBlock
                     Grid.Row="1"
+                    Margin="0,0,0,5"
+                    FontWeight="Thin"
+                    Text="{x:Bind AlertItems.Count, Mode=OneWay}" />
+
+                <ScrollView
+                    Grid.Row="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch">
                     <ListView

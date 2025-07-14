@@ -83,7 +83,10 @@
                 <CheckBox
                     x:Name="HeaderCheckBox"
                     Grid.Column="0"
-                    ToolTipService.ToolTip="Select/Deselect All" />
+                    Checked="HeaderCheckBox_CheckedChanged"
+                    IsThreeState="True"
+                    ToolTipService.ToolTip="Select/Deselect All"
+                    Unchecked="HeaderCheckBox_CheckedChanged" />
                 <Button
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
@@ -140,13 +143,16 @@
                                     Grid.Column="2"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind CriticalThreshold}" />
-                                <TextBlock
-                                    x:Name="ProposedTimeTextBlock"
+                                <TextBox
                                     Grid.Column="3"
+                                    MinWidth="80"
+                                    HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind ProposedThreshold, Mode=OneWay, Converter={StaticResource NullableDoubleToDashConverter}}" />
+                                    PlaceholderText="No data"
+                                    Text="{x:Bind ProposedThreshold, Mode=TwoWay, Converter={StaticResource NullableDoubleToDashConverter}, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Grid.Column="4"
+                                    Margin="40,0,20,0"
                                     Click="CopyNrqlButton_Click"
                                     Tag="{x:Bind}">
                                     <FontIcon FontSize="12" Glyph="&#xE8C8;" />
