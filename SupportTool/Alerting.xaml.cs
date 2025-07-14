@@ -218,14 +218,60 @@ namespace SupportTool
 
         private void AlertsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0)
+            var selected = AlertsListView.SelectedItems;
+            if (selected.Count == 1)
             {
-                // Set the selected alert and create a working copy
-                SelectedAlert = (NrqlAlert)e.AddedItems[0];
+                // Single selection: show details panel
+                SelectedAlert = (NrqlAlert)selected[0];
+                DetailsPanel.Visibility = Visibility.Visible;
+                BatchPanel.Visibility = Visibility.Collapsed;
+            }
+            else if (selected.Count > 1)
+            {
+                // Multi-selection: show batch panel
+                DetailsPanel.Visibility = Visibility.Collapsed;
+                BatchPanel.Visibility = Visibility.Visible;
+                BatchSelectionText.Text = $"{selected.Count} alerts selected.";
             }
             else
             {
+                // No selection
                 SelectedAlert = null;
+                DetailsPanel.Visibility = Visibility.Collapsed;
+                BatchPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private async void BatchDeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = AlertsListView.SelectedItems.Cast<NrqlAlert>().ToList();
+            if (selected.Count == 0) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Delete selected alerts?",
+                Content = $"Are you sure you want to delete {selected.Count} selected alerts? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                foreach (var alert in selected)
+                    AlertItems.Remove(alert);
+                // Save to file if needed
+                if (_selectedStack != null)
+                    _alertService.SaveAlertsToFile(_selectedStack, AlertItems.ToList());
+                // Hide batch panel
+                BatchPanel.Visibility = Visibility.Collapsed;
+                DetailsPanel.Visibility = Visibility.Collapsed;
+                AlertsListView.SelectedItems.Clear();
+                // Show toast
+                var toast = new CustomToast();
+                ToastContainer.Children.Add(toast);
+                toast.ShowToast("Alerts deleted", $"{selected.Count} alerts have been deleted.", InfoBarSeverity.Success, 3);
             }
         }
 

@@ -143,7 +143,7 @@
                         ItemsSource="{x:Bind AlertItems, Mode=OneWay}"
                         ReorderMode="Enabled"
                         SelectionChanged="AlertsListView_SelectionChanged"
-                        SelectionMode="Single">
+                        SelectionMode="Extended">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:NrqlAlert">
                                 <StackPanel Margin="10" Orientation="Horizontal">
@@ -157,7 +157,31 @@
 
             <!--  Right Column  -->
             <Grid Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid.Resources>
+                    <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+                </Grid.Resources>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <!--  Batch selection panel  -->
+                <StackPanel
+                    x:Name="BatchPanel"
+                    Padding="20"
+                    Spacing="20"
+                    Visibility="Collapsed">
+                    <TextBlock
+                        x:Name="BatchSelectionText"
+                        FontSize="18"
+                        FontWeight="Bold" />
+                    <Button
+                        x:Name="BatchDeleteButton"
+                        Click="BatchDeleteButton_Click"
+                        Content="Delete Selected Alerts"
+                        Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+                <!--  Single selection panel (existing details)  -->
                 <Grid
+                    x:Name="DetailsPanel"
                     Padding="10"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
@@ -167,7 +191,6 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="auto" />
                     </Grid.RowDefinitions>
-
                     <ScrollView Grid.Row="0">
                         <StackPanel Padding="10" Spacing="10">
 
