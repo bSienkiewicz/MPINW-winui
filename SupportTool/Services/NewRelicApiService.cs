@@ -61,7 +61,7 @@ namespace SupportTool.Services
                {{   
                    actor {{   
                        account(id: 400000) {{   
-                           nrql(timeout: 120 query: ""SELECT uniques(CarrierName) FROM Transaction WHERE host LIKE '%{stack}%' and PrintOperation LIKE '%create%' SINCE 7 days ago"") {{   
+                           nrql(timeout: 120 query: ""SELECT uniques(CarrierName) FROM Transaction WHERE host LIKE '%-{stack}-%' and PrintOperation LIKE '%create%' SINCE 7 days ago"") {{   
                                results   
                            }}   
                        }}   

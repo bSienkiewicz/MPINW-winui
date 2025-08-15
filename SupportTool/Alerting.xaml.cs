@@ -25,7 +25,7 @@ namespace SupportTool
     public sealed partial class Alerting : Page, INotifyPropertyChanged
     {
         // Path to the stacks configuration directory relative to the repository root
-        private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+        private static readonly string StacksPath = SupportTool.Helpers.ConfigLoader.Get<string>("Alert_Directory_Path", "metaform\\mpm\\copies\\production\\prd\\eu-west-1");
 
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
         private string? _selectedFolderPath;
@@ -250,7 +250,7 @@ namespace SupportTool
             var dialog = new ContentDialog
             {
                 Title = "Delete selected alerts?",
-                Content = $"Are you sure you want to delete {selected.Count} selected alerts? This action cannot be undone.",
+                Content = $"Are you sure you want to delete {selected.Count} selected alerts? You can undo this by rejecting the changes on the branch.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,

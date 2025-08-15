@@ -17,7 +17,7 @@ namespace SupportTool.Services
 {
     public class AlertService
     {
-        private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+        private static readonly string StacksPath = SupportTool.Helpers.ConfigLoader.Get<string>("Alert_Directory_Path", "metaform\\mpm\\copies\\production\\prd\\eu-west-1");
         private readonly string[] _requiredFolders = [".github", "ansible", "metaform", "terraform"];
         private readonly SettingsService _settings = new();
         private readonly NewRelicApiService _newRelicApiService = new();

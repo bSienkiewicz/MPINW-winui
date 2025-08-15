@@ -30,7 +30,7 @@ namespace SupportTool
 {
     public sealed partial class ThresholdManager : Page
     {
-        private const string StacksPath = "metaform\\mpm\\copies\\production\\prd\\eu-west-1";
+        private static readonly string StacksPath = SupportTool.Helpers.ConfigLoader.Get<string>("Alert_Directory_Path", "metaform\\mpm\\copies\\production\\prd\\eu-west-1");
         public ObservableCollection<NrqlAlert> AlertItems { get; } = new();
         private readonly AlertService _alertService = new();
         private readonly SettingsService _settings = new();
@@ -44,75 +44,6 @@ namespace SupportTool
             _availableStacks = _alertService.GetAlertStacksFromDirectories();
             LoadDirectory();
             LoadStack();
-            AlertItems.CollectionChanged += AlertItems_CollectionChanged;
-        }
-
-        private void AlertItems_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            if (e.NewItems != null)
-            {
-                foreach (var item in e.NewItems)
-                {
-                    if (item is NrqlAlert alert)
-                        alert.PropertyChanged += Alert_PropertyChanged;
-                }
-            }
-            if (e.OldItems != null)
-            {
-                foreach (var item in e.OldItems)
-                {
-                    if (item is NrqlAlert alert)
-                        alert.PropertyChanged -= Alert_PropertyChanged;
-                }
-            }
-            UpdateHeaderCheckBox();
-        }
-
-        private void Alert_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (sender is NrqlAlert alert)
-            {
-                if (e.PropertyName == nameof(NrqlAlert.IsSelectedForUpdate))
-                {
-                    UpdateHeaderCheckBox();
-                }
-                else if (e.PropertyName == nameof(NrqlAlert.ProposedThreshold))
-                {
-                    if (!alert.IsSelectedForUpdate)
-                        alert.IsSelectedForUpdate = true;
-                }
-            }
-        }
-
-        private void HeaderCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
-        {
-            if (HeaderCheckBox.IsChecked == true)
-            {
-                foreach (var alert in AlertItems)
-                    alert.IsSelectedForUpdate = true;
-            }
-            else if (HeaderCheckBox.IsChecked == false)
-            {
-                foreach (var alert in AlertItems)
-                    alert.IsSelectedForUpdate = false;
-            }
-            // If indeterminate, do nothing
-        }
-
-        private void UpdateHeaderCheckBox()
-        {
-            if (AlertItems.Count == 0)
-            {
-                HeaderCheckBox.IsChecked = false;
-                return;
-            }
-            int selected = AlertItems.Count(a => a.IsSelectedForUpdate);
-            if (selected == 0)
-                HeaderCheckBox.IsChecked = false;
-            else if (selected == AlertItems.Count)
-                HeaderCheckBox.IsChecked = true;
-            else
-                HeaderCheckBox.IsChecked = null; // Indeterminate
         }
 
         private void LoadStack()
@@ -277,14 +208,14 @@ namespace SupportTool
                 // Load all alerts for the stack
                 var allAlerts = _alertService.GetAlertsForStack(_selectedStack);
 
-                // For each PrintDuration alert in the UI, update the corresponding alert in allAlerts
-                foreach (var updatedAlert in AlertItems.Where(a => a.IsSelectedForUpdate && a.ProposedThreshold.HasValue))
+                // For each selected alert in the UI, update the corresponding alert in allAlerts
+                var selectedAlerts = AlertsListView.SelectedItems.Cast<NrqlAlert>().Where(a => a.ProposedThreshold.HasValue).ToList();
+                foreach (var updatedAlert in selectedAlerts)
                 {
                     var match = allAlerts.FirstOrDefault(a => a.Name == updatedAlert.Name);
                     if (match != null)
                     {
                         match.CriticalThreshold = updatedAlert.ProposedThreshold.Value;
-                        updatedAlert.IsSelectedForUpdate = false;
                     }
                 }
 

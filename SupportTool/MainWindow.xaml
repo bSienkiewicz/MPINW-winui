@@ -32,7 +32,7 @@
             x:Name="NavView"
             DisplayModeChanged="NavigationView_DisplayModeChanged"
             ExpandedModeThresholdWidth="1280"
-            PaneDisplayMode="Left"
+            PaneDisplayMode="LeftCompact"
             SelectionChanged="NavView_SelectionChanged">
             <NavigationView.MenuItems>
                 <NavigationViewItem

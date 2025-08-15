@@ -123,8 +123,6 @@ namespace SupportTool
                     Carriers.Add(item);
                 }
                 
-                // Reset header checkbox state
-                UpdateSelectionStatus();
             }
             catch (Exception ex)
             {
@@ -179,63 +177,6 @@ namespace SupportTool
             }
         }
 
-        private void HeaderCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
-        {
-            if (_isUpdatingHeaderCheckBox) return;
-
-            bool isChecked = HeaderCheckBox.IsChecked ?? false;
-            foreach (var carrier in Carriers)
-            {
-                carrier.IsSelected = isChecked;
-            }
-
-            UpdateSelectionStatus();
-        }
-
-        private void CarrierCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
-        {
-            // Force immediate update of the header checkbox
-            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
-            {
-                UpdateHeaderCheckBoxState();
-                UpdateSelectionStatus();
-            });
-        }
-
-        private void UpdateHeaderCheckBoxState()
-        {
-            if (Carriers.Count == 0) return;
-
-            _isUpdatingHeaderCheckBox = true;
-            try
-            {
-                bool allChecked = Carriers.All(c => c.IsSelected);
-                bool anyChecked = Carriers.Any(c => c.IsSelected);
-
-                if (allChecked)
-                {
-                    HeaderCheckBox.IsChecked = true;
-                }
-                else if (anyChecked)
-                {
-                    HeaderCheckBox.IsChecked = null; // Indeterminate state
-                }
-                else
-                {
-                    HeaderCheckBox.IsChecked = false;
-                }
-            }
-            finally
-            {
-                _isUpdatingHeaderCheckBox = false;
-            }
-        }
-
-        private void UpdateSelectionStatus()
-        {
-            int selectedCount = Carriers.Count(c => c.IsSelected);
-        }
-
         private async void BatchAddButton_Click(object sender, RoutedEventArgs e)
         {
             if (!IsApiKeyPresent() || string.IsNullOrEmpty(_selectedStack))
@@ -246,7 +187,7 @@ namespace SupportTool
                 return;
             }
 
-            var selectedCarriers = Carriers.Where(c => c.IsSelected).ToList();
+            var selectedCarriers = CarriersList.SelectedItems.Cast<CarrierItem>().ToList();
             if (!selectedCarriers.Any())
             {
                 var toast = new CustomToast();

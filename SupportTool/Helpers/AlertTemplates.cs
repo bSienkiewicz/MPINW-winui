@@ -234,7 +234,7 @@ namespace SupportTool.Helpers
                 {
                     var json = File.ReadAllText(configPath);
                     var doc = JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("ThresholdDifference", out var prop))
+                    if (doc.RootElement.TryGetProperty("Threshold_Difference", out var prop))
                     {
                         return prop.GetDouble();
                     }
