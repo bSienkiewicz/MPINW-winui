@@ -70,11 +70,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Dialogs\AlertDetailsDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
     <Page Update="Alerting.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -86,14 +81,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Page2.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="Page1.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <Folder Include="Features\" />
   </ItemGroup>
 
   <!--

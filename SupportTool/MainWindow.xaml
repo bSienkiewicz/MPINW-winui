@@ -37,12 +37,16 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem
                     Content="Alerting"
-                    IsExpanded="True"
-                    Tag="Alerting">
+                    IsExpanded="True">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="Alert List" Tag="Alerting">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE7BA;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                         <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xF0B5;" />
@@ -55,24 +59,22 @@
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
-
-
-                <!--<NavigationViewItem Content="Alerting Manager" Tag="NRAlertsTable">
+                <NavigationViewItem
+                    Content="Number Ranges"
+                    IsExpanded="True"
+                    Tag="FLRange">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7BA;" />
+                        <FontIcon Glyph="&#xF463;" />
                     </NavigationViewItem.Icon>
-                </NavigationViewItem>-->
-
-                <!--<NavigationViewItem Content="MPINW Tool" Tag="Page1">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xECAD;" />
-                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="Royal Mail" Tag="FLRange_RoyalMail">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xF0B5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
-                <NavigationViewItem Content="LSTool" Tag="Page2">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE773;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>-->
+
             </NavigationView.MenuItems>
 
             <!--  Content area for the pages  -->

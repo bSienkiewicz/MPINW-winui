@@ -1,0 +1,30 @@
+<ContentDialog
+    x:Class="SupportTool.Alerts.Dialogs.BatchAddOptionsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:SupportTool.Alerts.Dialogs"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Batch Add Options"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    PrimaryButtonText="Continue"
+    mc:Ignorable="d">
+
+    <StackPanel Spacing="15">
+        <TextBox
+            x:Name="NamePrefixTextBox"
+            Header="Name"
+            PlaceholderText="WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel"
+            Text="WebTransaction/WCF/XLogics.BlackBox.ServiceContracts.IBlackBoxContract.PrintParcel" />
+        <ComboBox
+            x:Name="FacetComboBox"
+            Header="Facet by"
+            PlaceholderText="Select a facet option"
+            SelectedIndex="0">
+            <ComboBoxItem Content="appName" />
+            <ComboBoxItem Content="BusinessUnit" />
+            <ComboBoxItem Content="None" />
+        </ComboBox>
+    </StackPanel>
+</ContentDialog> 
