@@ -35,20 +35,22 @@
             PaneDisplayMode="LeftCompact"
             SelectionChanged="NavView_SelectionChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem
-                    Content="Alerting"
-                    IsExpanded="True"
-                    Tag="Alerting">
+                <NavigationViewItem Content="New Relic Alerting" IsExpanded="True">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="Alert Manager" Tag="Alerting">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE7BA;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                         <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xF0B5;" />
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
-                        <NavigationViewItem Content="Threshold Manager" Tag="NRThresholdManager">
+                        <NavigationViewItem Content="Threshold Adjust" Tag="NRThresholdManager">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xECC5;" />
                             </NavigationViewItem.Icon>

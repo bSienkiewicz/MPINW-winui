@@ -161,16 +161,15 @@ namespace SupportTool
                         alert.ProposedThreshold = null;
                     }
 
-                    // Auto-check if difference is >= threshold
+                    // Auto-select if difference is >= threshold
                     if (alert.ProposedThreshold.HasValue)
                     {
                         double diff = Math.Abs(alert.CriticalThreshold - alert.ProposedThreshold.Value);
                         double threshold = AlertTemplates.GetThresholdDifference();
-                        alert.IsSelectedForUpdate = diff >= threshold;
-                    }
-                    else
-                    {
-                        alert.IsSelectedForUpdate = false;
+                        if (diff >= threshold)
+                        {
+                            AlertsListView.SelectedItems.Add(alert);
+                        }
                     }
                 }
                 ShowToast("Success", "Proposed times fetched from New Relic.", InfoBarSeverity.Success, 4);
