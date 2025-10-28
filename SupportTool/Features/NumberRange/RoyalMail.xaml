@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SupportTool.NumberRange.RoyalMail"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:SupportTool.NumberRange"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+            <TextBlock
+                    Style="{StaticResource TitleTextBlockStyle}"
+                    Text="Royal Mail" />
+                <TextBlock
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="Number Range" />
+            </StackPanel>
+                    
+
+
+            <StackPanel
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                <Button
+                        x:Name="refreshAlertsButton"
+                        ToolTipService.ToolTip="Clear all">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE75C;" />
+                    </StackPanel>
+                </Button>
+                <Button
+                        x:Name="openFolderButton"
+                        Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Send the request to Royal Mail">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE725;" />
+                        <TextBlock Text="Send request" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="1" />
+    </Grid>
+</Page>

@@ -1,0 +1,585 @@
+<Page
+    x:Class="SupportTool.Features.Alerts.Alerting"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:SupportTool.Features.Alerts.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="using:SupportTool.Features.Alerts.Helpers"
+    xmlns:local="using:SupportTool"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:SupportTool.Features.Alerts.Models"
+    mc:Ignorable="d">
+
+
+    <Page.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:NullableIntConverter x:Key="NullableIntConverter" />
+        <converters:NullableDoubleConverter x:Key="NullableDoubleConverter" />
+        <converters:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter" />
+    </Page.Resources>
+
+    <Grid x:Name="RootGrid" Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <InfoBar
+            Name="infoBar"
+            Grid.Row="0"
+            IsOpen="False"
+            Severity="Error" />
+
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Text="Alerting" />
+
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Button
+                    x:Name="refreshAlertsButton"
+                    Click="refreshAlertsButton_Click"
+                    ToolTipService.ToolTip="Refresh alert list">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE72C;" />
+                    </StackPanel>
+                </Button>
+                <ComboBox
+                    x:Name="stacksComboBox"
+                    Width="200"
+                    PlaceholderText="Select a stack..."
+                    SelectionChanged="StackComboBox_SelectionChanged" />
+                <Button
+                    x:Name="openFolderButton"
+                    Click="OpenFolderButton_Click"
+                    ToolTipService.ToolTip="Open the alerts folder">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8DA;" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            Grid.Row="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" MinWidth="300" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  Left Column with ScrollView  -->
+            <Grid
+                Name="EditPanel"
+                Grid.Column="0"
+                Padding="10"
+                Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid
+                    Grid.Row="0"
+                    Margin="0,0,0,15"
+                    ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox
+                        Name="NRAlertSearch"
+                        Grid.Column="0"
+                        PlaceholderText="Search for an alert"
+                        TextChanged="NRAlertSearch_TextChanged" />
+                    <Button
+                        Grid.Column="1"
+                        Click="AddNewAlertButton_Click"
+                        Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Add new empty alert">
+                        <FontIcon Glyph="&#xE710;" />
+                    </Button>
+
+                    <Button
+                        Grid.Column="2"
+                        Click="SortAlertsButton_Click"
+                        ToolTipService.ToolTip="Sort alerts alphabetically">
+                        <FontIcon Glyph="&#xE84A;" />
+                    </Button>
+                </Grid>
+
+                <TextBlock
+                    Grid.Row="1"
+                    Margin="0,0,0,5"
+                    FontWeight="Thin"
+                    Text="{x:Bind AlertItems.Count, Mode=OneWay}" />
+
+                <ScrollView
+                    Grid.Row="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                    <ListView
+                        x:Name="AlertsListView"
+                        AllowDrop="True"
+                        CanDrag="True"
+                        CanReorderItems="True"
+                        DragItemsCompleted="AlertsListView_DragItemsCompleted"
+                        DragItemsStarting="AlertsListView_DragItemsStarting"
+                        ItemsSource="{x:Bind AlertItems, Mode=OneWay}"
+                        ReorderMode="Enabled"
+                        SelectionChanged="AlertsListView_SelectionChanged"
+                        SelectionMode="Extended">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:NrqlAlert">
+                                <StackPanel Margin="10" Orientation="Horizontal">
+                                    <TextBlock Text="{x:Bind Name}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </ScrollView>
+            </Grid>
+
+            <!--  Right Column  -->
+            <Grid Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid.Resources>
+                    <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+                </Grid.Resources>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <!--  Batch selection panel  -->
+                <StackPanel
+                    x:Name="BatchPanel"
+                    Padding="20"
+                    Spacing="20"
+                    Visibility="Collapsed">
+                    <TextBlock
+                        x:Name="BatchSelectionText"
+                        FontSize="18"
+                        FontWeight="Bold" />
+                    <Button
+                        x:Name="BatchDeleteButton"
+                        Click="BatchDeleteButton_Click"
+                        Content="Delete Selected Alerts"
+                        Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+                <!--  Single selection panel (existing details)  -->
+                <Grid
+                    x:Name="DetailsPanel"
+                    Padding="10"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    RowSpacing="30"
+                    Visibility="{x:Bind WorkingCopy, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <ScrollView Grid.Row="0">
+                        <StackPanel Padding="10" Spacing="10">
+
+                            <CheckBox Content="Enabled" IsChecked="{x:Bind WorkingCopy.Enabled, Mode=TwoWay}" />
+
+                            <TextBox x:Name="NameTextBox" Text="{x:Bind WorkingCopy.Name, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Name:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The name of the alert condition. This should be descriptive and indicate what the condition is monitoring." />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <TextBox
+                                AcceptsReturn="True"
+                                Header="Description:"
+                                Text="{x:Bind WorkingCopy.Description, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+
+                            <TextBox
+                                MinHeight="100"
+                                AcceptsReturn="True"
+                                Header="NRQL Query:"
+                                Text="{x:Bind WorkingCopy.NrqlQuery, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind Severities}"
+                                SelectedItem="{x:Bind WorkingCopy.Severity, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Severity:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The severity level of the alert (CRITICAL is default)." />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind CriticalOperators}"
+                                SelectedItem="{x:Bind WorkingCopy.CriticalOperator, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Operator:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The operator used to compare the aggregated data against the critical threshold." />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox
+                                    x:Name="CriticalThresholdNumberBox"
+                                    Grid.Column="0"
+                                    HorizontalAlignment="Stretch"
+                                    AcceptsExpression="True"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind WorkingCopy.CriticalThreshold, Mode=TwoWay}">
+                                    <NumberBox.Header>
+                                        <StackPanel Orientation="Vertical">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock
+                                                    x:Name="CritaicalThresholdBlock"
+                                                    VerticalAlignment="Center"
+                                                    Text="Critical Threshold:"
+                                                    TextDecorations="Underline"
+                                                    ToolTipService.ToolTip="The value that triggers a critical alert." />
+                                                <ProgressRing
+                                                    x:Name="FetchProgressRing"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Margin="20,0,0,0"
+                                                    IsActive="{x:Bind IsFetchingDuration, Mode=OneWay}"
+                                                    Visibility="{x:Bind IsFetchingDuration, Mode=OneWay}" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Name="ProposedThresholdText"
+                                                Margin="10,5,0,5"
+                                                FontSize="12"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Tapped="ProposedThresholdText_Tapped"
+                                                Text="..."
+                                                Visibility="Collapsed" />
+                                        </StackPanel>
+                                    </NumberBox.Header>
+                                </NumberBox>
+                                <Button
+                                    x:Name="FetchDurationButton"
+                                    Grid.Column="1"
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Bottom"
+                                    Click="FetchDurationButton_Click"
+                                    IsEnabled="{x:Bind IsFetchDurationEnabled, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Fetch suggested duration threshold for this carrier"
+                                    Visibility="{x:Bind ShowFetchDurationButton, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE9D2;" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.CriticalThresholdDuration, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Duration:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="How long the condition must be met to trigger an alert." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind ThresholdOccurrences}"
+                                SelectedItem="{x:Bind WorkingCopy.CriticalThresholdOccurrences, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Critical Threshold Occurrences:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="How many times the condition must occur to trigger an alert." />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <TextBox Text="{x:Bind WorkingCopy.RunbookUrl, Mode=TwoWay}">
+                                <TextBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Runbook URL:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="A URL linking to a runbook, which is a set of instructions for responding to an incident triggered by this condition." />
+                                </TextBox.Header>
+                            </TextBox>
+
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Bind AggregationMethods}"
+                                SelectedItem="{x:Bind WorkingCopy.AggregationMethod, Mode=TwoWay}">
+                                <ComboBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Method:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The method used to aggregate data from the NRQL query. This affects how the data is processed before evaluation." />
+                                </ComboBox.Header>
+                            </ComboBox>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.AggregationDelay, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Delay:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The delay before the condition starts evaluating data after it becomes active. This allows for initial data stabilization." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.AggregationWindow, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Aggregation Window:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The time window over which data is aggregated before being evaluated against the threshold." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <CheckBox IsChecked="{x:Bind WorkingCopy.CloseViolationsOnExpiration, Mode=TwoWay}">
+                                <CheckBox.Content>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Loss Of Signal Enabled"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="Whether to close all open incidents when the signal expires." />
+                                </CheckBox.Content>
+                            </CheckBox>
+
+                            <NumberBox
+                                AcceptsExpression="True"
+                                Minimum="0"
+                                Value="{x:Bind WorkingCopy.ExpirationDuration, Mode=TwoWay}">
+                                <NumberBox.Header>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="Loss Of Signal Duration:"
+                                        TextDecorations="Underline"
+                                        ToolTipService.ToolTip="The amount of time (in seconds) to wait before considering the signal expired." />
+                                </NumberBox.Header>
+                            </NumberBox>
+
+                            <!--  Additional Fields Expander  -->
+
+                            <Expander
+                                Margin="0,50,0,0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch"
+                                IsExpanded="False">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <InfoBadge x:Name="infoBadge1" Value="{x:Bind AdditionalFieldsCount, Mode=OneWay}" />
+                                        <TextBlock Text="Additional Fields" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel Spacing="10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            Text="Fields not part of the standard alert structure. Use quotes for strings, e.g., &quot;value&quot;"
+                                            TextWrapping="Wrap" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Click="AddAdditionalField_Click"
+                                            Style="{StaticResource AccentButtonStyle}">
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <FontIcon Glyph="&#xE710;" />
+                                                <TextBlock Text="Add Field" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{x:Bind AdditionalFields, Mode=OneWay}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Spacing="5" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AdditionalField">
+                                                <Border
+                                                    Margin="0,0,0,5"
+                                                    Padding="12"
+                                                    HorizontalAlignment="Stretch"
+                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4">
+                                                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBox
+                                                            Grid.Column="0"
+                                                            HorizontalAlignment="Stretch"
+                                                            Header="Key"
+                                                            PlaceholderText="field_name"
+                                                            Text="{x:Bind Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                        <TextBox
+                                                            Grid.Column="1"
+                                                            HorizontalAlignment="Stretch"
+                                                            Header="Value"
+                                                            PlaceholderText="value (use quotes for strings)"
+                                                            Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                        <Button
+                                                            Grid.Column="2"
+                                                            Margin="0,0,0,3"
+                                                            VerticalAlignment="Bottom"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="RemoveAdditionalField_Click">
+                                                            <FontIcon Glyph="&#xE738;" />
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="No additional fields"
+                                        Visibility="{x:Bind AdditionalFields.Count, Mode=OneWay, Converter={StaticResource EmptyToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollView>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <!--  Bottom action button row LEFT  -->
+                        <StackPanel
+                            Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="10">
+                            <Button x:Name="cloneButton">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xF584;" />
+                                    <TextBlock Text="Duplicate" />
+                                </StackPanel>
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <StackPanel>
+                                            <TextBlock
+                                                Margin="0,0,0,12"
+                                                Style="{ThemeResource BaseTextBlockStyle}"
+                                                Text="This will create a copy of this alert." />
+                                            <Button Click="CopyAlertButton_Click" Content="Create a copy" />
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Button x:Name="deleteButton">
+                                <FontIcon Glyph="&#xE74D;" />
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <StackPanel>
+                                            <TextBlock
+                                                Margin="0,0,0,12"
+                                                Style="{ThemeResource BaseTextBlockStyle}"
+                                                Text="The alert will be removed, continue?" />
+                                            <Button
+                                                Background="IndianRed"
+                                                Click="DeleteAlertButton_Click"
+                                                Content="Yes, delete the alert"
+                                                Foreground="Black" />
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </StackPanel>
+                        <!--  Bottom action button row RIGHT  -->
+                        <StackPanel
+                            Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="10">
+                            <Button
+                                x:Name="saveButton"
+                                Click="SaveSelectedAlertButton_Click"
+                                Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE74E;" />
+                                    <TextBlock Text="Save alert" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="cancelButton" Click="CancelButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE711;" />
+                                    <TextBlock Text="Cancel" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Canvas
+            x:Name="ToastContainer"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="True" />
+    </Grid>
+</Page>
