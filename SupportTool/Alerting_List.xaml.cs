@@ -220,7 +220,7 @@ namespace SupportTool
                 var alertsToAdd = new List<NrqlAlert>();
                 int addedCount = 0;
 
-                // First, collect carriers that need PrintDuration alerts
+                // Collect carriers that need PrintDuration alerts
                 var carriersNeedingPrintDuration = selectedCarriers
                     .Where(c => !c.HasPrintDurationAlert)
                     .Select(c => c.CarrierName)

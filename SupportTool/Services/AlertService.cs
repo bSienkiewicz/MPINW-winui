@@ -238,6 +238,11 @@ namespace SupportTool.Services
                     proposedDuration = maxThreshold.Value;
                 }
 
+                if (proposedDuration < 3)
+                {
+                    proposedDuration = 3;
+                }
+
                 // Round to nearest 0.5
                 proposedDuration = Math.Round(proposedDuration * 2.0) / 2.0;
                 
