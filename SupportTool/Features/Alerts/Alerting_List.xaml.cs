@@ -219,6 +219,7 @@ namespace SupportTool
                 var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
                 var alertsToAdd = new List<NrqlAlert>();
                 int addedCount = 0;
+                var skippedCarriers = new List<string>();
 
                 // Collect carriers that need PrintDuration alerts
                 var carriersNeedingPrintDuration = selectedCarriers
@@ -250,6 +251,7 @@ namespace SupportTool
                     if (!carrier.HasPrintDurationAlert)
                     {
                         var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName, _selectedStack, namePrefix, facetBy);
+                        bool thresholdSet = false;
 
                         // If we have statistics for this carrier, calculate the threshold using centralized logic
                         if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)
@@ -257,16 +259,36 @@ namespace SupportTool
                             try
                             {
                                 double suggestedThreshold = AlertService.CalculateSuggestedThreshold(stats);
-                                printDurationAlert.CriticalThreshold = suggestedThreshold;
+                                
+                                // Validate the threshold is reasonable (at least 3.0, matching CalculateSuggestedThreshold minimum)
+                                var minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
+                                if (suggestedThreshold >= minThreshold)
+                                {
+                                    printDurationAlert.CriticalThreshold = suggestedThreshold;
+                                    thresholdSet = true;
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Calculated threshold {suggestedThreshold} for {carrier.CarrierName} is too low ({minThreshold}), skipping alert creation");
+                                    skippedCarriers.Add(carrier.CarrierName);
+                                }
                             }
                             catch (Exception ex)
                             {
                                 Debug.WriteLine($"Could not calculate threshold for {carrier.CarrierName}: {ex.Message}");
-                                // Continue with default threshold from template
+                                // Don't add alert if calculation fails
+                                skippedCarriers.Add(carrier.CarrierName);
                             }
                         }
+                        else
+                        {
+                            // No statistics available for this carrier
+                            Debug.WriteLine($"No statistics available for {carrier.CarrierName}, skipping PrintDuration alert creation");
+                            skippedCarriers.Add(carrier.CarrierName);
+                        }
 
-                        if (!_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.PrintDuration))
+                        // Only add the alert if we successfully set a valid threshold
+                        if (thresholdSet && !_alertService.HasCarrierAlert(existingAlerts, carrier.CarrierName, AlertType.PrintDuration))
                         {
                             alertsToAdd.Add(printDurationAlert);
                             addedCount++;
@@ -282,7 +304,12 @@ namespace SupportTool
 
                     var toast = new CustomToast();
                     ToastContainer.Children.Add(toast);
-                    toast.ShowToast("Success", $"Added {addedCount} missing alerts", InfoBarSeverity.Success, 5);
+                    string message = $"Added {addedCount} missing alerts";
+                    if (skippedCarriers.Any())
+                    {
+                        message += $". Skipped {skippedCarriers.Count} carrier(s) due to missing or invalid statistics: {string.Join(", ", skippedCarriers)}. Try running this batch again.";
+                    }
+                    toast.ShowToast("Success", message, InfoBarSeverity.Success, skippedCarriers.Any() ? 10 : 5);
 
                     // Refresh the alert status display
                     RefreshAlertStatus();
@@ -291,7 +318,16 @@ namespace SupportTool
                 {
                     var toast = new CustomToast();
                     ToastContainer.Children.Add(toast);
-                    toast.ShowToast("Information", "No missing alerts to add", InfoBarSeverity.Informational, 5);
+                    string message = "No missing alerts to add";
+                    if (skippedCarriers.Any())
+                    {
+                        message += $". {skippedCarriers.Count} carrier(s) skipped due to missing or invalid statistics: {string.Join(", ", skippedCarriers)}";
+                        toast.ShowToast("Warning", message, InfoBarSeverity.Warning, 10);
+                    }
+                    else
+                    {
+                        toast.ShowToast("Information", message, InfoBarSeverity.Informational, 5);
+                    }
                 }
             }
             catch (Exception ex)
