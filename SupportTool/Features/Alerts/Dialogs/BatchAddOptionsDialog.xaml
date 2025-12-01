@@ -10,8 +10,12 @@
     DefaultButton="Primary"
     PrimaryButtonText="Continue"
     mc:Ignorable="d">
-
     <StackPanel Spacing="15">
+        <TextBlock
+            Margin="0,0,0,10"
+            Text="The 'Name' and 'Facet by' options below are suggested based on most commonly used options in existing alerts. Change the options if desired."
+            TextWrapping="Wrap" />
+
         <TextBox
             x:Name="NamePrefixTextBox"
             Header="Name"
