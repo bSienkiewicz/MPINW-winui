@@ -9,8 +9,6 @@ using System.Threading;
 using System.Linq;
 using Microsoft.UI.Xaml.Input;
 using SupportTool.Alerts.Dialogs;
-using Windows.Storage;
-using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
 using SupportTool.Features.Alerts.Helpers;
 using SupportTool.Features.Alerts.Models;
@@ -115,14 +113,26 @@ namespace SupportTool
 
                     var item = new CarrierItem
                     {
-                        CarrierName = carrier,
-                        IsSelected = false
+                        CarrierName = carrier
                     };
                     item.HasPrintDurationAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
                     item.HasErrorRateAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
+                    
+                    // Select carriers that are missing any alerts
+                    item.IsSelected = !item.HasPrintDurationAlert || !item.HasErrorRateAlert;
+                    
                     Carriers.Add(item);
                 }
                 
+                // Select any carrier that is missing any alert type
+                CarriersList.SelectedItems.Clear();
+                foreach (var item in Carriers)
+                {
+                    if (item.IsSelected)
+                    {
+                        CarriersList.SelectedItems.Add(item);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -253,14 +263,14 @@ namespace SupportTool
                         var printDurationAlert = AlertTemplates.GetTemplate("PrintDuration", carrier.CarrierName, _selectedStack, namePrefix, facetBy);
                         bool thresholdSet = false;
 
-                        // If we have statistics for this carrier, calculate the threshold using centralized logic
+                        // If we have statistics for this carrier, calculate the threshold
                         if (durationStats.TryGetValue(carrier.CarrierName, out var stats) && stats.HasData)
                         {
                             try
                             {
                                 double suggestedThreshold = AlertService.CalculateSuggestedThreshold(stats);
-                                
-                                // Validate the threshold is reasonable (at least 3.0, matching CalculateSuggestedThreshold minimum)
+
+                                // Validate the threshold is reasonable (at least MinimumAbsoluteThreshold)
                                 var minThreshold = AlertTemplates.GetConfigValue<float?>("PrintDuration.ProposedValues.MinimumAbsoluteThreshold");
                                 if (suggestedThreshold >= minThreshold)
                                 {
