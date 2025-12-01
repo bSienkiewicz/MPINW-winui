@@ -196,7 +196,7 @@ namespace SupportTool
                 return;
             }
 
-            var optionsDialog = new BatchAddOptionsDialog
+            var optionsDialog = new BatchAddOptionsDialog(_selectedStack)
             {
                 XamlRoot = RootGrid.XamlRoot
             };
