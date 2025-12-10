@@ -109,7 +109,7 @@
     <ApplicationIcon>Assets\mainlogo.ico</ApplicationIcon>
     <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <PackageCertificateThumbprint>CB0D623243EBE2440ED143C04A31EE077B45551A</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>5DAD41C298CA056787EAA2B5D86307E0672143FE</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
