@@ -1,4 +1,5 @@
 ﻿using SupportTool.Features.Alerts.Models;
+using SupportTool.Features.Alerts.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -223,6 +224,99 @@ namespace SupportTool.Features.Alerts.Helpers
                         .Replace("{namepath}", namepath)
                         .Replace("{facet}", facet)
                         .TrimEnd();
+        }
+
+        /// <summary>
+        /// Gets a DM alert template for Error Rate or Average Duration
+        /// </summary>
+        /// <param name="alertType">"ErrorRate" or "AverageDuration"</param>
+        /// <param name="carrierId">The carrier ID</param>
+        /// <param name="carrierName">Carrier name (required, will be wrapped in &lt;&gt;)</param>
+        /// <param name="isAsos">Whether this is for ASOS retailer (true) or non-ASOS (false)</param>
+        /// <param name="policyId">The New Relic policy ID (optional, will use default from settings if not provided)</param>
+        /// <returns>NrqlAlert template</returns>
+        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool isAsos = false, int? policyId = null)
+        {
+            if (string.IsNullOrWhiteSpace(carrierName))
+            {
+                throw new ArgumentException("Carrier name is required and cannot be empty.", nameof(carrierName));
+            }
+
+            // Validate carrier name for invalid characters
+            char[] invalidChars = { '\'', '\"', '.', ',', '<', '>', '(', ')', '[', ']', '{', '}', ':', ';', '/', '?', '\\' };
+            if (carrierName.IndexOfAny(invalidChars) >= 0)
+            {
+                throw new ArgumentException($"Carrier name cannot contain special characters.", nameof(carrierName));
+            }
+
+            string retailerFilter = isAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
+            string asosPrefix = isAsos ? "ASOS " : "";
+            
+            string name;
+            string titleTemplate;
+            string nrqlQuery;
+            string runbookUrl = "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/6384386132/DM+Alerting+Error+Percentage+and+Average+Duration";
+
+            if (alertType == "ErrorRate")
+            {
+                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Error Percentage";
+                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Error Percentage";
+                nrqlQuery = $"SELECT percentage(count(*),where error is true) FROM Transaction FACET retailerName,appName WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId}";
+            }
+            else if (alertType == "AverageDuration")
+            {
+                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Average Duration";
+                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Average Duration";
+                nrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} and carrierId = {carrierId} FACET retailerName,appName,carrierId";
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown alert type: {alertType}", nameof(alertType));
+            }
+
+            // Get policy ID from settings if not provided
+            if (!policyId.HasValue)
+            {
+                var settingsService = new SettingsService();
+                string policyIdStr = settingsService.GetSetting("DMPolicyId", "6708037");
+                if (int.TryParse(policyIdStr, out int parsedPolicyId))
+                {
+                    policyId = parsedPolicyId;
+                }
+                else
+                {
+                    policyId = 6708037; // Default fallback
+                }
+            }
+
+            var alert = new NrqlAlert
+            {
+                Name = name,
+                Description = "",
+                Severity = "CRITICAL",
+                NrqlQuery = nrqlQuery,
+                RunbookUrl = runbookUrl,
+                Enabled = true,
+                AggregationMethod = "EVENT_FLOW",
+                AggregationWindow = 60,
+                AggregationDelay = 120,
+                CriticalOperator = "ABOVE_OR_EQUALS",
+                CriticalThreshold = alertType == "ErrorRate" ? 5 : 4, // Default thresholds
+                CriticalThresholdDuration = 300,
+                CriticalThresholdOccurrences = "ALL",
+                ExpirationDuration = 900,
+                CloseViolationsOnExpiration = true
+            };
+
+            // Add additional fields specific to DM alerts
+            alert.AdditionalFields["fill_option"] = "static";
+            alert.AdditionalFields["fill_value"] = 1;
+            alert.AdditionalFields["title_template"] = titleTemplate;
+            alert.AdditionalFields["open_violation_on_expiration"] = false;
+            alert.AdditionalFields["ignore_on_expected_termination"] = false;
+            alert.AdditionalFields["policy_id"] = policyId.Value;
+
+            return alert;
         }
 
         public static double GetThresholdDifference()

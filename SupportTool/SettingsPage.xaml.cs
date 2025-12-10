@@ -26,6 +26,8 @@ namespace SupportTool
         {
             this.InitializeComponent();
             LoadApiKey();
+            LoadAutoSelectSetting();
+            LoadDMPolicyIdSetting();
             string repoPath = _settings.GetSetting("NRAlertsDir");
             ValidateAndUpdateUi(repoPath);
         }
@@ -41,7 +43,7 @@ namespace SupportTool
                 switch (tabName)
                 {
                     case "ApiKeyTab":
-                        ExpanderSettings_NRAPI.IsExpanded = true;
+                        ExpanderSettings_InitialConfig.IsExpanded = true;
                         break;
                     default:
                         break;
@@ -149,6 +151,47 @@ namespace SupportTool
 
             // Use Regex to check if the API key matches the pattern
             return System.Text.RegularExpressions.Regex.IsMatch(apiKey, pattern);
+        }
+
+        private void LoadAutoSelectSetting()
+        {
+            string setting = _settings.GetSetting("AutoSelectMissingAlerts", "Both");
+            foreach (ComboBoxItem item in AutoSelectComboBox.Items)
+            {
+                if (item.Tag?.ToString() == setting)
+                {
+                    AutoSelectComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+
+        private void LoadDMPolicyIdSetting()
+        {
+            string policyId = _settings.GetSetting("DMPolicyId", "6708037");
+            DMPolicyIdTextBox.Text = policyId;
+        }
+
+        private void DMPolicyIdTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string policyId = DMPolicyIdTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(policyId) && int.TryParse(policyId, out _))
+            {
+                _settings.SetSetting("DMPolicyId", policyId);
+                DMPolicyIdTextBox.BorderBrush = null;
+            }
+            else if (!string.IsNullOrWhiteSpace(policyId))
+            {
+                DMPolicyIdTextBox.BorderBrush = new SolidColorBrush(Colors.Red);
+            }
+        }
+
+        private void AutoSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AutoSelectComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string tag)
+            {
+                _settings.SetSetting("AutoSelectMissingAlerts", tag);
+            }
         }
 
         private void DeleteConfirmation_Click(object sender, RoutedEventArgs e)

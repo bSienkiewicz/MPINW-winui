@@ -114,8 +114,9 @@ namespace SupportTool
             if (AlertItems.Count == 0) return;
 
             CalculateTimesButton.IsEnabled = false;
-            AlertFetchingProgress.IsActive = true;
+            AlertFetchingProgressRing.IsActive = true;
             AlertFetchingProgress.Visibility = Visibility.Visible;
+            AlertFetchingOverlay.Visibility = Visibility.Visible;
             try
             {
                 var carriers = AlertItems
@@ -128,8 +129,9 @@ namespace SupportTool
                 {
                     ShowToast("No carriers found", "There are no carriers to fetch.", InfoBarSeverity.Warning, 5);
                     CalculateTimesButton.IsEnabled = true;
-                    AlertFetchingProgress.IsActive = false;
+                    AlertFetchingProgressRing.IsActive = false;
                     AlertFetchingProgress.Visibility = Visibility.Collapsed;
+                    AlertFetchingOverlay.Visibility = Visibility.Collapsed;
                     return;
                 }
 
@@ -168,8 +170,9 @@ namespace SupportTool
             finally
             {
                 CalculateTimesButton.IsEnabled = true;
-                AlertFetchingProgress.IsActive = false;
+                AlertFetchingProgressRing.IsActive = false;
                 AlertFetchingProgress.Visibility = Visibility.Collapsed;
+                AlertFetchingOverlay.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -187,8 +190,9 @@ namespace SupportTool
 
         private void ApplySelectedThresholdsButton_Click(object sender, RoutedEventArgs e)
         {
-            AlertFetchingProgress.IsActive = true;
+            AlertFetchingProgressRing.IsActive = true;
             AlertFetchingProgress.Visibility = Visibility.Visible;
+            AlertFetchingOverlay.Visibility = Visibility.Visible;
             if (!string.IsNullOrEmpty(_selectedStack))
             {
                 // Load all alerts for the stack
@@ -209,8 +213,9 @@ namespace SupportTool
                 ShowToast("Thresholds Applied", "Selected thresholds have been updated and saved.", InfoBarSeverity.Success, 4);
                 LoadAlertsForStack();
             }
-            AlertFetchingProgress.IsActive = false;
+            AlertFetchingProgressRing.IsActive = false;
             AlertFetchingProgress.Visibility = Visibility.Collapsed;
+            AlertFetchingOverlay.Visibility = Visibility.Collapsed;
         }
 
         private void ShowToast(string title, string message, InfoBarSeverity severity, int durationSeconds)

@@ -17,7 +17,7 @@ using SupportTool.Features.Alerts.CustomControls;
 
 namespace SupportTool
 {
-    public sealed partial class Alerting_List : Page
+    public sealed partial class AlertAudit : Page
     {
         public ObservableCollection<CarrierItem> Carriers { get; } = new();
         private readonly NewRelicApiService _newRelicApiService = new();
@@ -27,7 +27,7 @@ namespace SupportTool
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isUpdatingHeaderCheckBox = false;
 
-        public Alerting_List()
+        public AlertAudit()
         {
             InitializeComponent();
             InitializeControls();
@@ -83,6 +83,10 @@ namespace SupportTool
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
 
+                // Show spinner immediately for new operation
+                CarrierFetchingProgressRing.IsActive = true;
+                CarrierFetchingProgress.Visibility = Visibility.Visible;
+
                 // Update selected stack
                 _selectedStack = e.AddedItems[0].ToString();
                 _settings.SetSetting("SelectedStack", _selectedStack);
@@ -100,7 +104,7 @@ namespace SupportTool
 
             try
             {
-                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgressRing.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
                 var uniqueCarriers = await _newRelicApiService.FetchCarriers(stack, cancellationToken);
@@ -109,7 +113,10 @@ namespace SupportTool
                 Carriers.Clear();
                 foreach (var carrier in uniqueCarriers)
                 {
-                    if (cancellationToken.IsCancellationRequested) return;
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException();
+                    }
 
                     var item = new CarrierItem
                     {
@@ -118,21 +125,30 @@ namespace SupportTool
                     item.HasPrintDurationAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
                     item.HasErrorRateAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
                     
-                    // Select carriers that are missing any alerts
-                    item.IsSelected = !item.HasPrintDurationAlert || !item.HasErrorRateAlert;
+                    // Select carriers that are missing any alerts (if auto-select is enabled for MPM)
+                    bool shouldAutoSelect = ShouldAutoSelectMissingAlerts("MPM");
+                    item.IsSelected = shouldAutoSelect && (!item.HasPrintDurationAlert || !item.HasErrorRateAlert);
                     
                     Carriers.Add(item);
                 }
                 
-                // Select any carrier that is missing any alert type
-                CarriersList.SelectedItems.Clear();
-                foreach (var item in Carriers)
+                // Select any carrier that is missing any alert type (if auto-select is enabled)
+                if (ShouldAutoSelectMissingAlerts("MPM"))
                 {
-                    if (item.IsSelected)
+                    CarriersList.SelectedItems.Clear();
+                    foreach (var item in Carriers)
                     {
-                        CarriersList.SelectedItems.Add(item);
+                        if (item.IsSelected)
+                        {
+                            CarriersList.SelectedItems.Add(item);
+                        }
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Operation was cancelled, don't hide spinner as new operation may be starting
+                return;
             }
             catch (Exception ex)
             {
@@ -142,8 +158,12 @@ namespace SupportTool
             }
             finally
             {
-                CarrierFetchingProgress.IsActive = false;
-                CarrierFetchingProgress.Visibility = Visibility.Collapsed;
+                // Only hide spinner if operation completed normally
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    CarrierFetchingProgressRing.IsActive = false;
+                    CarrierFetchingProgress.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -160,6 +180,19 @@ namespace SupportTool
         private void ApiKeyWarningInfoBar_ButtonClick(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
+        }
+
+        private bool ShouldAutoSelectMissingAlerts(string alertType)
+        {
+            string setting = _settings.GetSetting("AutoSelectMissingAlerts", "Both");
+            return setting switch
+            {
+                "Both" => true,
+                "MPM" => alertType == "MPM",
+                "DM" => alertType == "DM",
+                "None" => false,
+                _ => true // Default to true for backward compatibility
+            };
         }
 
         private void RefreshAlertStatus()
@@ -189,22 +222,18 @@ namespace SupportTool
 
         private async void BatchAddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!IsApiKeyPresent() || string.IsNullOrEmpty(_selectedStack))
+            var (isValid, errorMessage) = BatchAlertService.ValidateBatchPrerequisites(
+                IsApiKeyPresent(), 
+                _selectedStack, 
+                CarriersList.SelectedItems.Count);
+
+            if (!isValid)
             {
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Error", "Please ensure API key is set and a stack is selected", InfoBarSeverity.Error, 5);
+                BatchAlertService.ShowToast(ToastContainer, "Error", errorMessage!, InfoBarSeverity.Error, 5);
                 return;
             }
 
             var selectedCarriers = CarriersList.SelectedItems.Cast<CarrierItem>().ToList();
-            if (!selectedCarriers.Any())
-            {
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Information", "Please select at least one carrier", InfoBarSeverity.Informational, 5);
-                return;
-            }
 
             var optionsDialog = new BatchAddOptionsDialog(_selectedStack)
             {
@@ -223,7 +252,7 @@ namespace SupportTool
             try
             {
                 BatchAddButton.IsEnabled = false;
-                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgressRing.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
                 var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
@@ -237,11 +266,13 @@ namespace SupportTool
                     .Select(c => c.CarrierName)
                     .ToList();
 
-                // Fetch statistics for all carriers needing PrintDuration alerts in one request
+                // Fetch statistics for all carriers in one request
                 Dictionary<string, CarrierDurationStatistics> durationStats = new();
                 if (carriersNeedingPrintDuration.Any())
                 {
+                    CarrierFetchingProgressText.Text = "Hold tight - calculating the average duration";
                     durationStats = await _newRelicApiService.FetchDurationStatisticsForCarriersAsync(carriersNeedingPrintDuration);
+                    CarrierFetchingProgressText.Text = "Hold tight - gathering carrier list...";
                 }
 
                 foreach (var carrier in selectedCarriers)
@@ -312,43 +343,30 @@ namespace SupportTool
                     existingAlerts.AddRange(alertsToAdd);
                     _alertService.SaveAlertsToFile(_selectedStack, existingAlerts);
 
-                    var toast = new CustomToast();
-                    ToastContainer.Children.Add(toast);
-                    string message = $"Added {addedCount} missing alerts";
-                    if (skippedCarriers.Any())
-                    {
-                        message += $". Skipped {skippedCarriers.Count} carrier(s) due to missing or invalid statistics: {string.Join(", ", skippedCarriers)}. Try running this batch again.";
-                    }
-                    toast.ShowToast("Success", message, InfoBarSeverity.Success, skippedCarriers.Any() ? 10 : 5);
+                    string message = BatchAlertService.CreateSuccessMessage(addedCount, skippedCarriers, "carrier");
+                    BatchAlertService.ShowToast(
+                        ToastContainer, 
+                        "Success", 
+                        message, 
+                        InfoBarSeverity.Success, 
+                        skippedCarriers.Any() ? 10 : 5);
 
                     // Refresh the alert status display
                     RefreshAlertStatus();
                 }
                 else
                 {
-                    var toast = new CustomToast();
-                    ToastContainer.Children.Add(toast);
-                    string message = "No missing alerts to add";
-                    if (skippedCarriers.Any())
-                    {
-                        message += $". {skippedCarriers.Count} carrier(s) skipped due to missing or invalid statistics: {string.Join(", ", skippedCarriers)}";
-                        toast.ShowToast("Warning", message, InfoBarSeverity.Warning, 10);
-                    }
-                    else
-                    {
-                        toast.ShowToast("Information", message, InfoBarSeverity.Informational, 5);
-                    }
+                    var (message, severity) = BatchAlertService.CreateNoAlertsMessage(skippedCarriers, "carrier");
+                    BatchAlertService.ShowToast(ToastContainer, severity == InfoBarSeverity.Warning ? "Warning" : "Information", message, severity, skippedCarriers.Any() ? 10 : 5);
                 }
             }
             catch (Exception ex)
             {
-                var toast = new CustomToast();
-                ToastContainer.Children.Add(toast);
-                toast.ShowToast("Error", $"Failed to add alerts: {ex.Message}", InfoBarSeverity.Error, 10);
+                BatchAlertService.ShowToast(ToastContainer, "Error", $"Failed to add alerts: {ex.Message}", InfoBarSeverity.Error, 10);
             }
             finally
             {
-                CarrierFetchingProgress.IsActive = false;
+                CarrierFetchingProgressRing.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
                 BatchAddButton.IsEnabled = true;
             }

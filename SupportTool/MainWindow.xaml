@@ -45,7 +45,12 @@
                                 <FontIcon Glyph="&#xE7BA;" />
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
-                        <NavigationViewItem Content="Alert Audit" Tag="NRAlertsList">
+                        <NavigationViewItem Content="MPM Alert Audit" Tag="NRAlertAuditMPM">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xF0B5;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem Content="DM Alert Audit" Tag="NRAlertAuditDM">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xF0B5;" />
                             </NavigationViewItem.Icon>

@@ -16,7 +16,8 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, Type> _pageMapping = new Dictionary<string, Type>
         {
             { "Alerting", typeof(Alerting) },
-            { "NRAlertsList", typeof(Alerting_List) },
+            { "NRAlertAuditMPM", typeof(AlertAudit) },
+            { "NRAlertAuditDM", typeof(AlertAuditDM) },
             { "NRThresholdManager", typeof(ThresholdManager) },
             { "FLRange_RoyalMail", typeof(RoyalMail) }
         };

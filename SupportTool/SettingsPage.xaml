@@ -13,47 +13,9 @@
         <StackPanel Spacing="12">
             <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="App Settings" />
 
-            <!--  Repository location  -->
-            <Grid
-                x:Name="RepoDirectorySettingItem"
-                Padding="16"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="4">
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <FontIcon
-                        Margin="16,0,16,0"
-                        VerticalAlignment="Center"
-                        FontSize="20"
-                        Glyph="&#xE8B7;" />
-
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock FontSize="14" Text="Repository Location" />
-                        <TextBlock
-                            x:Name="RepoPathTextBlock"
-                            Margin="0,4,0,0"
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Select the main Alerting repository folder" />
-                    </StackPanel>
-                </StackPanel>
-
-                <Button
-                    Grid.Column="1"
-                    Click="SelectFolderButton_Click"
-                    Content="Select Repository" />
-            </Grid>
-
-            <!--  API Input  -->
+            <!--  Initial Configuration  -->
             <Expander
-                x:Name="ExpanderSettings_NRAPI"
+                x:Name="ExpanderSettings_InitialConfig"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch">
                 <Expander.Header>
@@ -63,30 +25,145 @@
                                 Margin="0,0,16,0"
                                 VerticalAlignment="Center"
                                 FontSize="20"
-                                Glyph="&#xF081;" />
+                                Glyph="&#xE713;" />
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock FontSize="14" Text="New Relic Connection" />
+                                <TextBlock FontSize="14" Text="Initial Configuration" />
                                 <TextBlock
                                     Margin="0,4,0,0"
                                     FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Set up New Relic API Key" />
+                                    Text="Configure repository location and API connection" />
                             </StackPanel>
                         </StackPanel>
                     </Grid>
                 </Expander.Header>
                 <Expander.Content>
-                    <StackPanel Padding="16" HorizontalAlignment="Stretch">
-                        <TextBox
-                            Name="NR_API_KeyTextbox"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Center"
-                            Header="New Relic API Key:"
-                            PlaceholderText="NRAK-1234567890"
-                            TextChanged="NR_API_Key_OnTextChanged" />
+                    <StackPanel Padding="16" Spacing="16">
+                        <!--  Repository location  -->
+                        <Grid
+                            x:Name="RepoDirectorySettingItem"
+                            Padding="16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <FontIcon
+                                    Margin="16,0,16,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="20"
+                                    Glyph="&#xE8B7;" />
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock FontSize="14" Text="Repository Location" />
+                                    <TextBlock
+                                        x:Name="RepoPathTextBlock"
+                                        Margin="0,4,0,0"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Select the main Alerting repository folder" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="1"
+                                Click="SelectFolderButton_Click"
+                                Content="Select Repository" />
+                        </Grid>
+
+                        <!--  API Input  -->
+                        <StackPanel Spacing="8">
+                            <TextBox
+                                Name="NR_API_KeyTextbox"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                Header="New Relic API Key:"
+                                PlaceholderText="NRAK-1234567890"
+                                TextChanged="NR_API_Key_OnTextChanged" />
+                        </StackPanel>
                     </StackPanel>
                 </Expander.Content>
             </Expander>
+
+            <!--  General Settings  -->
+            <Grid
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0,0,0,16"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Text="Application Preferences" />
+
+                <!--  Auto-select missing alerts  -->
+                <Grid Grid.Row="1" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontSize="14" Text="Auto-select Missing Alerts" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Automatically select carriers that are missing alerts when loading data" />
+                    </StackPanel>
+
+                    <ComboBox
+                        x:Name="AutoSelectComboBox"
+                        Grid.Column="1"
+                        Width="200"
+                        HorizontalAlignment="Right"
+                        SelectionChanged="AutoSelectComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Both (MPM and DM)" Tag="Both" />
+                        <ComboBoxItem Content="MPM only" Tag="MPM" />
+                        <ComboBoxItem Content="DM only" Tag="DM" />
+                        <ComboBoxItem Content="None" Tag="None" />
+                    </ComboBox>
+                </Grid>
+
+                <!--  DM Policy ID  -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontSize="14" Text="DM Policy ID" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="New Relic policy ID for DM alerts (default: 6708037)" />
+                    </StackPanel>
+
+                    <TextBox
+                        x:Name="DMPolicyIdTextBox"
+                        Grid.Column="1"
+                        Width="200"
+                        HorizontalAlignment="Right"
+                        PlaceholderText="6708037"
+                        TextChanged="DMPolicyIdTextBox_TextChanged" />
+                </Grid>
+            </Grid>
 
             <!--  Reset settings  -->
             <Expander

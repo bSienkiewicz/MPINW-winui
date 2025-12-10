@@ -183,6 +183,71 @@ namespace SupportTool.Features.Alerts.Services
             };
         }
 
+        /// <summary>
+        /// Checks if a carrier ID has a DM alert of the specified type
+        /// </summary>
+        /// <param name="alerts">List of alerts to check</param>
+        /// <param name="carrierId">The carrier ID to check for</param>
+        /// <param name="alertType">The type of alert (AverageDuration or ErrorRate)</param>
+        /// <param name="isAsos">Whether to check for ASOS alerts (true) or non-ASOS alerts (false). Null means check both.</param>
+        /// <returns>True if the alert exists, false otherwise</returns>
+        public bool HasCarrierIdAlert(List<NrqlAlert> alerts, string carrierId, AlertType alertType, bool? isAsos = null)
+        {
+            return alertType switch
+            {
+                AlertType.PrintDuration => alerts.Any(alert =>
+                    alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
+                    alert.Name.Contains("Average Duration", StringComparison.OrdinalIgnoreCase) &&                   // Must be Average Duration
+                    HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
+                    alert.NrqlQuery.Contains("average(duration)", StringComparison.OrdinalIgnoreCase) &&            // Find average aggregate function
+                    (isAsos == null || (isAsos.Value ? alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase) : !alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase)))), // Match ASOS/non-ASOS based on parameter
+                AlertType.ErrorRate => alerts.Any(alert =>
+                    alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
+                    alert.Name.Contains("Error Percentage", StringComparison.OrdinalIgnoreCase) &&                  // Must be Error Percentage
+                    HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
+                    alert.NrqlQuery.Contains("percentage", StringComparison.OrdinalIgnoreCase) &&                    // Find percentage aggregate function
+                    alert.NrqlQuery.Contains("error", StringComparison.OrdinalIgnoreCase) &&
+                    (isAsos == null || (isAsos.Value ? alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase) : !alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase)))), // Match ASOS/non-ASOS based on parameter
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Checks if an alert has an exact match for the carrier ID (not a partial match)
+        /// Checks both the alert name (in parentheses) and the query
+        /// </summary>
+        /// <param name="alert">The alert to check</param>
+        /// <param name="carrierId">The carrier ID to match</param>
+        /// <returns>True if exact match found, false otherwise</returns>
+        public static bool HasExactCarrierIdMatch(NrqlAlert alert, string carrierId)
+        {
+            // Check alert name for pattern: (carrierId) - this ensures exact match
+            string namePattern = $"({carrierId})";
+            if (alert.Name.Contains(namePattern, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Also check query for exact match: carrierId = carrierId followed by space, comma, or end
+            // This prevents matching 74 when looking for 741
+            string queryPattern = $"carrierId = {carrierId}";
+            int index = alert.NrqlQuery.IndexOf(queryPattern, StringComparison.OrdinalIgnoreCase);
+            if (index >= 0)
+            {
+                int afterPattern = index + queryPattern.Length;
+                // Check if the character after the pattern is a space, comma, or end of string
+                if (afterPattern >= alert.NrqlQuery.Length || 
+                    alert.NrqlQuery[afterPattern] == ' ' || 
+                    alert.NrqlQuery[afterPattern] == ',' ||
+                    alert.NrqlQuery[afterPattern] == ')')
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public NrqlAlert CloneAlert(NrqlAlert alert) => new()
         {
             Name = $"{alert.Name} Copy",
@@ -281,6 +346,56 @@ namespace SupportTool.Features.Alerts.Services
             if (dashIndex > 0)
             {
                 return title.Substring(0, dashIndex).Trim();
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Extracts carrier name from DM alert name format: "DM Allocation <CarrierName> (ID) ..." or "DM Allocation CarrierName (ID) ..."
+        /// </summary>
+        /// <param name="alertName">The alert name</param>
+        /// <param name="carrierId">The carrier ID to match</param>
+        /// <returns>The carrier name if found, empty string otherwise</returns>
+        public static string ExtractCarrierNameFromDmAlert(string alertName, string carrierId)
+        {
+            if (string.IsNullOrEmpty(alertName) || string.IsNullOrEmpty(carrierId))
+                return string.Empty;
+
+            // Look for pattern: DM Allocation ... <CarrierName> (carrierId) ...
+            // Example: "DM Allocation <DPD Poland API> (764) Error Percentage"
+            // Or legacy: "DM Allocation FedEx API (701) Error Percentage"
+            
+            // First try new format with <>
+            int openBracketIndex = alertName.IndexOf('<');
+            if (openBracketIndex >= 0)
+            {
+                int closeBracketIndex = alertName.IndexOf('>', openBracketIndex);
+                if (closeBracketIndex > openBracketIndex)
+                {
+                    // Verify the carrier ID matches by checking for (carrierId) after the closing bracket
+                    int parenIndex = alertName.IndexOf($"({carrierId})", closeBracketIndex);
+                    if (parenIndex > closeBracketIndex)
+                    {
+                        return alertName.Substring(openBracketIndex + 1, closeBracketIndex - openBracketIndex - 1).Trim();
+                    }
+                }
+            }
+
+            // Fallback: Try to extract from legacy format without <>
+            // Pattern: "DM Allocation ***Critical*** CarrierName (ID) ..."
+            int criticalIndex = alertName.IndexOf("***Critical***", StringComparison.OrdinalIgnoreCase);
+            if (criticalIndex >= 0)
+            {
+                int startIndex = criticalIndex + "***Critical***".Length;
+                int parenIndex = alertName.IndexOf($"({carrierId})", startIndex);
+                if (parenIndex > startIndex)
+                {
+                    // Extract text between "***Critical***" and "(carrierId)"
+                    string extracted = alertName.Substring(startIndex, parenIndex - startIndex).Trim();
+                    // Remove any trailing spaces or special characters
+                    return extracted.Trim();
+                }
             }
 
             return string.Empty;

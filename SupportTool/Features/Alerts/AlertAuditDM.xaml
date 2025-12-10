@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Page
-    x:Class="SupportTool.Alerting_List"
+    x:Class="SupportTool.Features.Alerts.AlertAuditDM"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:SupportTool"
+    xmlns:local="using:SupportTool.Features.Alerts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:SupportTool.Features.Alerts.Models"
     mc:Ignorable="d">
@@ -53,17 +53,23 @@
                 Grid.Column="0"
                 Margin="0,0,0,20"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="Alert Audit" />
+                Text="DM Alert Audit" />
 
             <StackPanel
                 Grid.Column="2"
                 VerticalAlignment="Center"
                 Orientation="Horizontal"
                 Spacing="10">
+                <ToggleSwitch
+                    x:Name="AsosToggle"
+                    Padding="0"
+                    VerticalAlignment="Center"
+                    OffContent="Non-ASOS"
+                    OnContent="ASOS"
+                    Toggled="AsosToggle_Toggled" />
                 <Button
                     x:Name="BatchAddButton"
-                    Grid.Column="3"
-                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
                     Click="BatchAddButton_Click"
                     Style="{StaticResource AccentButtonStyle}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -74,13 +80,15 @@
                 <ComboBox
                     x:Name="stacksComboBox"
                     Width="200"
+                    VerticalAlignment="Center"
                     PlaceholderText="Select a stack..."
                     SelectionChanged="StackComboBox_SelectionChanged" />
                 <Button
                     x:Name="FetchNRButton"
+                    VerticalAlignment="Center"
                     Click="FetchNRButton_Click"
                     Style="{StaticResource AccentButtonStyle}"
-                    ToolTipService.ToolTip="Refresh carrier list">
+                    ToolTipService.ToolTip="Refresh carrier ID list">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xEBD3;" />
                     </StackPanel>
@@ -105,55 +113,85 @@
 
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="2*" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="0"
                     HorizontalAlignment="Stretch"
-                    Content="Carrier Name"
-                    CornerRadius="5,0,0,5" />
+                    Content="Carrier ID"
+                    CornerRadius="5,0,0,0" />
                 <Button
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
-                    Content="PD Alert"
+                    Content="Carrier Name"
                     CornerRadius="0,0,0,0" />
                 <Button
                     Grid.Column="2"
                     HorizontalAlignment="Stretch"
-                    Content="ER Alert"
+                    Content="Avg Duration Alert"
+                    CornerRadius="0,0,0,0" />
+                <Button
+                    Grid.Column="3"
+                    HorizontalAlignment="Stretch"
+                    Content="Error Rate Alert"
                     CornerRadius="0,5,5,0" />
             </Grid>
 
-            <ProgressRing
+            <StackPanel
                 x:Name="CarrierFetchingProgress"
                 Grid.Row="2"
-                IsActive="True"
-                Visibility="Collapsed" />
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Vertical"
+                Spacing="16"
+                Visibility="Collapsed">
+                <TextBlock
+                    x:Name="CarrierFetchingProgressText"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="Hold tight - gathering carrier list..." />
+                <ProgressRing
+                    x:Name="CarrierFetchingProgressRing"
+                    HorizontalAlignment="Center"
+                    IsActive="True" />
+            </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="CarriersList" SelectionMode="Multiple">
+                <ListView x:Name="CarriersList" SelectionMode="Multiple" TabNavigation="Cycle">
                     <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="models:CarrierItem">
+                        <DataTemplate x:DataType="models:CarrierIdItem">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="3*" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="10,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind CarrierName}" />
-                                <CheckBox
+                                    Text="{x:Bind CarrierId}" />
+                                <TextBox
                                     Grid.Column="1"
-                                    Content="Print Duration Alert"
-                                    IsChecked="{x:Bind HasPrintDurationAlert}"
-                                    IsEnabled="False" />
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    PlaceholderText="Carrier name..."
+                                    Text="{x:Bind CarrierName, Mode=TwoWay}"
+                                    TextChanged="CarrierNameTextBox_TextChanged"
+                                    KeyDown="CarrierNameTextBox_KeyDown"
+                                    IsTabStop="True" />
                                 <CheckBox
                                     Grid.Column="2"
-                                    Content="Error Rate Alert"
+                                    Content="Print Duration"
+                                    IsChecked="{x:Bind HasAverageDurationAlert}"
+                                    IsEnabled="False" />
+                                <CheckBox
+                                    Grid.Column="3"
+                                    Content="Error Rate"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
                                     IsEnabled="False" />
                             </Grid>
