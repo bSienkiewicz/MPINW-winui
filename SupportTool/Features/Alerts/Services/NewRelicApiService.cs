@@ -40,6 +40,12 @@ namespace SupportTool.Features.Alerts.Services
             _settingsService = new SettingsService();
         }
 
+        /// <summary>
+        /// Fetch all actively used carriers from a provided stack
+        /// </summary>
+        /// <param name="stack"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<List<string>> FetchCarriers(string stack, CancellationToken cancellationToken = default)
         {
             var carriers = new List<string>();
@@ -111,15 +117,13 @@ namespace SupportTool.Features.Alerts.Services
             }
             catch (OperationCanceledException)
             {
-                // Handle cancellation gracefully
                 Debug.WriteLine("FetchCarriers was canceled.");
-                throw; // Re-throw if you want the caller to handle the cancellation
+                throw;
             }
             catch (Exception ex)
             {
-                // Handle or log the exception appropriately
                 Debug.WriteLine($"Error in FetchCarriers: {ex.Message}");
-                throw; // Re-throw for now
+                throw;
             }
 
             return carriers;
