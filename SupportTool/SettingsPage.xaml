@@ -100,6 +100,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock
@@ -110,7 +111,7 @@
                     Text="Application Preferences" />
 
                 <!--  Auto-select missing alerts  -->
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="1" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -136,6 +137,31 @@
                         <ComboBoxItem Content="DM only" Tag="DM" />
                         <ComboBoxItem Content="None" Tag="None" />
                     </ComboBox>
+                </Grid>
+
+                <!--  DM Policy ID  -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontSize="14" Text="DM Policy ID" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="New Relic policy ID for DM alerts (default: 6708037)" />
+                    </StackPanel>
+
+                    <TextBox
+                        x:Name="DMPolicyIdTextBox"
+                        Grid.Column="1"
+                        Width="200"
+                        HorizontalAlignment="Right"
+                        PlaceholderText="6708037"
+                        TextChanged="DMPolicyIdTextBox_TextChanged" />
                 </Grid>
             </Grid>
 

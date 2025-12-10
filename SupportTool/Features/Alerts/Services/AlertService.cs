@@ -360,8 +360,8 @@ namespace SupportTool.Features.Alerts.Services
                 return string.Empty;
 
             // Look for pattern: DM Allocation ... <CarrierName> (carrierId) ...
-            // Example: "DM Allocation ***Critical*** <DPD Poland API> (764) Error Percentage"
-            // Or legacy: "DM Allocation ***Critical*** FedEx API (701) Error Percentage"
+            // Example: "DM Allocation <DPD Poland API> (764) Error Percentage"
+            // Or legacy: "DM Allocation FedEx API (701) Error Percentage"
             
             // First try new format with <>
             int openBracketIndex = alertName.IndexOf('<');

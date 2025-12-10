@@ -27,6 +27,7 @@ namespace SupportTool
             this.InitializeComponent();
             LoadApiKey();
             LoadAutoSelectSetting();
+            LoadDMPolicyIdSetting();
             string repoPath = _settings.GetSetting("NRAlertsDir");
             ValidateAndUpdateUi(repoPath);
         }
@@ -162,6 +163,26 @@ namespace SupportTool
                     AutoSelectComboBox.SelectedItem = item;
                     break;
                 }
+            }
+        }
+
+        private void LoadDMPolicyIdSetting()
+        {
+            string policyId = _settings.GetSetting("DMPolicyId", "6708037");
+            DMPolicyIdTextBox.Text = policyId;
+        }
+
+        private void DMPolicyIdTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string policyId = DMPolicyIdTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(policyId) && int.TryParse(policyId, out _))
+            {
+                _settings.SetSetting("DMPolicyId", policyId);
+                DMPolicyIdTextBox.BorderBrush = null;
+            }
+            else if (!string.IsNullOrWhiteSpace(policyId))
+            {
+                DMPolicyIdTextBox.BorderBrush = new SolidColorBrush(Colors.Red);
             }
         }
 

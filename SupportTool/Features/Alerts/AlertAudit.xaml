@@ -136,12 +136,12 @@
                 Visibility="Collapsed">
                 <TextBlock
                     HorizontalAlignment="Center"
-                    Text="Gathering carrier list..."
-                    Style="{StaticResource BodyTextBlockStyle}" />
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="Gathering carrier list..." />
                 <ProgressRing
                     x:Name="CarrierFetchingProgressRing"
-                    IsActive="True"
-                    HorizontalAlignment="Center" />
+                    HorizontalAlignment="Center"
+                    IsActive="True" />
             </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
@@ -160,12 +160,12 @@
                                     Text="{x:Bind CarrierName}" />
                                 <CheckBox
                                     Grid.Column="1"
-                                    Content="Print Duration Alert"
+                                    Content="Print Duration"
                                     IsChecked="{x:Bind HasPrintDurationAlert}"
                                     IsEnabled="False" />
                                 <CheckBox
                                     Grid.Column="2"
-                                    Content="Error Rate Alert"
+                                    Content="Error Rate"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
                                     IsEnabled="False" />
                             </Grid>

@@ -41,8 +41,23 @@ namespace SupportTool
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            // Initialize default settings if they don't exist
+            InitializeDefaultSettings();
+            
             MainWindow = new MainWindow();
             MainWindow.Activate();
+        }
+
+        private void InitializeDefaultSettings()
+        {
+            var settingsService = new Features.Alerts.Services.SettingsService();
+            
+            // Initialize DM Policy ID if not set
+            string dmPolicyId = settingsService.GetSetting("DMPolicyId");
+            if (string.IsNullOrEmpty(dmPolicyId))
+            {
+                settingsService.SetSetting("DMPolicyId", "6708037");
+            }
         }
 
         public static Window? MainWindow { get; set; }

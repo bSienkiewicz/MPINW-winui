@@ -1,4 +1,5 @@
 ﻿using SupportTool.Features.Alerts.Models;
+using SupportTool.Features.Alerts.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -232,8 +233,9 @@ namespace SupportTool.Features.Alerts.Helpers
         /// <param name="carrierId">The carrier ID</param>
         /// <param name="carrierName">Carrier name (required, will be wrapped in &lt;&gt;)</param>
         /// <param name="includeAsos">Whether this is for ASOS retailer</param>
+        /// <param name="policyId">The New Relic policy ID (optional, will use default from settings if not provided)</param>
         /// <returns>NrqlAlert template</returns>
-        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool includeAsos = false)
+        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool includeAsos = false, int? policyId = null)
         {
             if (string.IsNullOrWhiteSpace(carrierName))
             {
@@ -244,17 +246,20 @@ namespace SupportTool.Features.Alerts.Helpers
             string asosPrefix = includeAsos ? "ASOS " : "";
             
             string name;
+            string titleTemplate;
             string nrqlQuery;
             string runbookUrl = "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/6384386132/DM+Alerting+Error+Percentage+and+Average+Duration";
 
             if (alertType == "ErrorRate")
             {
-                name = $"DM Allocation {asosPrefix}***Critical*** <{carrierName}> ({carrierId}) Error Percentage";
+                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Error Percentage";
+                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Error Percentage";
                 nrqlQuery = $"SELECT percentage(count(*),where error is true) FROM Transaction FACET retailerName,appName WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId}";
             }
             else if (alertType == "AverageDuration")
             {
-                name = $"DM Allocation {asosPrefix}***Critical*** <{carrierName}> ({carrierId}) Average Duration";
+                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Average Duration";
+                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Average Duration";
                 nrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} and carrierId = {carrierId} FACET retailerName,appName,carrierId";
             }
             else
@@ -262,7 +267,22 @@ namespace SupportTool.Features.Alerts.Helpers
                 throw new ArgumentException($"Unknown alert type: {alertType}", nameof(alertType));
             }
 
-            return new NrqlAlert
+            // Get policy ID from settings if not provided
+            if (!policyId.HasValue)
+            {
+                var settingsService = new SettingsService();
+                string policyIdStr = settingsService.GetSetting("DMPolicyId", "6708037");
+                if (int.TryParse(policyIdStr, out int parsedPolicyId))
+                {
+                    policyId = parsedPolicyId;
+                }
+                else
+                {
+                    policyId = 6708037; // Default fallback
+                }
+            }
+
+            var alert = new NrqlAlert
             {
                 Name = name,
                 Description = "",
@@ -270,16 +290,26 @@ namespace SupportTool.Features.Alerts.Helpers
                 NrqlQuery = nrqlQuery,
                 RunbookUrl = runbookUrl,
                 Enabled = true,
-                AggregationMethod = "event_flow",
+                AggregationMethod = "EVENT_FLOW",
                 AggregationWindow = 60,
                 AggregationDelay = 120,
-                CriticalOperator = "above_or_equals",
+                CriticalOperator = "ABOVE_OR_EQUALS",
                 CriticalThreshold = alertType == "ErrorRate" ? 5 : 4, // Default thresholds
                 CriticalThresholdDuration = 300,
                 CriticalThresholdOccurrences = "ALL",
                 ExpirationDuration = 900,
                 CloseViolationsOnExpiration = true
             };
+
+            // Add additional fields specific to DM alerts
+            alert.AdditionalFields["fill_option"] = "static";
+            alert.AdditionalFields["fill_value"] = 1;
+            alert.AdditionalFields["title_template"] = titleTemplate;
+            alert.AdditionalFields["open_violation_on_expiration"] = false;
+            alert.AdditionalFields["ignore_on_expected_termination"] = false;
+            alert.AdditionalFields["policy_id"] = policyId.Value;
+
+            return alert;
         }
 
         public static double GetThresholdDifference()
