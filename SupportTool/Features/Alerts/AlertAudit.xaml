@@ -146,7 +146,7 @@
             </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="CarriersList" SelectionMode="Multiple">
+                <ListView x:Name="CarriersList" SelectionMode="Multiple" TabNavigation="Cycle">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:CarrierItem">
                             <Grid>
@@ -163,12 +163,14 @@
                                     Grid.Column="1"
                                     Content="Print Duration"
                                     IsChecked="{x:Bind HasPrintDurationAlert}"
-                                    IsEnabled="False" />
+                                    IsEnabled="False"
+                                    IsTabStop="False" />
                                 <CheckBox
                                     Grid.Column="2"
                                     Content="Error Rate"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
-                                    IsEnabled="False" />
+                                    IsEnabled="False"
+                                    IsTabStop="False" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

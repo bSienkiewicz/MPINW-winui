@@ -160,7 +160,7 @@
             </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="CarriersList" SelectionMode="Multiple">
+                <ListView x:Name="CarriersList" SelectionMode="Multiple" TabNavigation="Cycle">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:CarrierIdItem">
                             <Grid>
@@ -181,7 +181,9 @@
                                     VerticalAlignment="Center"
                                     PlaceholderText="Carrier name..."
                                     Text="{x:Bind CarrierName, Mode=TwoWay}"
-                                    TextChanged="CarrierNameTextBox_TextChanged" />
+                                    TextChanged="CarrierNameTextBox_TextChanged"
+                                    KeyDown="CarrierNameTextBox_KeyDown"
+                                    IsTabStop="True" />
                                 <CheckBox
                                     Grid.Column="2"
                                     Content="Print Duration"

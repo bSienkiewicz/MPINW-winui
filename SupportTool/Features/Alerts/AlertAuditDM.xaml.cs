@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml;
 using System.Threading;
 using System.Linq;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using SupportTool.Alerts.Dialogs;
 using System.Collections.Generic;
 using SupportTool.Features.Alerts.Helpers;
@@ -292,7 +293,7 @@ namespace SupportTool.Features.Alerts
                 BatchAlertService.ShowToast(
                     ToastContainer, 
                     "Error", 
-                    $"Carrier names cannot contain special characters: ' \" . , < > ( ) [ ] {{ }} : ; / ? \\ Invalid names: {invalidCarrierInfo}", 
+                    $"Carrier names cannot contain special characters. Invalid names: {invalidCarrierInfo}", 
                     InfoBarSeverity.Error, 
                     10);
                 return;
@@ -513,16 +514,96 @@ namespace SupportTool.Features.Alerts
                 }
 
                 // Auto-select carrier if name is entered and carrier doesn't have both alerts
-                if (!string.IsNullOrWhiteSpace(carrierItem.CarrierName) && 
-                    (!carrierItem.HasAverageDurationAlert || !carrierItem.HasErrorRateAlert))
+                // Use the sanitized text if invalid chars were removed, otherwise use currentText
+                string finalText = hadInvalidChars ? SanitizeCarrierName(currentText) : currentText;
+                
+                if (!string.IsNullOrWhiteSpace(finalText))
                 {
-                    // Only select if not already selected to avoid unnecessary UI updates
-                    if (!CarriersList.SelectedItems.Contains(carrierItem))
+                    // Select UNLESS it has both alerts already
+                    bool hasBothAlerts = carrierItem.HasAverageDurationAlert && carrierItem.HasErrorRateAlert;
+                    
+                    if (!hasBothAlerts)
                     {
-                        CarriersList.SelectedItems.Add(carrierItem);
+                        // Only select if not already selected to avoid unnecessary UI updates
+                        if (!CarriersList.SelectedItems.Contains(carrierItem))
+                        {
+                            CarriersList.SelectedItems.Add(carrierItem);
+                        }
+                    }
+                    else
+                    {
+                        // Deselect if it has both alerts (user might have just entered a name but carrier already has both)
+                        if (CarriersList.SelectedItems.Contains(carrierItem))
+                        {
+                            CarriersList.SelectedItems.Remove(carrierItem);
+                        }
+                    }
+                }
+                else
+                {
+                    // If name is cleared, deselect the carrier
+                    if (CarriersList.SelectedItems.Contains(carrierItem))
+                    {
+                        CarriersList.SelectedItems.Remove(carrierItem);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Handles KeyDown event for carrier name TextBox to enable Tab navigation between items
+        /// </summary>
+        private void CarrierNameTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Tab && sender is TextBox textBox)
+            {
+                // Find the current item index
+                if (textBox.DataContext is CarrierIdItem currentItem)
+                {
+                    int currentIndex = Carriers.IndexOf(currentItem);
+                    
+                    if (currentIndex >= 0)
+                    {
+                        // Determine next index (cycle to beginning if at end)
+                        int nextIndex = (currentIndex + 1) % Carriers.Count;
+                        
+                        // Find the next TextBox in the ListView
+                        var container = CarriersList.ContainerFromIndex(nextIndex) as ListViewItem;
+                        if (container != null)
+                        {
+                            var nextTextBox = FindVisualChild<TextBox>(container);
+                            if (nextTextBox != null)
+                            {
+                                nextTextBox.Focus(FocusState.Keyboard);
+                                e.Handled = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to find a visual child of a specific type
+        /// </summary>
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                {
+                    return result;
+                }
+                var childOfChild = FindVisualChild<T>(child);
+                if (childOfChild != null)
+                {
+                    return childOfChild;
+                }
+            }
+            return null;
         }
     }
 }
