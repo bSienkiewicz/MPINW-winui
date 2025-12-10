@@ -183,6 +183,32 @@ namespace SupportTool.Features.Alerts.Services
             };
         }
 
+        /// <summary>
+        /// Checks if a carrier ID has a DM alert of the specified type
+        /// </summary>
+        /// <param name="alerts">List of alerts to check</param>
+        /// <param name="carrierId">The carrier ID to check for</param>
+        /// <param name="alertType">The type of alert (AverageDuration or ErrorRate)</param>
+        /// <returns>True if the alert exists, false otherwise</returns>
+        public bool HasCarrierIdAlert(List<NrqlAlert> alerts, string carrierId, AlertType alertType)
+        {
+            return alertType switch
+            {
+                AlertType.PrintDuration => alerts.Any(alert =>
+                    alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
+                    alert.Name.Contains("Average Duration", StringComparison.OrdinalIgnoreCase) &&                   // Must be Average Duration
+                    alert.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase) &&      // Find carrierId in query
+                    alert.NrqlQuery.Contains("average(duration)", StringComparison.OrdinalIgnoreCase)),            // Find average aggregate function
+                AlertType.ErrorRate => alerts.Any(alert =>
+                    alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
+                    alert.Name.Contains("Error Percentage", StringComparison.OrdinalIgnoreCase) &&                  // Must be Error Percentage
+                    alert.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase) &&    // Find carrierId in query
+                    alert.NrqlQuery.Contains("percentage", StringComparison.OrdinalIgnoreCase) &&                    // Find percentage aggregate function
+                    alert.NrqlQuery.Contains("error", StringComparison.OrdinalIgnoreCase)),
+                _ => false
+            };
+        }
+
         public NrqlAlert CloneAlert(NrqlAlert alert) => new()
         {
             Name = $"{alert.Name} Copy",
