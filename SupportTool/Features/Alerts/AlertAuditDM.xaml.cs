@@ -140,19 +140,23 @@ namespace SupportTool.Features.Alerts
                         item.CarrierName = AlertService.ExtractCarrierNameFromDmAlert(existingAlertForCarrier.Name, carrierId);
                     }
                     
-                    // Select carriers that are missing any alerts
-                    item.IsSelected = !item.HasAverageDurationAlert || !item.HasErrorRateAlert;
+                    // Select carriers that are missing any alerts (if auto-select is enabled for DM)
+                    bool shouldAutoSelect = ShouldAutoSelectMissingAlerts("DM");
+                    item.IsSelected = shouldAutoSelect && (!item.HasAverageDurationAlert || !item.HasErrorRateAlert);
                     
                     Carriers.Add(item);
                 }
                 
-                // Initially select any carrier that is missing any alert type
-                CarriersList.SelectedItems.Clear();
-                foreach (var item in Carriers)
+                // Initially select any carrier that is missing any alert type (if auto-select is enabled)
+                if (ShouldAutoSelectMissingAlerts("DM"))
                 {
-                    if (item.IsSelected)
+                    CarriersList.SelectedItems.Clear();
+                    foreach (var item in Carriers)
                     {
-                        CarriersList.SelectedItems.Add(item);
+                        if (item.IsSelected)
+                        {
+                            CarriersList.SelectedItems.Add(item);
+                        }
                     }
                 }
             }
@@ -205,6 +209,19 @@ namespace SupportTool.Features.Alerts
                 _cancellationTokenSource = new CancellationTokenSource();
                 await LoadCarrierIdsForStack(_selectedStack, _cancellationTokenSource.Token);
             }
+        }
+
+        private bool ShouldAutoSelectMissingAlerts(string alertType)
+        {
+            string setting = _settings.GetSetting("AutoSelectMissingAlerts", "Both");
+            return setting switch
+            {
+                "Both" => true,
+                "MPM" => alertType == "MPM",
+                "DM" => alertType == "DM",
+                "None" => false,
+                _ => true // Default to true for backward compatibility
+            };
         }
 
         private void RefreshAlertStatus()

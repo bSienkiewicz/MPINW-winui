@@ -125,19 +125,23 @@ namespace SupportTool
                     item.HasPrintDurationAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.PrintDuration);
                     item.HasErrorRateAlert = _alertService.HasCarrierAlert(existingAlerts, item.CarrierName, AlertType.ErrorRate);
                     
-                    // Select carriers that are missing any alerts
-                    item.IsSelected = !item.HasPrintDurationAlert || !item.HasErrorRateAlert;
+                    // Select carriers that are missing any alerts (if auto-select is enabled for MPM)
+                    bool shouldAutoSelect = ShouldAutoSelectMissingAlerts("MPM");
+                    item.IsSelected = shouldAutoSelect && (!item.HasPrintDurationAlert || !item.HasErrorRateAlert);
                     
                     Carriers.Add(item);
                 }
                 
-                // Select any carrier that is missing any alert type
-                CarriersList.SelectedItems.Clear();
-                foreach (var item in Carriers)
+                // Select any carrier that is missing any alert type (if auto-select is enabled)
+                if (ShouldAutoSelectMissingAlerts("MPM"))
                 {
-                    if (item.IsSelected)
+                    CarriersList.SelectedItems.Clear();
+                    foreach (var item in Carriers)
                     {
-                        CarriersList.SelectedItems.Add(item);
+                        if (item.IsSelected)
+                        {
+                            CarriersList.SelectedItems.Add(item);
+                        }
                     }
                 }
             }
@@ -176,6 +180,19 @@ namespace SupportTool
         private void ApiKeyWarningInfoBar_ButtonClick(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(SettingsPage), "ApiKeyTab");
+        }
+
+        private bool ShouldAutoSelectMissingAlerts(string alertType)
+        {
+            string setting = _settings.GetSetting("AutoSelectMissingAlerts", "Both");
+            return setting switch
+            {
+                "Both" => true,
+                "MPM" => alertType == "MPM",
+                "DM" => alertType == "DM",
+                "None" => false,
+                _ => true // Default to true for backward compatibility
+            };
         }
 
         private void RefreshAlertStatus()
