@@ -113,6 +113,7 @@
 
             <Grid Grid.Row="1" Margin="10,0,10,10">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
                     <ColumnDefinition Width="3*" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
                     <ColumnDefinition Width="1*" MinWidth="100" />
@@ -121,14 +122,19 @@
                     Grid.Column="0"
                     HorizontalAlignment="Stretch"
                     Content="Carrier ID"
-                    CornerRadius="5,0,0,5" />
+                    CornerRadius="5,0,0,0" />
                 <Button
                     Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    Content="Carrier Name"
+                    CornerRadius="0,0,0,0" />
+                <Button
+                    Grid.Column="2"
                     HorizontalAlignment="Stretch"
                     Content="Avg Duration Alert"
                     CornerRadius="0,0,0,0" />
                 <Button
-                    Grid.Column="2"
+                    Grid.Column="3"
                     HorizontalAlignment="Stretch"
                     Content="Error Rate Alert"
                     CornerRadius="0,5,5,0" />
@@ -158,6 +164,7 @@
                         <DataTemplate x:DataType="models:CarrierIdItem">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="3*" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
                                     <ColumnDefinition Width="1*" MinWidth="100" />
@@ -165,14 +172,21 @@
                                 <TextBlock
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
+                                    Margin="10,0"
                                     Text="{x:Bind CarrierId}" />
-                                <CheckBox
+                                <TextBox
                                     Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Margin="5,0"
+                                    PlaceholderText="Carrier name..."
+                                    Text="{x:Bind CarrierName, Mode=TwoWay}" />
+                                <CheckBox
+                                    Grid.Column="2"
                                     Content="Average Duration Alert"
                                     IsChecked="{x:Bind HasAverageDurationAlert}"
                                     IsEnabled="False" />
                                 <CheckBox
-                                    Grid.Column="2"
+                                    Grid.Column="3"
                                     Content="Error Rate Alert"
                                     IsChecked="{x:Bind HasErrorRateAlert}"
                                     IsEnabled="False" />

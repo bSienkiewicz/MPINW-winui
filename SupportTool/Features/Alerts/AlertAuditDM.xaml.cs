@@ -130,6 +130,16 @@ namespace SupportTool.Features.Alerts
                     item.HasAverageDurationAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.PrintDuration);
                     item.HasErrorRateAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.ErrorRate);
                     
+                    // Try to extract carrier name from existing alerts
+                    var existingAlertForCarrier = existingAlerts.FirstOrDefault(a => 
+                        a.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&
+                        a.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase));
+                    
+                    if (existingAlertForCarrier != null)
+                    {
+                        item.CarrierName = AlertService.ExtractCarrierNameFromDmAlert(existingAlertForCarrier.Name, carrierId);
+                    }
+                    
                     // Select carriers that are missing any alerts
                     item.IsSelected = !item.HasAverageDurationAlert || !item.HasErrorRateAlert;
                     
@@ -237,6 +247,23 @@ namespace SupportTool.Features.Alerts
 
             var selectedCarriers = CarriersList.SelectedItems.Cast<CarrierIdItem>().ToList();
 
+            // Validate that all selected carriers have names
+            var carriersWithoutNames = selectedCarriers
+                .Where(c => string.IsNullOrWhiteSpace(c.CarrierName))
+                .ToList();
+
+            if (carriersWithoutNames.Any())
+            {
+                var carrierIds = string.Join(", ", carriersWithoutNames.Select(c => c.CarrierId));
+                BatchAlertService.ShowToast(
+                    ToastContainer, 
+                    "Error", 
+                    $"Please provide carrier names for the following carrier IDs: {carrierIds}", 
+                    InfoBarSeverity.Error, 
+                    10);
+                return;
+            }
+
             try
             {
                 BatchAddButton.IsEnabled = false;
@@ -272,7 +299,7 @@ namespace SupportTool.Features.Alerts
                     // Check and add Error Rate alert if missing
                     if (!carrier.HasErrorRateAlert)
                     {
-                        var errorRateAlert = AlertTemplates.GetDmTemplate("ErrorRate", carrier.CarrierId, null, _includeAsos);
+                        var errorRateAlert = AlertTemplates.GetDmTemplate("ErrorRate", carrier.CarrierId, carrier.CarrierName.Trim(), _includeAsos);
                         if (!_alertService.HasCarrierIdAlert(existingAlerts, carrier.CarrierId, AlertType.ErrorRate))
                         {
                             if (_includeAsos)
@@ -290,7 +317,7 @@ namespace SupportTool.Features.Alerts
                     // Check and add Average Duration alert if missing
                     if (!carrier.HasAverageDurationAlert)
                     {
-                        var averageDurationAlert = AlertTemplates.GetDmTemplate("AverageDuration", carrier.CarrierId, null, _includeAsos);
+                        var averageDurationAlert = AlertTemplates.GetDmTemplate("AverageDuration", carrier.CarrierId, carrier.CarrierName.Trim(), _includeAsos);
                         bool thresholdSet = false;
 
                         // If we have statistics for this carrier ID, calculate the threshold

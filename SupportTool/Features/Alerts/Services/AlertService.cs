@@ -311,5 +311,55 @@ namespace SupportTool.Features.Alerts.Services
 
             return string.Empty;
         }
+
+        /// <summary>
+        /// Extracts carrier name from DM alert name format: "DM Allocation <CarrierName> (ID) ..." or "DM Allocation CarrierName (ID) ..."
+        /// </summary>
+        /// <param name="alertName">The alert name</param>
+        /// <param name="carrierId">The carrier ID to match</param>
+        /// <returns>The carrier name if found, empty string otherwise</returns>
+        public static string ExtractCarrierNameFromDmAlert(string alertName, string carrierId)
+        {
+            if (string.IsNullOrEmpty(alertName) || string.IsNullOrEmpty(carrierId))
+                return string.Empty;
+
+            // Look for pattern: DM Allocation ... <CarrierName> (carrierId) ...
+            // Example: "DM Allocation ***Critical*** <DPD Poland API> (764) Error Percentage"
+            // Or legacy: "DM Allocation ***Critical*** FedEx API (701) Error Percentage"
+            
+            // First try new format with <>
+            int openBracketIndex = alertName.IndexOf('<');
+            if (openBracketIndex >= 0)
+            {
+                int closeBracketIndex = alertName.IndexOf('>', openBracketIndex);
+                if (closeBracketIndex > openBracketIndex)
+                {
+                    // Verify the carrier ID matches by checking for (carrierId) after the closing bracket
+                    int parenIndex = alertName.IndexOf($"({carrierId})", closeBracketIndex);
+                    if (parenIndex > closeBracketIndex)
+                    {
+                        return alertName.Substring(openBracketIndex + 1, closeBracketIndex - openBracketIndex - 1).Trim();
+                    }
+                }
+            }
+
+            // Fallback: Try to extract from legacy format without <>
+            // Pattern: "DM Allocation ***Critical*** CarrierName (ID) ..."
+            int criticalIndex = alertName.IndexOf("***Critical***", StringComparison.OrdinalIgnoreCase);
+            if (criticalIndex >= 0)
+            {
+                int startIndex = criticalIndex + "***Critical***".Length;
+                int parenIndex = alertName.IndexOf($"({carrierId})", startIndex);
+                if (parenIndex > startIndex)
+                {
+                    // Extract text between "***Critical***" and "(carrierId)"
+                    string extracted = alertName.Substring(startIndex, parenIndex - startIndex).Trim();
+                    // Remove any trailing spaces or special characters
+                    return extracted.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
     }
 }

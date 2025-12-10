@@ -133,6 +133,7 @@ namespace SupportTool.Features.Alerts.Models
     public class CarrierIdItem : IEquatable<CarrierIdItem>, INotifyPropertyChanged
     {
         private string _carrierId;
+        private string _carrierName = string.Empty;
         private bool _hasAverageDurationAlert;
         private bool _hasErrorRateAlert;
         private bool _isSelected;
@@ -158,6 +159,19 @@ namespace SupportTool.Features.Alerts.Models
                 if (_carrierId != value)
                 {
                     _carrierId = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string CarrierName
+        {
+            get => _carrierName;
+            set
+            {
+                if (_carrierName != value)
+                {
+                    _carrierName = value;
                     OnPropertyChanged();
                 }
             }

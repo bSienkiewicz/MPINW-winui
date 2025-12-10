@@ -230,12 +230,16 @@ namespace SupportTool.Features.Alerts.Helpers
         /// </summary>
         /// <param name="alertType">"ErrorRate" or "AverageDuration"</param>
         /// <param name="carrierId">The carrier ID</param>
-        /// <param name="carrierName">Optional carrier name for display (if not provided, uses "Carrier {carrierId}")</param>
+        /// <param name="carrierName">Carrier name (required, will be wrapped in &lt;&gt;)</param>
         /// <param name="includeAsos">Whether this is for ASOS retailer</param>
         /// <returns>NrqlAlert template</returns>
-        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string? carrierName = null, bool includeAsos = false)
+        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool includeAsos = false)
         {
-            string displayName = carrierName ?? $"Carrier {carrierId}";
+            if (string.IsNullOrWhiteSpace(carrierName))
+            {
+                throw new ArgumentException("Carrier name is required and cannot be empty.", nameof(carrierName));
+            }
+
             string retailerFilter = includeAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
             string asosPrefix = includeAsos ? "ASOS " : "";
             
@@ -245,12 +249,12 @@ namespace SupportTool.Features.Alerts.Helpers
 
             if (alertType == "ErrorRate")
             {
-                name = $"DM Allocation {asosPrefix}***Critical*** {displayName} ({carrierId}) Error Percentage";
+                name = $"DM Allocation {asosPrefix}***Critical*** <{carrierName}> ({carrierId}) Error Percentage";
                 nrqlQuery = $"SELECT percentage(count(*),where error is true) FROM Transaction FACET retailerName,appName WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId}";
             }
             else if (alertType == "AverageDuration")
             {
-                name = $"DM Allocation {asosPrefix}***Critical*** {displayName} ({carrierId}) Average Duration";
+                name = $"DM Allocation {asosPrefix}***Critical*** <{carrierName}> ({carrierId}) Average Duration";
                 nrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} and carrierId = {carrierId} FACET retailerName,appName,carrierId";
             }
             else
