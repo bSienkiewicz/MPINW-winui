@@ -43,7 +43,7 @@ namespace SupportTool
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             // Initialize default settings if they don't exist
-            InitializeDefaultSettings();
+            Features.Services.DefaultSettingsInitializer.InitializeDefaults();
             
             MainWindow = new MainWindow();
             MainWindow.Activate();
@@ -78,17 +78,6 @@ namespace SupportTool
             }
         }
 
-        private void InitializeDefaultSettings()
-        {
-            var settingsService = new Features.Alerts.Services.SettingsService();
-            
-            // Initialize DM Policy ID if not set
-            string dmPolicyId = settingsService.GetSetting("DMPolicyId");
-            if (string.IsNullOrEmpty(dmPolicyId))
-            {
-                settingsService.SetSetting("DMPolicyId", "6708037");
-            }
-        }
 
         public static Window? MainWindow { get; set; }
     }

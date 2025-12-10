@@ -90,25 +90,22 @@
                 </Expander.Content>
             </Expander>
 
+
+            <TextBlock
+                    Grid.Row="0"
+                    Margin="0,16,0,0"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Text="Application Preferences" />
+            
             <!--  General Settings  -->
-            <Grid
+            <StackPanel
                 Padding="16"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="4">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
 
-                <TextBlock
-                    Grid.Row="0"
-                    Margin="0,0,0,16"
-                    FontSize="16"
-                    FontWeight="SemiBold"
-                    Text="Application Preferences" />
 
                 <!--  Auto-select missing alerts  -->
                 <Grid Grid.Row="1" Margin="0,0,0,16">
@@ -165,7 +162,7 @@
                 </Grid>
 
                 <!--  Check for Updates  -->
-                <Grid Grid.Row="3">
+                <Grid Grid.Row="3" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -187,7 +184,7 @@
                         Click="CheckForUpdatesButton_Click"
                         Content="Check for Updates" />
                 </Grid>
-            </Grid>
+            </StackPanel>
 
             <!--  Reset settings  -->
             <Expander
