@@ -60,13 +60,22 @@
                 VerticalAlignment="Center"
                 Orientation="Horizontal"
                 Spacing="10">
+                <ToggleSwitch
+                    x:Name="AsosToggle"
+                    Padding="0"
+                    VerticalAlignment="Center"
+                    OffContent="Non-ASOS"
+                    OnContent="ASOS"
+                    Toggled="AsosToggle_Toggled" />
                 <ComboBox
                     x:Name="stacksComboBox"
                     Width="200"
+                    VerticalAlignment="Center"
                     PlaceholderText="Select a stack..."
                     SelectionChanged="StackComboBox_SelectionChanged" />
                 <Button
                     x:Name="FetchNRButton"
+                    VerticalAlignment="Center"
                     Click="FetchNRButton_Click"
                     Style="{StaticResource AccentButtonStyle}"
                     ToolTipService.ToolTip="Refresh carrier ID list">
@@ -125,12 +134,12 @@
                 Visibility="Collapsed">
                 <TextBlock
                     HorizontalAlignment="Center"
-                    Text="Gathering carrier ID list..."
-                    Style="{StaticResource BodyTextBlockStyle}" />
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Text="Gathering carrier ID list..." />
                 <ProgressRing
                     x:Name="CarrierFetchingProgressRing"
-                    IsActive="True"
-                    HorizontalAlignment="Center" />
+                    HorizontalAlignment="Center"
+                    IsActive="True" />
             </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">

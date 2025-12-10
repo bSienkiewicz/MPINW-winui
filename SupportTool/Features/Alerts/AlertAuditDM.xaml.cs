@@ -26,6 +26,7 @@ namespace SupportTool.Features.Alerts
         private string _selectedStack = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isUpdatingHeaderCheckBox = false;
+        private bool _includeAsos = false;
 
         public AlertAuditDM()
         {
@@ -53,6 +54,9 @@ namespace SupportTool.Features.Alerts
 
             // Restore previously selected stack
             _selectedStack = _settings.GetSetting("SelectedStackDM");
+            _includeAsos = _settings.GetSetting("IncludeAsosDM") == "true";
+            AsosToggle.IsOn = _includeAsos;
+            
             if (!string.IsNullOrEmpty(_selectedStack) && availableStacks.Contains(_selectedStack))
             {
                 stacksComboBox.SelectedItem = _selectedStack;
@@ -103,8 +107,8 @@ namespace SupportTool.Features.Alerts
                 CarrierFetchingProgressRing.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
-                // Fetch non-ASOS carrier IDs
-                var uniqueCarrierIds = await _newRelicApiService.FetchCarrierIds(includeAsos: false, cancellationToken);
+                // Fetch carrier IDs based on ASOS toggle
+                var uniqueCarrierIds = await _newRelicApiService.FetchCarrierIds(includeAsos: _includeAsos, cancellationToken);
                 var existingAlerts = _alertService.GetAlertsForStack(stack);
 
                 Carriers.Clear();
@@ -161,6 +165,20 @@ namespace SupportTool.Features.Alerts
         private void ApiKeyWarningInfoBar_ButtonClick(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(SupportTool.SettingsPage), "ApiKeyTab");
+        }
+
+        private async void AsosToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            _includeAsos = AsosToggle.IsOn;
+            _settings.SetSetting("IncludeAsosDM", _includeAsos ? "true" : "false");
+            
+            // Reload carrier IDs when toggle changes
+            if (!string.IsNullOrEmpty(_selectedStack) && IsApiKeyPresent())
+            {
+                _cancellationTokenSource?.Cancel();
+                _cancellationTokenSource = new CancellationTokenSource();
+                await LoadCarrierIdsForStack(_selectedStack, _cancellationTokenSource.Token);
+            }
         }
 
         private void RefreshAlertStatus()
