@@ -242,6 +242,13 @@ namespace SupportTool.Features.Alerts.Helpers
                 throw new ArgumentException("Carrier name is required and cannot be empty.", nameof(carrierName));
             }
 
+            // Validate carrier name for invalid characters
+            char[] invalidChars = { '\'', '\"', '.', ',', '<', '>', '(', ')', '[', ']', '{', '}', ':', ';', '/', '?', '\\' };
+            if (carrierName.IndexOfAny(invalidChars) >= 0)
+            {
+                throw new ArgumentException($"Carrier name cannot contain special characters.", nameof(carrierName));
+            }
+
             string retailerFilter = isAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
             string asosPrefix = isAsos ? "ASOS " : "";
             

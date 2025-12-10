@@ -281,6 +281,23 @@ namespace SupportTool.Features.Alerts
                 return;
             }
 
+            // Validate carrier names for invalid characters
+            var carriersWithInvalidNames = selectedCarriers
+                .Where(c => !string.IsNullOrWhiteSpace(c.CarrierName) && ContainsInvalidCarrierNameCharacters(c.CarrierName))
+                .ToList();
+
+            if (carriersWithInvalidNames.Any())
+            {
+                var invalidCarrierInfo = string.Join(", ", carriersWithInvalidNames.Select(c => $"{c.CarrierId} ({c.CarrierName})"));
+                BatchAlertService.ShowToast(
+                    ToastContainer, 
+                    "Error", 
+                    $"Carrier names cannot contain special characters: ' \" . , < > ( ) [ ] {{ }} : ; / ? \\ Invalid names: {invalidCarrierInfo}", 
+                    InfoBarSeverity.Error, 
+                    10);
+                return;
+            }
+
             try
             {
                 BatchAddButton.IsEnabled = false;
@@ -437,6 +454,74 @@ namespace SupportTool.Features.Alerts
                 CarrierFetchingProgressRing.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
                 BatchAddButton.IsEnabled = true;
+            }
+        }
+
+        private static readonly char[] InvalidCarrierNameChars = { '\'', '\"', '.', ',', '<', '>', '(', ')', '[', ']', '{', '}', ':', ';', '/', '?', '\\' };
+
+        /// <summary>
+        /// Validates carrier name for invalid characters
+        /// </summary>
+        /// <param name="carrierName">The carrier name to validate</param>
+        /// <returns>True if invalid characters are found, false otherwise</returns>
+        private static bool ContainsInvalidCarrierNameCharacters(string carrierName)
+        {
+            if (string.IsNullOrWhiteSpace(carrierName))
+                return false;
+
+            return carrierName.IndexOfAny(InvalidCarrierNameChars) >= 0;
+        }
+
+        /// <summary>
+        /// Removes invalid characters from carrier name
+        /// </summary>
+        /// <param name="carrierName">The carrier name to sanitize</param>
+        /// <returns>Sanitized carrier name</returns>
+        private static string SanitizeCarrierName(string carrierName)
+        {
+            if (string.IsNullOrWhiteSpace(carrierName))
+                return carrierName;
+
+            return new string(carrierName.Where(c => !InvalidCarrierNameChars.Contains(c)).ToArray());
+        }
+
+        /// <summary>
+        /// Handles TextChanged event for carrier name TextBox to filter invalid characters and auto-select carrier
+        /// </summary>
+        private void CarrierNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox && textBox.DataContext is CarrierIdItem carrierItem)
+            {
+                string currentText = textBox.Text;
+                bool hadInvalidChars = ContainsInvalidCarrierNameCharacters(currentText);
+                
+                if (hadInvalidChars)
+                {
+                    // Remove invalid characters
+                    string sanitized = SanitizeCarrierName(currentText);
+                    
+                    // Update the TextBox text (this will trigger another TextChanged, but it will be clean)
+                    int caretIndex = textBox.SelectionStart;
+                    
+                    // Calculate how many characters were removed before the cursor
+                    int removedBeforeCursor = currentText.Take(caretIndex).Count(c => InvalidCarrierNameChars.Contains(c));
+                    
+                    textBox.Text = sanitized;
+                    
+                    // Restore cursor position (adjust if characters were removed before cursor)
+                    textBox.SelectionStart = Math.Max(0, caretIndex - removedBeforeCursor);
+                }
+
+                // Auto-select carrier if name is entered and carrier doesn't have both alerts
+                if (!string.IsNullOrWhiteSpace(carrierItem.CarrierName) && 
+                    (!carrierItem.HasAverageDurationAlert || !carrierItem.HasErrorRateAlert))
+                {
+                    // Only select if not already selected to avoid unnecessary UI updates
+                    if (!CarriersList.SelectedItems.Contains(carrierItem))
+                    {
+                        CarriersList.SelectedItems.Add(carrierItem);
+                    }
+                }
             }
         }
     }

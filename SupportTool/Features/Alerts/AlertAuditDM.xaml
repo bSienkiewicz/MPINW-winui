@@ -180,7 +180,8 @@
                                     Margin="5,0"
                                     VerticalAlignment="Center"
                                     PlaceholderText="Carrier name..."
-                                    Text="{x:Bind CarrierName, Mode=TwoWay}" />
+                                    Text="{x:Bind CarrierName, Mode=TwoWay}"
+                                    TextChanged="CarrierNameTextBox_TextChanged" />
                                 <CheckBox
                                     Grid.Column="2"
                                     Content="Print Duration"
