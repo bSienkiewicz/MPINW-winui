@@ -100,7 +100,7 @@ namespace SupportTool
 
             try
             {
-                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgressRing.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
                 var uniqueCarriers = await _newRelicApiService.FetchCarriers(stack, cancellationToken);
@@ -142,7 +142,7 @@ namespace SupportTool
             }
             finally
             {
-                CarrierFetchingProgress.IsActive = false;
+                CarrierFetchingProgressRing.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
             }
         }
@@ -223,7 +223,7 @@ namespace SupportTool
             try
             {
                 BatchAddButton.IsEnabled = false;
-                CarrierFetchingProgress.IsActive = true;
+                CarrierFetchingProgressRing.IsActive = true;
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
                 var existingAlerts = _alertService.GetAlertsForStack(_selectedStack);
@@ -348,7 +348,7 @@ namespace SupportTool
             }
             finally
             {
-                CarrierFetchingProgress.IsActive = false;
+                CarrierFetchingProgressRing.IsActive = false;
                 CarrierFetchingProgress.Visibility = Visibility.Collapsed;
                 BatchAddButton.IsEnabled = true;
             }

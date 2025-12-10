@@ -126,11 +126,23 @@
                     CornerRadius="0,5,5,0" />
             </Grid>
 
-            <ProgressRing
+            <StackPanel
                 x:Name="CarrierFetchingProgress"
                 Grid.Row="2"
-                IsActive="True"
-                Visibility="Collapsed" />
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Vertical"
+                Spacing="16"
+                Visibility="Collapsed">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    Text="Gathering carrier list..."
+                    Style="{StaticResource BodyTextBlockStyle}" />
+                <ProgressRing
+                    x:Name="CarrierFetchingProgressRing"
+                    IsActive="True"
+                    HorizontalAlignment="Center" />
+            </StackPanel>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <ListView x:Name="CarriersList" SelectionMode="Multiple">
