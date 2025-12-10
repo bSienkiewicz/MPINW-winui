@@ -73,15 +73,12 @@
     <Page Update="Alerting.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Alerting_List.xaml">
+    <Page Update="AlertAudit.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SettingsPage.xaml">
       <SubType>Designer</SubType>
     </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Features\" />
   </ItemGroup>
 
   <!--

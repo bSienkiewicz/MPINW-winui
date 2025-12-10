@@ -17,7 +17,7 @@ using SupportTool.Features.Alerts.CustomControls;
 
 namespace SupportTool
 {
-    public sealed partial class Alerting_List : Page
+    public sealed partial class AlertAudit : Page
     {
         public ObservableCollection<CarrierItem> Carriers { get; } = new();
         private readonly NewRelicApiService _newRelicApiService = new();
@@ -27,7 +27,7 @@ namespace SupportTool
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isUpdatingHeaderCheckBox = false;
 
-        public Alerting_List()
+        public AlertAudit()
         {
             InitializeComponent();
             InitializeControls();
