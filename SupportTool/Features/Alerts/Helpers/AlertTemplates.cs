@@ -225,6 +225,59 @@ namespace SupportTool.Features.Alerts.Helpers
                         .TrimEnd();
         }
 
+        /// <summary>
+        /// Gets a DM alert template for Error Rate or Average Duration
+        /// </summary>
+        /// <param name="alertType">"ErrorRate" or "AverageDuration"</param>
+        /// <param name="carrierId">The carrier ID</param>
+        /// <param name="carrierName">Optional carrier name for display (if not provided, uses "Carrier {carrierId}")</param>
+        /// <param name="includeAsos">Whether this is for ASOS retailer</param>
+        /// <returns>NrqlAlert template</returns>
+        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string? carrierName = null, bool includeAsos = false)
+        {
+            string displayName = carrierName ?? $"Carrier {carrierId}";
+            string retailerFilter = includeAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
+            string asosPrefix = includeAsos ? "ASOS " : "";
+            
+            string name;
+            string nrqlQuery;
+            string runbookUrl = "https://auctane.atlassian.net/wiki/spaces/GSKB/pages/6384386132/DM+Alerting+Error+Percentage+and+Average+Duration";
+
+            if (alertType == "ErrorRate")
+            {
+                name = $"DM Allocation {asosPrefix}***Critical*** {displayName} ({carrierId}) Error Percentage";
+                nrqlQuery = $"SELECT percentage(count(*),where error is true) FROM Transaction FACET retailerName,appName WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId}";
+            }
+            else if (alertType == "AverageDuration")
+            {
+                name = $"DM Allocation {asosPrefix}***Critical*** {displayName} ({carrierId}) Average Duration";
+                nrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} and carrierId = {carrierId} FACET retailerName,appName,carrierId";
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown alert type: {alertType}", nameof(alertType));
+            }
+
+            return new NrqlAlert
+            {
+                Name = name,
+                Description = "",
+                Severity = "CRITICAL",
+                NrqlQuery = nrqlQuery,
+                RunbookUrl = runbookUrl,
+                Enabled = true,
+                AggregationMethod = "event_flow",
+                AggregationWindow = 60,
+                AggregationDelay = 120,
+                CriticalOperator = "above_or_equals",
+                CriticalThreshold = alertType == "ErrorRate" ? 5 : 4, // Default thresholds
+                CriticalThresholdDuration = 300,
+                CriticalThresholdOccurrences = "ALL",
+                ExpirationDuration = 900,
+                CloseViolationsOnExpiration = true
+            };
+        }
+
         public static double GetThresholdDifference()
         {
             try

@@ -67,6 +67,16 @@
                     OffContent="Non-ASOS"
                     OnContent="ASOS"
                     Toggled="AsosToggle_Toggled" />
+                <Button
+                    x:Name="BatchAddButton"
+                    VerticalAlignment="Center"
+                    Click="BatchAddButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE710;" />
+                        <TextBlock Text="Add Missing Alerts" />
+                    </StackPanel>
+                </Button>
                 <ComboBox
                     x:Name="stacksComboBox"
                     Width="200"
