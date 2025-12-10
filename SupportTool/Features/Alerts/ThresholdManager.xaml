@@ -107,37 +107,6 @@
                     Tag="{x:Bind}" />
             </Grid>
 
-            <!-- Overlay to block interactions when progress is shown -->
-            <Rectangle
-                x:Name="AlertFetchingOverlay"
-                Grid.Row="1"
-                Fill="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                Opacity="0.4"
-                Visibility="Collapsed"
-                IsHitTestVisible="True" />
-
-            <Border
-                x:Name="AlertFetchingProgress"
-                Grid.Row="1"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                Opacity="0.95"
-                CornerRadius="8"
-                Padding="24"
-                Visibility="Collapsed">
-                <StackPanel Orientation="Vertical" Spacing="16">
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        Text="Calculating carrier performance..."
-                        Style="{StaticResource BodyTextBlockStyle}" />
-                    <ProgressRing
-                        x:Name="AlertFetchingProgressRing"
-                        IsActive="False"
-                        HorizontalAlignment="Center" />
-                </StackPanel>
-            </Border>
-
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ListView
                     x:Name="AlertsListView"
@@ -179,6 +148,39 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </ScrollViewer>
+
+            <!-- Overlay to block interactions when progress is shown -->
+            <Rectangle
+                x:Name="AlertFetchingOverlay"
+                Grid.Row="1"
+                Canvas.ZIndex="100"
+                Fill="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                Opacity="0.2"
+                Visibility="Collapsed"
+                IsHitTestVisible="True" />
+
+            <Border
+                x:Name="AlertFetchingProgress"
+                Grid.Row="1"
+                Canvas.ZIndex="200"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                Opacity="0.95"
+                CornerRadius="8"
+                Padding="24"
+                Visibility="Collapsed">
+                <StackPanel Orientation="Vertical" Spacing="16">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Text="Calculating carrier performance..."
+                        Style="{StaticResource BodyTextBlockStyle}" />
+                    <ProgressRing
+                        x:Name="AlertFetchingProgressRing"
+                        IsActive="False"
+                        HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
         </Grid>
 
         <Canvas
