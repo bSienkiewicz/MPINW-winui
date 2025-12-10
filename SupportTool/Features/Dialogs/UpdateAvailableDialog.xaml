@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SupportTool.Features.Dialogs.UpdateAvailableDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:services="using:SupportTool.Features.Services"
+    Title="Update Available"
+    PrimaryButtonText="Download Update"
+    SecondaryButtonText="Later"
+    DefaultButton="Primary">
+    <StackPanel Spacing="16">
+        <TextBlock
+            FontSize="16"
+            FontWeight="SemiBold"
+            Text="{x:Bind UpdateInfo.ReleaseName, Mode=OneWay}" />
+        <TextBlock TextWrapping="Wrap">
+            <Run Text="A new version is available: " />
+            <Run FontWeight="SemiBold" Text="{x:Bind UpdateInfo.VersionString, Mode=OneWay}" />
+            <Run Text=" (Current: " />
+            <Run Text="{x:Bind UpdateInfo.CurrentVersionString, Mode=OneWay}" />
+            <Run Text=")" />
+        </TextBlock>
+        <ScrollViewer
+            MaxHeight="200"
+            VerticalScrollBarVisibility="Auto">
+            <TextBlock
+                Text="{x:Bind UpdateInfo.ReleaseNotes, Mode=OneWay}"
+                TextWrapping="Wrap" />
+        </ScrollViewer>
+    </StackPanel>
+</ContentDialog>

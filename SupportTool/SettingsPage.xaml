@@ -140,7 +140,7 @@
                 </Grid>
 
                 <!--  DM Policy ID  -->
-                <Grid Grid.Row="2">
+                <Grid Grid.Row="2" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -162,6 +162,30 @@
                         HorizontalAlignment="Right"
                         PlaceholderText="6708037"
                         TextChanged="DMPolicyIdTextBox_TextChanged" />
+                </Grid>
+
+                <!--  Check for Updates  -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontSize="14" Text="Application Updates" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Check for the latest version of the application" />
+                    </StackPanel>
+
+                    <Button
+                        x:Name="CheckForUpdatesButton"
+                        Grid.Column="1"
+                        HorizontalAlignment="Right"
+                        Click="CheckForUpdatesButton_Click"
+                        Content="Check for Updates" />
                 </Grid>
             </Grid>
 

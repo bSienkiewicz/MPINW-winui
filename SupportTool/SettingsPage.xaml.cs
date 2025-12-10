@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -10,6 +11,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Storage.Pickers;
 using SupportTool.Features.Alerts.Services;
 using SupportTool.Features.Alerts.CustomControls;
+using SupportTool.Features.Services;
+using SupportTool.Features.Dialogs;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -197,6 +200,54 @@ namespace SupportTool
         private void DeleteConfirmation_Click(object sender, RoutedEventArgs e)
         {
             _settings.RemoveAllSettings();
+        }
+
+        private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            CheckForUpdatesButton.IsEnabled = false;
+            CheckForUpdatesButton.Content = "Checking...";
+
+            try
+            {
+                var updateService = new UpdateService();
+                var updateInfo = await updateService.CheckForUpdatesAsync();
+
+                if (updateInfo != null)
+                {
+                    var dialog = new UpdateAvailableDialog(updateInfo)
+                    {
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
+                else
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = "No Updates Available",
+                        Content = "You are running the latest version of the application.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to check for updates: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+            finally
+            {
+                CheckForUpdatesButton.IsEnabled = true;
+                CheckForUpdatesButton.Content = "Check for Updates";
+            }
         }
     }
 }
