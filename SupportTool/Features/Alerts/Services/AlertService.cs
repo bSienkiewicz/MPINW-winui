@@ -197,16 +197,52 @@ namespace SupportTool.Features.Alerts.Services
                 AlertType.PrintDuration => alerts.Any(alert =>
                     alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
                     alert.Name.Contains("Average Duration", StringComparison.OrdinalIgnoreCase) &&                   // Must be Average Duration
-                    alert.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase) &&      // Find carrierId in query
+                    HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
                     alert.NrqlQuery.Contains("average(duration)", StringComparison.OrdinalIgnoreCase)),            // Find average aggregate function
                 AlertType.ErrorRate => alerts.Any(alert =>
                     alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
                     alert.Name.Contains("Error Percentage", StringComparison.OrdinalIgnoreCase) &&                  // Must be Error Percentage
-                    alert.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase) &&    // Find carrierId in query
+                    HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
                     alert.NrqlQuery.Contains("percentage", StringComparison.OrdinalIgnoreCase) &&                    // Find percentage aggregate function
                     alert.NrqlQuery.Contains("error", StringComparison.OrdinalIgnoreCase)),
                 _ => false
             };
+        }
+
+        /// <summary>
+        /// Checks if an alert has an exact match for the carrier ID (not a partial match)
+        /// Checks both the alert name (in parentheses) and the query
+        /// </summary>
+        /// <param name="alert">The alert to check</param>
+        /// <param name="carrierId">The carrier ID to match</param>
+        /// <returns>True if exact match found, false otherwise</returns>
+        public static bool HasExactCarrierIdMatch(NrqlAlert alert, string carrierId)
+        {
+            // Check alert name for pattern: (carrierId) - this ensures exact match
+            string namePattern = $"({carrierId})";
+            if (alert.Name.Contains(namePattern, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Also check query for exact match: carrierId = carrierId followed by space, comma, or end
+            // This prevents matching 74 when looking for 741
+            string queryPattern = $"carrierId = {carrierId}";
+            int index = alert.NrqlQuery.IndexOf(queryPattern, StringComparison.OrdinalIgnoreCase);
+            if (index >= 0)
+            {
+                int afterPattern = index + queryPattern.Length;
+                // Check if the character after the pattern is a space, comma, or end of string
+                if (afterPattern >= alert.NrqlQuery.Length || 
+                    alert.NrqlQuery[afterPattern] == ' ' || 
+                    alert.NrqlQuery[afterPattern] == ',' ||
+                    alert.NrqlQuery[afterPattern] == ')')
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public NrqlAlert CloneAlert(NrqlAlert alert) => new()

@@ -133,7 +133,7 @@ namespace SupportTool.Features.Alerts
                     // Try to extract carrier name from existing alerts
                     var existingAlertForCarrier = existingAlerts.FirstOrDefault(a => 
                         a.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&
-                        a.NrqlQuery.Contains($"carrierId = {carrierId}", StringComparison.OrdinalIgnoreCase));
+                        AlertService.HasExactCarrierIdMatch(a, carrierId));
                     
                     if (existingAlertForCarrier != null)
                     {
