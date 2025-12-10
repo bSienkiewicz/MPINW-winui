@@ -266,11 +266,13 @@ namespace SupportTool
                     .Select(c => c.CarrierName)
                     .ToList();
 
-                // Fetch statistics for all carriers needing PrintDuration alerts in one request
+                // Fetch statistics for all carriers in one request
                 Dictionary<string, CarrierDurationStatistics> durationStats = new();
                 if (carriersNeedingPrintDuration.Any())
                 {
+                    CarrierFetchingProgressText.Text = "Hold tight - calculating the average duration";
                     durationStats = await _newRelicApiService.FetchDurationStatisticsForCarriersAsync(carriersNeedingPrintDuration);
+                    CarrierFetchingProgressText.Text = "Hold tight - gathering carrier list...";
                 }
 
                 foreach (var carrier in selectedCarriers)

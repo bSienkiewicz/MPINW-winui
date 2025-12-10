@@ -26,7 +26,7 @@ namespace SupportTool.Features.Alerts
         private string _selectedStack = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isUpdatingHeaderCheckBox = false;
-        private bool _includeAsos = false;
+        private bool _isAsos = false;
 
         public AlertAuditDM()
         {
@@ -54,8 +54,8 @@ namespace SupportTool.Features.Alerts
 
             // Restore previously selected stack
             _selectedStack = _settings.GetSetting("SelectedStackDM");
-            _includeAsos = _settings.GetSetting("IncludeAsosDM") == "true";
-            AsosToggle.IsOn = _includeAsos;
+            _isAsos = _settings.GetSetting("IncludeAsosDM") == "true";
+            AsosToggle.IsOn = _isAsos;
             
             if (!string.IsNullOrEmpty(_selectedStack) && availableStacks.Contains(_selectedStack))
             {
@@ -112,7 +112,7 @@ namespace SupportTool.Features.Alerts
                 CarrierFetchingProgress.Visibility = Visibility.Visible;
 
                 // Fetch carrier IDs based on ASOS toggle state
-                var uniqueCarrierIds = await _newRelicApiService.FetchCarrierIds(includeAsos: _includeAsos, cancellationToken);
+                var uniqueCarrierIds = await _newRelicApiService.FetchCarrierIds(isAsos: _isAsos, cancellationToken);
                 var existingAlerts = _alertService.GetAlertsForStack(stack);
 
                 Carriers.Clear();
@@ -127,8 +127,8 @@ namespace SupportTool.Features.Alerts
                     {
                         CarrierId = carrierId
                     };
-                    item.HasAverageDurationAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.PrintDuration);
-                    item.HasErrorRateAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.ErrorRate);
+                    item.HasAverageDurationAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.PrintDuration, _isAsos);
+                    item.HasErrorRateAlert = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.ErrorRate, _isAsos);
                     
                     // Try to extract carrier name from existing alerts
                     var existingAlertForCarrier = existingAlerts.FirstOrDefault(a => 
@@ -199,8 +199,8 @@ namespace SupportTool.Features.Alerts
 
         private async void AsosToggle_Toggled(object sender, RoutedEventArgs e)
         {
-            _includeAsos = AsosToggle.IsOn;
-            _settings.SetSetting("IncludeAsosDM", _includeAsos ? "true" : "false");
+            _isAsos = AsosToggle.IsOn;
+            _settings.SetSetting("IncludeAsosDM", _isAsos ? "true" : "false");
             
             // Reload carrier IDs when toggle changes
             if (!string.IsNullOrEmpty(_selectedStack) && IsApiKeyPresent())
@@ -235,8 +235,8 @@ namespace SupportTool.Features.Alerts
             {
                 var item = Carriers[i];
 
-                bool newADStatus = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.PrintDuration);
-                bool newERStatus = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.ErrorRate);
+                bool newADStatus = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.PrintDuration, _isAsos);
+                bool newERStatus = _alertService.HasCarrierIdAlert(existingAlerts, item.CarrierId, AlertType.ErrorRate, _isAsos);
 
                 if (item.HasAverageDurationAlert != newADStatus || item.HasErrorRateAlert != newERStatus)
                 {
@@ -302,9 +302,11 @@ namespace SupportTool.Features.Alerts
                 Dictionary<string, CarrierDurationStatistics> durationStats = new();
                 if (carrierIdsNeedingAverageDuration.Any())
                 {
+                    CarrierFetchingProgressText.Text = "Hold tight - calculating the average duration";
                     durationStats = await _newRelicApiService.FetchDurationStatisticsForCarrierIdsAsync(
                         carrierIdsNeedingAverageDuration, 
-                        _includeAsos);
+                        _isAsos);
+                    CarrierFetchingProgressText.Text = "Gathering carrier ID list...";
                 }
 
                 // Separate ASOS and non-ASOS alerts to ensure ASOS alerts are at the bottom
@@ -316,10 +318,10 @@ namespace SupportTool.Features.Alerts
                     // Check and add Error Rate alert if missing
                     if (!carrier.HasErrorRateAlert)
                     {
-                        var errorRateAlert = AlertTemplates.GetDmTemplate("ErrorRate", carrier.CarrierId, carrier.CarrierName.Trim(), _includeAsos);
-                        if (!_alertService.HasCarrierIdAlert(existingAlerts, carrier.CarrierId, AlertType.ErrorRate))
+                        var errorRateAlert = AlertTemplates.GetDmTemplate("ErrorRate", carrier.CarrierId, carrier.CarrierName.Trim(), _isAsos);
+                        if (!_alertService.HasCarrierIdAlert(existingAlerts, carrier.CarrierId, AlertType.ErrorRate, _isAsos))
                         {
-                            if (_includeAsos)
+                            if (_isAsos)
                             {
                                 asosAlerts.Add(errorRateAlert);
                             }
@@ -334,7 +336,7 @@ namespace SupportTool.Features.Alerts
                     // Check and add Average Duration alert if missing
                     if (!carrier.HasAverageDurationAlert)
                     {
-                        var averageDurationAlert = AlertTemplates.GetDmTemplate("AverageDuration", carrier.CarrierId, carrier.CarrierName.Trim(), _includeAsos);
+                        var averageDurationAlert = AlertTemplates.GetDmTemplate("AverageDuration", carrier.CarrierId, carrier.CarrierName.Trim(), _isAsos);
                         bool thresholdSet = false;
 
                         // If we have statistics for this carrier ID, calculate the threshold
@@ -371,9 +373,9 @@ namespace SupportTool.Features.Alerts
                         }
 
                         // Only add the alert if we successfully set a valid threshold
-                        if (thresholdSet && !_alertService.HasCarrierIdAlert(existingAlerts, carrier.CarrierId, AlertType.PrintDuration))
+                        if (thresholdSet && !_alertService.HasCarrierIdAlert(existingAlerts, carrier.CarrierId, AlertType.PrintDuration, _isAsos))
                         {
-                            if (_includeAsos)
+                            if (_isAsos)
                             {
                                 asosAlerts.Add(averageDurationAlert);
                             }

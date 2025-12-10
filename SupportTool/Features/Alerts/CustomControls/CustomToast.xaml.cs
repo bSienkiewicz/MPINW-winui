@@ -30,6 +30,19 @@ namespace SupportTool.Features.Alerts.CustomControls
             ToastInfoBar.Title = title;
             ToastInfoBar.Message = message;
             ToastInfoBar.Severity = severity;
+            
+            // Explicitly set blue background for Informational severity
+            if (severity == InfoBarSeverity.Informational)
+            {
+                // Use system accent color or fallback to a standard blue
+                var blueBrush = new SolidColorBrush(Microsoft.UI.Colors.RoyalBlue);
+                ToastInfoBar.Background = blueBrush;
+            }
+            else
+            {
+                // Clear background for other severities to use default styling
+                ToastInfoBar.ClearValue(InfoBar.BackgroundProperty);
+            }
 
             ShowStoryboard.Begin();
 

@@ -135,9 +135,10 @@
                 Spacing="16"
                 Visibility="Collapsed">
                 <TextBlock
+                    x:Name="CarrierFetchingProgressText"
                     HorizontalAlignment="Center"
                     Style="{StaticResource BodyTextBlockStyle}"
-                    Text="Gathering carrier list..." />
+                    Text="Hold tight - gathering carrier list..." />
                 <ProgressRing
                     x:Name="CarrierFetchingProgressRing"
                     HorizontalAlignment="Center"

@@ -189,8 +189,9 @@ namespace SupportTool.Features.Alerts.Services
         /// <param name="alerts">List of alerts to check</param>
         /// <param name="carrierId">The carrier ID to check for</param>
         /// <param name="alertType">The type of alert (AverageDuration or ErrorRate)</param>
+        /// <param name="isAsos">Whether to check for ASOS alerts (true) or non-ASOS alerts (false). Null means check both.</param>
         /// <returns>True if the alert exists, false otherwise</returns>
-        public bool HasCarrierIdAlert(List<NrqlAlert> alerts, string carrierId, AlertType alertType)
+        public bool HasCarrierIdAlert(List<NrqlAlert> alerts, string carrierId, AlertType alertType, bool? isAsos = null)
         {
             return alertType switch
             {
@@ -198,13 +199,15 @@ namespace SupportTool.Features.Alerts.Services
                     alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
                     alert.Name.Contains("Average Duration", StringComparison.OrdinalIgnoreCase) &&                   // Must be Average Duration
                     HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
-                    alert.NrqlQuery.Contains("average(duration)", StringComparison.OrdinalIgnoreCase)),            // Find average aggregate function
+                    alert.NrqlQuery.Contains("average(duration)", StringComparison.OrdinalIgnoreCase) &&            // Find average aggregate function
+                    (isAsos == null || (isAsos.Value ? alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase) : !alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase)))), // Match ASOS/non-ASOS based on parameter
                 AlertType.ErrorRate => alerts.Any(alert =>
                     alert.Name.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) &&                      // Must be DM Allocation alert
                     alert.Name.Contains("Error Percentage", StringComparison.OrdinalIgnoreCase) &&                  // Must be Error Percentage
                     HasExactCarrierIdMatch(alert, carrierId) &&                                                      // Find exact carrierId match
                     alert.NrqlQuery.Contains("percentage", StringComparison.OrdinalIgnoreCase) &&                    // Find percentage aggregate function
-                    alert.NrqlQuery.Contains("error", StringComparison.OrdinalIgnoreCase)),
+                    alert.NrqlQuery.Contains("error", StringComparison.OrdinalIgnoreCase) &&
+                    (isAsos == null || (isAsos.Value ? alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase) : !alert.Name.Contains("ASOS", StringComparison.OrdinalIgnoreCase)))), // Match ASOS/non-ASOS based on parameter
                 _ => false
             };
         }

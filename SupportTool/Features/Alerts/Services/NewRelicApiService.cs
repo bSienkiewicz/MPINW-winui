@@ -200,17 +200,17 @@ namespace SupportTool.Features.Alerts.Services
         /// <summary>
         /// Fetch all actively used carrier IDs from DM allocation transactions
         /// </summary>
-        /// <param name="includeAsos">If true, fetches ASOS carriers; if false, excludes ASOS</param>
+        /// <param name="isAsos">If true, fetches ASOS carriers; if false, excludes ASOS</param>
         /// <param name="cancellationToken"></param>
         /// <returns>List of carrier IDs as strings</returns>
-        public async Task<List<string>> FetchCarrierIds(bool includeAsos = false, CancellationToken cancellationToken = default)
+        public async Task<List<string>> FetchCarrierIds(bool isAsos = false, CancellationToken cancellationToken = default)
         {
             var carrierIds = new List<string>();
             try
             {
                 string apiKey = NewRelicApiHelper.GetApiKey(_settingsService);
 
-                string retailerFilter = includeAsos 
+                string retailerFilter = isAsos 
                     ? "retailerName = 'ASOS'" 
                     : "retailerName != 'ASOS'";
                 
@@ -258,10 +258,10 @@ namespace SupportTool.Features.Alerts.Services
         /// Fetches average duration and standard deviation for multiple carrier IDs' DM allocation transactions.
         /// </summary>
         /// <param name="carrierIds">List of carrier IDs to fetch statistics for.</param>
-        /// <param name="includeAsos">If true, includes ASOS transactions; if false, excludes ASOS</param>
+        /// <param name="isAsos">If true, includes ASOS transactions; if false, excludes ASOS</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Dictionary mapping carrier ID to CarrierDurationStatistics.</returns>
-        public async Task<Dictionary<string, CarrierDurationStatistics>> FetchDurationStatisticsForCarrierIdsAsync(List<string> carrierIds, bool includeAsos = false, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<string, CarrierDurationStatistics>> FetchDurationStatisticsForCarrierIdsAsync(List<string> carrierIds, bool isAsos = false, CancellationToken cancellationToken = default)
         {
             var statistics = new Dictionary<string, CarrierDurationStatistics>();
             try
@@ -274,7 +274,7 @@ namespace SupportTool.Features.Alerts.Services
 
                 int samplingDays = AlertTemplates.GetConfigValue<int>("PrintDuration.ProposedValues.SamplingDays");
                 string carrierIdsList = string.Join(", ", carrierIds);
-                string retailerFilter = includeAsos 
+                string retailerFilter = isAsos 
                     ? "retailerName = 'ASOS'" 
                     : "retailerName != 'ASOS'";
 

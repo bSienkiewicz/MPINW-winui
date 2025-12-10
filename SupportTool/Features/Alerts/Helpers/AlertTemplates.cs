@@ -232,18 +232,18 @@ namespace SupportTool.Features.Alerts.Helpers
         /// <param name="alertType">"ErrorRate" or "AverageDuration"</param>
         /// <param name="carrierId">The carrier ID</param>
         /// <param name="carrierName">Carrier name (required, will be wrapped in &lt;&gt;)</param>
-        /// <param name="includeAsos">Whether this is for ASOS retailer</param>
+        /// <param name="isAsos">Whether this is for ASOS retailer (true) or non-ASOS (false)</param>
         /// <param name="policyId">The New Relic policy ID (optional, will use default from settings if not provided)</param>
         /// <returns>NrqlAlert template</returns>
-        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool includeAsos = false, int? policyId = null)
+        public static NrqlAlert GetDmTemplate(string alertType, string carrierId, string carrierName, bool isAsos = false, int? policyId = null)
         {
             if (string.IsNullOrWhiteSpace(carrierName))
             {
                 throw new ArgumentException("Carrier name is required and cannot be empty.", nameof(carrierName));
             }
 
-            string retailerFilter = includeAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
-            string asosPrefix = includeAsos ? "ASOS " : "";
+            string retailerFilter = isAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
+            string asosPrefix = isAsos ? "ASOS " : "";
             
             string name;
             string titleTemplate;
