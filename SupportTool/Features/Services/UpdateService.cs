@@ -1,9 +1,12 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Windows.ApplicationModel;
 
 namespace SupportTool.Features.Services
@@ -26,14 +29,65 @@ namespace SupportTool.Features.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SupportTool-UpdateChecker");
         }
 
-        /// <summary>
-        /// Gets the current application version
-        /// </summary>
         public static Version GetCurrentVersion()
         {
-            var package = Package.Current;
-            var version = package.Id.Version;
-            return new Version(version.Major, version.Minor, version.Build, version.Revision);
+            // Try Package.Current first (works for MSIX packaged apps)
+            try
+            {
+                var package = Package.Current;
+                if (package != null)
+                {
+                    var version = package.Id.Version;
+                    return new Version(version.Major, version.Minor, version.Build, version.Revision);
+                }
+            }
+            catch
+            {
+                // Package.Current not available - try other methods
+            }
+
+            // Try reading from Package.appxmanifest file
+            try
+            {
+                var manifestPath = Path.Combine(AppContext.BaseDirectory, "Package.appxmanifest");
+                if (File.Exists(manifestPath))
+                {
+                    var doc = XDocument.Load(manifestPath);
+                    var ns = XNamespace.Get("http://schemas.microsoft.com/appx/manifest/foundation/windows10");
+                    var identity = doc.Descendants(ns + "Identity").FirstOrDefault();
+                    var versionAttr = identity?.Attribute("Version");
+                    if (versionAttr != null && Version.TryParse(versionAttr.Value, out var version))
+                    {
+                        return version;
+                    }
+                }
+            }
+            catch
+            {
+                // Failed to read manifest - try assembly
+            }
+
+            // Try assembly version as last resort
+            try
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                var assemblyVersion = assembly.GetName().Version;
+                if (assemblyVersion != null)
+                {
+                    return new Version(
+                        assemblyVersion.Major,
+                        assemblyVersion.Minor,
+                        assemblyVersion.Build >= 0 ? assemblyVersion.Build : 0,
+                        assemblyVersion.Revision >= 0 ? assemblyVersion.Revision : 0);
+                }
+            }
+            catch
+            {
+                // All methods failed
+            }
+
+            // Absolute fallback - should never reach here
+            return new Version(1, 0, 0, 0);
         }
 
         /// <summary>
@@ -55,26 +109,52 @@ namespace SupportTool.Features.Services
                     .Replace("{repo}", GitHubRepo);
 
                 var response = await _httpClient.GetStringAsync(apiUrl);
+                Debug.WriteLine($"GitHub API Response: {response}");
+                
                 var release = JsonSerializer.Deserialize<GitHubRelease>(response, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                if (release == null || string.IsNullOrEmpty(release.TagName))
+                if (release == null)
                 {
+                    Debug.WriteLine("Release is null after deserialization");
                     return null;
                 }
 
-                // Parse version from tag (e.g., "v1.0.1" or "1.0.1")
+                if (string.IsNullOrEmpty(release.TagName))
+                {
+                    Debug.WriteLine($"TagName is null or empty. Release object: Name={release.Name}, Prerelease={release.Prerelease}");
+                    return null;
+                }
+
+                // Parse version from tag (e.g., "v1.0.1", "1.0.1", "v1.0.1.0", "1.0.1.0")
                 var tagVersion = release.TagName.TrimStart('v', 'V');
+                Debug.WriteLine($"GitHub release tag: {release.TagName}, parsed: {tagVersion}");
+                
                 if (!Version.TryParse(tagVersion, out var latestVersion))
                 {
+                    Debug.WriteLine($"Failed to parse version from tag: {tagVersion}");
                     return null;
                 }
 
-                var currentVersion = GetCurrentVersion();
+                // GetCurrentVersion() should never throw, but wrap it just in case
+                Version currentVersion = GetCurrentVersion();
+                Debug.WriteLine($"Current version: {currentVersion}, Latest version: {latestVersion}");
 
-                if (latestVersion > currentVersion)
+                var normalizedCurrent = new Version(
+                    currentVersion.Major,
+                    currentVersion.Minor,
+                    currentVersion.Build >= 0 ? currentVersion.Build : 0,
+                    currentVersion.Revision >= 0 ? currentVersion.Revision : 0);
+                
+                var normalizedLatest = new Version(
+                    latestVersion.Major,
+                    latestVersion.Minor,
+                    latestVersion.Build >= 0 ? latestVersion.Build : 0,
+                    latestVersion.Revision >= 0 ? latestVersion.Revision : 0);
+
+                if (normalizedLatest > normalizedCurrent)
                 {
                     // Find the .msix asset
                     var msixAsset = release.Assets?.FirstOrDefault(a => 
@@ -119,9 +199,7 @@ namespace SupportTool.Features.Services
         /// </summary>
         public static string GetAppInstallerUrl()
         {
-            // TODO: Update this with your GitHub Releases AppInstaller URL
-            // Format: https://github.com/{owner}/{repo}/releases/download/{tag}/SupportTool.appinstaller
-            return $"https://github.com/{GitHubOwner}/{GitHubRepo}/releases/latest/download/SupportTool.appinstaller";
+            return $"https://github.com/{GitHubOwner}/{GitHubRepo}/releases/latest/download/SupportTool_x64.appinstaller";
         }
     }
 
@@ -145,10 +223,15 @@ namespace SupportTool.Features.Services
     /// </summary>
     internal class GitHubRelease
     {
+        [System.Text.Json.Serialization.JsonPropertyName("tag_name")]
         public string? TagName { get; set; }
+        
         public string? Name { get; set; }
+        
         public string? Body { get; set; }
+        
         public bool Prerelease { get; set; }
+        
         public GitHubAsset[]? Assets { get; set; }
     }
 
@@ -158,7 +241,10 @@ namespace SupportTool.Features.Services
     internal class GitHubAsset
     {
         public string? Name { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("browser_download_url")]
         public string? BrowserDownloadUrl { get; set; }
+        
         public long Size { get; set; }
     }
 }

@@ -31,6 +31,7 @@ namespace SupportTool
             LoadApiKey();
             LoadAutoSelectSetting();
             LoadDMPolicyIdSetting();
+            LoadCurrentVersion();
             string repoPath = _settings.GetSetting("NRAlertsDir");
             ValidateAndUpdateUi(repoPath);
         }
@@ -175,6 +176,29 @@ namespace SupportTool
             DMPolicyIdTextBox.Text = policyId;
         }
 
+        private void LoadCurrentVersion()
+        {
+            try
+            {
+                // GetCurrentVersion() now uses a constant fallback, so it should never throw
+                var version = UpdateService.GetCurrentVersion();
+                if (version != null && version.Major > 0)
+                {
+                    CurrentVersionTextBlock.Text = $"Current version: v{version.Major}.{version.Minor}.{version.Build}";
+                }
+                else
+                {
+                    CurrentVersionTextBlock.Text = "Version unavailable";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                System.Diagnostics.Debug.WriteLine($"Error loading version: {ex.GetType().Name} - {ex.Message}");
+                CurrentVersionTextBlock.Text = "Version unavailable";
+            }
+        }
+
         private void DMPolicyIdTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string policyId = DMPolicyIdTextBox.Text;
@@ -209,6 +233,7 @@ namespace SupportTool
 
             try
             {
+                var currentVersion = UpdateService.GetCurrentVersion();
                 var updateService = new UpdateService();
                 var updateInfo = await updateService.CheckForUpdatesAsync();
 
@@ -225,7 +250,7 @@ namespace SupportTool
                     var dialog = new ContentDialog
                     {
                         Title = "No Updates Available",
-                        Content = "You are running the latest version of the application.",
+                        Content = $"You are running the latest version of the application (v{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}).",
                         CloseButtonText = "OK",
                         XamlRoot = this.XamlRoot
                     };

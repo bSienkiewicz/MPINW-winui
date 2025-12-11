@@ -7,7 +7,8 @@
     Title="Update Available"
     PrimaryButtonText="Download Update"
     SecondaryButtonText="Later"
-    DefaultButton="Primary">
+    DefaultButton="Primary"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
     <StackPanel Spacing="16">
         <TextBlock
             FontSize="16"
