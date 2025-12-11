@@ -5,8 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:services="using:SupportTool.Features.Services"
     Title="Update Available"
-    PrimaryButtonText="Download Update"
-    SecondaryButtonText="Later"
+    PrimaryButtonText="Download"
+    CloseButtonText="Later"
     DefaultButton="Primary"
     PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
     <StackPanel Spacing="16">
@@ -21,12 +21,17 @@
             <Run Text="{x:Bind UpdateInfo.CurrentVersionString, Mode=OneWay}" />
             <Run Text=")" />
         </TextBlock>
-        <ScrollViewer
-            MaxHeight="200"
-            VerticalScrollBarVisibility="Auto">
-            <TextBlock
-                Text="{x:Bind UpdateInfo.ReleaseNotes, Mode=OneWay}"
-                TextWrapping="Wrap" />
-        </ScrollViewer>
+        
+        <InfoBar
+            x:Name="MajorUpdateWarning"
+            IsOpen="False"
+            Severity="Warning"
+            Title="Critical Update"
+            Message="An important update is available. It's recommended to update now." />
+        
+        <HyperlinkButton
+            Content="View full release notes on GitHub"
+            Click="ViewReleaseNotes_Click"
+            HorizontalAlignment="Left" />
     </StackPanel>
 </ContentDialog>

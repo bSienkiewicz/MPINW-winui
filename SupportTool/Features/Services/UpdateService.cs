@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Windows.ApplicationModel;
+using SupportTool.Features.Alerts.Helpers;
 
 namespace SupportTool.Features.Services
 {
@@ -18,10 +19,9 @@ namespace SupportTool.Features.Services
     {
         private readonly HttpClient _httpClient;
         private const string GitHubReleasesApiUrl = "https://api.github.com/repos/{owner}/{repo}/releases/latest";
-        
-        // TODO: Update these with your GitHub repository details
-        private const string GitHubOwner = "bSienkiewicz";
-        private const string GitHubRepo = "MPINW-winui";
+
+        public static string GitHubOwner => ConfigLoader.Get<string>("GitHubOwner", "bSienkiewicz");
+        public static string GitHubRepo => ConfigLoader.Get<string>("GitHubRepo", "MPINW-winui");
 
         public UpdateService()
         {
@@ -31,7 +31,6 @@ namespace SupportTool.Features.Services
 
         public static Version GetCurrentVersion()
         {
-            // Try Package.Current first (works for MSIX packaged apps)
             try
             {
                 var package = Package.Current;
@@ -43,10 +42,8 @@ namespace SupportTool.Features.Services
             }
             catch
             {
-                // Package.Current not available - try other methods
             }
 
-            // Try reading from Package.appxmanifest file
             try
             {
                 var manifestPath = Path.Combine(AppContext.BaseDirectory, "Package.appxmanifest");
@@ -64,10 +61,8 @@ namespace SupportTool.Features.Services
             }
             catch
             {
-                // Failed to read manifest - try assembly
             }
 
-            // Try assembly version as last resort
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
@@ -83,10 +78,8 @@ namespace SupportTool.Features.Services
             }
             catch
             {
-                // All methods failed
             }
 
-            // Absolute fallback - should never reach here
             return new Version(1, 0, 0, 0);
         }
 
@@ -100,7 +93,6 @@ namespace SupportTool.Features.Services
             {
                 if (string.IsNullOrEmpty(GitHubOwner) || string.IsNullOrEmpty(GitHubRepo))
                 {
-                    // GitHub info not configured, skip update check
                     return null;
                 }
 
@@ -128,7 +120,6 @@ namespace SupportTool.Features.Services
                     return null;
                 }
 
-                // Parse version from tag (e.g., "v1.0.1", "1.0.1", "v1.0.1.0", "1.0.1.0")
                 var tagVersion = release.TagName.TrimStart('v', 'V');
                 Debug.WriteLine($"GitHub release tag: {release.TagName}, parsed: {tagVersion}");
                 
@@ -138,7 +129,6 @@ namespace SupportTool.Features.Services
                     return null;
                 }
 
-                // GetCurrentVersion() should never throw, but wrap it just in case
                 Version currentVersion = GetCurrentVersion();
                 Debug.WriteLine($"Current version: {currentVersion}, Latest version: {latestVersion}");
 
@@ -156,7 +146,6 @@ namespace SupportTool.Features.Services
 
                 if (normalizedLatest > normalizedCurrent)
                 {
-                    // Find the .msix asset
                     var msixAsset = release.Assets?.FirstOrDefault(a => 
                         a.Name.EndsWith(".msix", StringComparison.OrdinalIgnoreCase));
 

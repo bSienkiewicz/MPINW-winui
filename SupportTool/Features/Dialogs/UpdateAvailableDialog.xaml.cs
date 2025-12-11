@@ -15,31 +15,35 @@ namespace SupportTool.Features.Dialogs
         {
             InitializeComponent();
             UpdateInfo = updateInfo;
+            CheckForMajorUpdate();
+        }
+
+        private void CheckForMajorUpdate()
+        {
+            if (UpdateInfo.CurrentVersion.Major < UpdateInfo.Version.Major ||
+                (UpdateInfo.CurrentVersion.Major == UpdateInfo.Version.Major && 
+                 UpdateInfo.CurrentVersion.Minor < UpdateInfo.Version.Minor))
+            {
+                MajorUpdateWarning.IsOpen = true;
+            }
         }
 
         private async void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-            // Defer closing the dialog until we've launched the update
             args.Cancel = true;
 
             try
             {
-                // Use AppInstaller for automatic updates (recommended)
-                // This will automatically download and install the update
                 var appInstallerUrl = UpdateService.GetAppInstallerUrl();
-                
-                // Use Launcher for URLs in WinUI apps
                 var uri = new Uri(appInstallerUrl);
                 var success = await Launcher.LaunchUriAsync(uri);
                 
                 if (success)
                 {
-                    // Close the dialog after successful launch
                     sender.Hide();
                 }
                 else
                 {
-                    // Fallback: Try opening the MSIX download URL
                     var msixUri = new Uri(UpdateInfo.DownloadUrl);
                     await Launcher.LaunchUriAsync(msixUri);
                     sender.Hide();
@@ -47,7 +51,6 @@ namespace SupportTool.Features.Dialogs
             }
             catch (Exception ex)
             {
-                // If Launcher fails, try Process.Start as fallback
                 try
                 {
                     Process.Start(new ProcessStartInfo
@@ -59,7 +62,6 @@ namespace SupportTool.Features.Dialogs
                 }
                 catch
                 {
-                    // Show error if all methods fail
                     var errorDialog = new ContentDialog
                     {
                         Title = "Error",
@@ -70,6 +72,27 @@ namespace SupportTool.Features.Dialogs
                     await errorDialog.ShowAsync();
                     sender.Hide();
                 }
+            }
+        }
+
+        private async void ViewReleaseNotes_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            try
+            {
+                var releaseUrl = $"https://github.com/{UpdateService.GitHubOwner}/{UpdateService.GitHubRepo}/releases/latest";
+                var uri = new Uri(releaseUrl);
+                await Launcher.LaunchUriAsync(uri);
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to open release page.\n\nError: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
             }
         }
     }
