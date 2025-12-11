@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -10,6 +11,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Storage.Pickers;
 using SupportTool.Features.Alerts.Services;
 using SupportTool.Features.Alerts.CustomControls;
+using SupportTool.Features.Services;
+using SupportTool.Features.Dialogs;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,6 +31,7 @@ namespace SupportTool
             LoadApiKey();
             LoadAutoSelectSetting();
             LoadDMPolicyIdSetting();
+            LoadCurrentVersion();
             string repoPath = _settings.GetSetting("NRAlertsDir");
             ValidateAndUpdateUi(repoPath);
         }
@@ -172,6 +176,29 @@ namespace SupportTool
             DMPolicyIdTextBox.Text = policyId;
         }
 
+        private void LoadCurrentVersion()
+        {
+            try
+            {
+                // GetCurrentVersion() now uses a constant fallback, so it should never throw
+                var version = UpdateService.GetCurrentVersion();
+                if (version != null && version.Major > 0)
+                {
+                    CurrentVersionTextBlock.Text = $"Current version: v{version.Major}.{version.Minor}.{version.Build}";
+                }
+                else
+                {
+                    CurrentVersionTextBlock.Text = "Version unavailable";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                System.Diagnostics.Debug.WriteLine($"Error loading version: {ex.GetType().Name} - {ex.Message}");
+                CurrentVersionTextBlock.Text = "Version unavailable";
+            }
+        }
+
         private void DMPolicyIdTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string policyId = DMPolicyIdTextBox.Text;
@@ -197,6 +224,55 @@ namespace SupportTool
         private void DeleteConfirmation_Click(object sender, RoutedEventArgs e)
         {
             _settings.RemoveAllSettings();
+        }
+
+        private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            CheckForUpdatesButton.IsEnabled = false;
+            CheckForUpdatesButton.Content = "Checking...";
+
+            try
+            {
+                var currentVersion = UpdateService.GetCurrentVersion();
+                var updateService = new UpdateService();
+                var updateInfo = await updateService.CheckForUpdatesAsync();
+
+                if (updateInfo != null)
+                {
+                    var dialog = new UpdateAvailableDialog(updateInfo)
+                    {
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
+                else
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = "No Updates Available",
+                        Content = $"You are running the latest version of the application (v{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}).",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to check for updates: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+            finally
+            {
+                CheckForUpdatesButton.IsEnabled = true;
+                CheckForUpdatesButton.Content = "Check for Updates";
+            }
         }
     }
 }

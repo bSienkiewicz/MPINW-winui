@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="SupportTool.Features.Dialogs.UpdateAvailableDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:services="using:SupportTool.Features.Services"
+    Title="Update Available"
+    PrimaryButtonText="Download"
+    CloseButtonText="Later"
+    DefaultButton="Primary"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
+    <StackPanel Spacing="16">
+        <TextBlock
+            FontSize="16"
+            FontWeight="SemiBold"
+            Text="{x:Bind UpdateInfo.ReleaseName, Mode=OneWay}" />
+        <TextBlock TextWrapping="Wrap">
+            <Run Text="A new version is available: " />
+            <Run FontWeight="SemiBold" Text="{x:Bind UpdateInfo.VersionString, Mode=OneWay}" />
+            <Run Text=" (Current: " />
+            <Run Text="{x:Bind UpdateInfo.CurrentVersionString, Mode=OneWay}" />
+            <Run Text=")" />
+        </TextBlock>
+        
+        <InfoBar
+            x:Name="MajorUpdateWarning"
+            IsOpen="False"
+            Severity="Warning"
+            Title="Critical Update"
+            Message="An important update is available. It's recommended to update now." />
+        
+        <HyperlinkButton
+            Content="View full release notes on GitHub"
+            Click="ViewReleaseNotes_Click"
+            HorizontalAlignment="Left" />
+    </StackPanel>
+</ContentDialog>
