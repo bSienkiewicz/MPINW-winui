@@ -21,7 +21,7 @@ namespace SupportTool.Features.Services
         private const string GitHubReleasesApiUrl = "https://api.github.com/repos/{owner}/{repo}/releases/latest";
 
         public static string GitHubOwner => ConfigLoader.Get<string>("GitHubOwner", "bSienkiewicz");
-        public static string GitHubRepo => ConfigLoader.Get<string>("GitHubRepo", "MPINW-winui");
+        public static string GitHubRepo => ConfigLoader.Get<string>("GitHubRepo", "SupportTool");
 
         public UpdateService()
         {
