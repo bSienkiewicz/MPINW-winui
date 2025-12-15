@@ -247,8 +247,7 @@ namespace SupportTool
                 var dataPackage = new DataPackage();
                 dataPackage.SetText(nrql);
                 Clipboard.SetContent(dataPackage);
-                // Optionally show a toast or InfoBar here
-            }
+                ShowToast("Copied the New Relic Query", "Paste it in the New Relic Query Builder to confirm the change.", InfoBarSeverity.Informational, 4);            }
         }
 
         private void ApplySelectedThresholdsButton_Click(object sender, RoutedEventArgs e)
