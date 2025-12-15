@@ -330,23 +330,9 @@ namespace SupportTool.Features.Alerts
         {
             if (_originalAlert == null || _selectedStack == null) return;
 
-            // Create a new alert based on the original (not the working copy)
-            var alertCopy = new NrqlAlert
-            {
-                Name = $"{_originalAlert.Name} Copy",
-                Description = _originalAlert.Description,
-                NrqlQuery = _originalAlert.NrqlQuery,
-                RunbookUrl = _originalAlert.RunbookUrl,
-                Severity = _originalAlert.Severity,
-                Enabled = _originalAlert.Enabled,
-                AggregationMethod = _originalAlert.AggregationMethod,
-                AggregationWindow = _originalAlert.AggregationWindow,
-                AggregationDelay = _originalAlert.AggregationDelay,
-                CriticalOperator = _originalAlert.CriticalOperator,
-                CriticalThreshold = _originalAlert.CriticalThreshold,
-                CriticalThresholdDuration = _originalAlert.CriticalThresholdDuration,
-                CriticalThresholdOccurrences = _originalAlert.CriticalThresholdOccurrences
-            };
+            // Create a new alert based on the original (not the working copy) using Clone to ensure all fields are copied
+            var alertCopy = (NrqlAlert)_originalAlert.Clone();
+            alertCopy.Name = $"{_originalAlert.Name} Copy";
 
             // Add the copy to the collection
             AlertItems.Add(alertCopy);

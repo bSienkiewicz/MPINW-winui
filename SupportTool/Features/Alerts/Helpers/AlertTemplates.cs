@@ -250,7 +250,7 @@ namespace SupportTool.Features.Alerts.Helpers
             }
 
             string retailerFilter = isAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
-            string asosPrefix = isAsos ? "ASOS " : "";
+            string asosPrefix = isAsos ? " ASOS " : " ";
             
             string name;
             string titleTemplate;
@@ -259,14 +259,14 @@ namespace SupportTool.Features.Alerts.Helpers
 
             if (alertType == "ErrorRate")
             {
-                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Error Percentage";
-                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Error Percentage";
+                name = $"DM Allocation{asosPrefix}<{carrierName}> ({carrierId}) Error Percentage";
+                titleTemplate = $"DM Allocation{asosPrefix}{carrierName} ({carrierId}) Error Percentage";
                 nrqlQuery = $"SELECT percentage(count(*),where error is true) FROM Transaction FACET retailerName,appName WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId}";
             }
             else if (alertType == "AverageDuration")
             {
-                name = $"DM Allocation {asosPrefix} <{carrierName}> ({carrierId}) Average Duration";
-                titleTemplate = $"DM Allocation {asosPrefix}{carrierName} ({carrierId}) Average Duration";
+                name = $"DM Allocation{asosPrefix}<{carrierName}> ({carrierId}) Average Duration";
+                titleTemplate = $"DM Allocation{asosPrefix}{carrierName} ({carrierId}) Average Duration";
                 nrqlQuery = $"SELECT average(duration) FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} and carrierId = {carrierId} FACET retailerName,appName,carrierId";
             }
             else

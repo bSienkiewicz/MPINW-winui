@@ -141,24 +141,41 @@ namespace SupportTool.Features.Alerts.Helpers
             //  (?<val2>[^,\s#]+)   : Match unquoted value (stops at comma, whitespace, or #), capture in group "val2"
             // )                    : End non-capturing group
             var pattern = $"\"{key}\"\\s*=\\s*(?:\\\"(?<val1>[^\\\\\"]*)\\\"|(?<val2>[^,\\s#]+))";
-            var match = Regex.Match(blockContent, pattern);
+            var matches = Regex.Matches(blockContent, pattern);
 
-            if (!match.Success) return string.Empty;
+            if (matches.Count == 0) return string.Empty;
 
-            // Combine captured groups (only one will have a value) and trim
-            var value = (match.Groups["val1"].Value + match.Groups["val2"].Value).Trim();
+            // When there are duplicate keys, use the last non-empty value
+            // This handles cases where a key appears multiple times (e.g., runbook_url appearing twice)
+            string lastNonEmptyValue = string.Empty;
+            foreach (Match match in matches)
+            {
+                // Combine captured groups (only one will have a value) and trim
+                var value = (match.Groups["val1"].Value + match.Groups["val2"].Value).Trim();
 
-            // Unescape common sequences like \\ and \"
-            value = Regex.Unescape(value); // More robust than manual replaces
+                // Unescape common sequences like \\ and \"
+                value = Regex.Unescape(value); // More robust than manual replaces
+
+                // Keep track of the last non-empty value
+                if (!string.IsNullOrEmpty(value))
+                {
+                    lastNonEmptyValue = value;
+                }
+                else if (string.IsNullOrEmpty(lastNonEmptyValue))
+                {
+                    // If we haven't found a non-empty value yet, keep the empty one as fallback
+                    lastNonEmptyValue = value;
+                }
+            }
 
             // Apply specific normalization if needed
             return key switch
             {
-                "severity" => value.ToUpperInvariant(),
-                "aggregation_method" => value.ToUpperInvariant(),
-                "critical_operator" => value.ToUpperInvariant(),
-                "critical_threshold_occurrences" => value.ToUpperInvariant(),
-                _ => value
+                "severity" => lastNonEmptyValue.ToUpperInvariant(),
+                "aggregation_method" => lastNonEmptyValue.ToUpperInvariant(),
+                "critical_operator" => lastNonEmptyValue.ToUpperInvariant(),
+                "critical_threshold_occurrences" => lastNonEmptyValue.ToUpperInvariant(),
+                _ => lastNonEmptyValue
             };
         }
 
