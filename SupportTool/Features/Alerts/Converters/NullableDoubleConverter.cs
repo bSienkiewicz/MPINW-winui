@@ -33,16 +33,45 @@ namespace SupportTool.Features.Alerts.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
+            // Return empty string when null so placeholder shows
             if (value == null || !(value is double d))
-                return "–";
+                return string.Empty;
             return d.ToString();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
-            if (value is string s && double.TryParse(s, out double result))
-                return result;
+            // Return null if empty or invalid, so ProposedThreshold becomes null
+            if (value is string s)
+            {
+                s = s.Trim();
+                if (string.IsNullOrEmpty(s))
+                    return null;
+                
+                // Try parsing with invariant culture
+                if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                    return result;
+            }
             return null;
+        }
+    }
+
+    public class NullableDoubleToBoolConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            if (value == null)
+                return false;
+
+            if (value is double d && !double.IsNaN(d))
+                return true;
+
+            return false;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
         }
     }
 

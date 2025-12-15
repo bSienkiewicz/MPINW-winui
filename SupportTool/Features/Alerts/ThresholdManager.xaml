@@ -13,6 +13,7 @@
     <Page.Resources>
         <converters:NullableDoubleToDashConverter x:Key="NullableDoubleToDashConverter" />
         <converters:ThresholdDifferenceToBrushConverter x:Key="ThresholdDifferenceToBrushConverter" />
+        <converters:NullableDoubleToBoolConverter x:Key="NullableDoubleToBoolConverter" />
     </Page.Resources>
 
     <Grid x:Name="RootGrid" Padding="24">
@@ -140,6 +141,7 @@
                                     Grid.Column="3"
                                     Margin="40,0,20,0"
                                     Click="CopyNrqlButton_Click"
+                                    IsEnabled="{x:Bind ProposedThreshold, Mode=OneWay, Converter={StaticResource NullableDoubleToBoolConverter}}"
                                     Tag="{x:Bind}">
                                     <FontIcon FontSize="12" Glyph="&#xE8C8;" />
                                 </Button>

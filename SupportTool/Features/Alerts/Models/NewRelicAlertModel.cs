@@ -230,12 +230,32 @@ namespace SupportTool.Features.Alerts.Models
 
         public string GetVerificationNrql(string stack)
         {
-            var carrier = AlertService.ExtractCarrierFromTitle(Name);
+            var carrierName = AlertService.ExtractCarrierFromTitle(Name);
+            var carrierId = AlertService.ExtractCarrierIdFromAlert(Name);
             var threshold = ProposedThreshold.HasValue ? ProposedThreshold.Value : 0;
             var oldThreshold = CriticalThreshold;
             int samplingDays = AlertTemplates.GetConfigValue<int>("PrintDuration.ProposedValues.SamplingDays");
-            // Use the same NRQL as in the template, but fill in the values
-            return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrier}' timeseries max since {samplingDays} days ago";
+
+            // Check if this is a DM alert (has carrierId)
+            bool isDmAlert = Name?.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) == true;
+            bool isAsos = Name?.Contains("ASOS", StringComparison.OrdinalIgnoreCase) == true;
+            
+            if (isDmAlert && !string.IsNullOrEmpty(carrierId))
+            {
+                // DM alert: use carrierId and DM allocation transaction
+                string retailerFilter = isAsos ? "retailerName = 'ASOS'" : "retailerName != 'ASOS'";
+                return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE name = 'WebTransaction/SpringController/OctopusApiController/_allocateConsignment' AND {retailerFilter} AND carrierId = {carrierId} timeseries max since {samplingDays} days ago";
+            }
+            else if (!string.IsNullOrEmpty(carrierName))
+            {
+                // MPM alert: use carrierName and PrintParcel transaction
+                return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE PrintOperation like '%Create%' AND host like '%-{stack}-%' AND CarrierName = '{carrierName.Replace("'", "\\'")}' timeseries max since {samplingDays} days ago";
+            }
+            else
+            {
+                // Fallback: return a generic query if neither carrierName nor carrierId is found
+                return $"SELECT average(duration), stddev(duration) as 'Deviation', {threshold} as 'New Threshold', {oldThreshold} as 'Old Threshold' FROM Transaction WHERE host like '%-{stack}-%' timeseries max since {samplingDays} days ago";
+            }
         }
     }
 
