@@ -328,12 +328,24 @@ namespace SupportTool.Features.Alerts.Services
 
         public static bool IsAlertPrintDuration(NrqlAlert workingCopy)
         {
-
             bool hasAverageDuration = workingCopy.NrqlQuery?.ToLower().Contains("average(duration)") == true;
+            
+            if (!hasAverageDuration)
+                return false;
+
+            // Check for MPM alerts (PrintParcel with carrier name)
             bool hasPrintParcel = workingCopy.Name?.ToLower().Contains("printparcel") == true;
             bool hasCarrierInTitle = !string.IsNullOrEmpty(ExtractCarrierFromTitle(workingCopy.Name));
+            if (hasPrintParcel && hasCarrierInTitle)
+                return true;
 
-            return hasAverageDuration && hasCarrierInTitle && hasPrintParcel;
+            // Check for DM alerts (DM Allocation with carrier ID)
+            bool isDmAllocation = workingCopy.Name?.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) == true;
+            bool hasCarrierId = !string.IsNullOrEmpty(ExtractCarrierIdFromAlert(workingCopy.Name));
+            if (isDmAllocation && hasCarrierId)
+                return true;
+
+            return false;
         }
 
         public static string ExtractCarrierFromTitle(string title)
@@ -395,6 +407,35 @@ namespace SupportTool.Features.Alerts.Services
                     string extracted = alertName.Substring(startIndex, parenIndex - startIndex).Trim();
                     // Remove any trailing spaces or special characters
                     return extracted.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Extracts carrier ID from DM alert name format: "DM Allocation ... (ID) ..."
+        /// </summary>
+        /// <param name="alertName">The alert name</param>
+        /// <returns>The carrier ID if found, empty string otherwise</returns>
+        public static string ExtractCarrierIdFromAlert(string alertName)
+        {
+            if (string.IsNullOrEmpty(alertName))
+                return string.Empty;
+            
+            // Find the first occurrence of ( followed by digits and then )
+            int openParenIndex = alertName.IndexOf('(');
+            if (openParenIndex >= 0)
+            {
+                int closeParenIndex = alertName.IndexOf(')', openParenIndex);
+                if (closeParenIndex > openParenIndex)
+                {
+                    string potentialId = alertName.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1).Trim();
+                    // Check if it's all digits (carrier ID)
+                    if (!string.IsNullOrEmpty(potentialId) && potentialId.All(char.IsDigit))
+                    {
+                        return potentialId;
+                    }
                 }
             }
 

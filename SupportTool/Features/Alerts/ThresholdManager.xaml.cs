@@ -9,6 +9,7 @@ using Windows.ApplicationModel.DataTransfer;
 using SupportTool.Features.Alerts.Helpers;
 using SupportTool.Features.Alerts.Models;
 using SupportTool.Features.Alerts.Services;
+using System.Collections.Generic;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -119,29 +120,89 @@ namespace SupportTool
             AlertFetchingOverlay.Visibility = Visibility.Visible;
             try
             {
-                var carriers = AlertItems
+                var apiService = new NewRelicApiService();
+                
+                // Separate alerts by type: MPM (carrierName) and DM (carrierId)
+                var mpmAlerts = new List<NrqlAlert>();
+                var dmAlerts = new List<NrqlAlert>();
+                
+                foreach (var alert in AlertItems)
+                {
+                    bool isDmAlert = alert.Name?.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) == true;
+                    if (isDmAlert)
+                    {
+                        dmAlerts.Add(alert);
+                    }
+                    else
+                    {
+                        mpmAlerts.Add(alert);
+                    }
+                }
+
+                // Fetch statistics for MPM alerts (by carrier name)
+                Dictionary<string, CarrierDurationStatistics> mpmStatsDict = new();
+                var carriers = mpmAlerts
                     .Select(alert => AlertService.ExtractCarrierFromTitle(alert.Name))
                     .Where(name => !string.IsNullOrEmpty(name))
                     .Distinct()
                     .ToList();
 
-                if (carriers.Count == 0)
+                if (carriers.Any())
                 {
-                    ShowToast("No carriers found", "There are no carriers to fetch.", InfoBarSeverity.Warning, 5);
-                    CalculateTimesButton.IsEnabled = true;
-                    AlertFetchingProgressRing.IsActive = false;
-                    AlertFetchingProgress.Visibility = Visibility.Collapsed;
-                    AlertFetchingOverlay.Visibility = Visibility.Collapsed;
-                    return;
+                    mpmStatsDict = await apiService.FetchDurationStatisticsForCarriersAsync(carriers);
                 }
 
-                var apiService = new NewRelicApiService();
-                var statsDict = await apiService.FetchDurationStatisticsForCarriersAsync(carriers);
+                // Fetch statistics for DM alerts (by carrier ID)
+                // Group by ASOS/non-ASOS since they need separate queries
+                var dmAlertsByAsos = dmAlerts.GroupBy(alert => 
+                    alert.Name?.Contains("ASOS", StringComparison.OrdinalIgnoreCase) == true).ToList();
+                
+                Dictionary<string, CarrierDurationStatistics> dmStatsDict = new();
+                foreach (var group in dmAlertsByAsos)
+                {
+                    bool isAsos = group.Key;
+                    var carrierIds = group
+                        .Select(alert => AlertService.ExtractCarrierIdFromAlert(alert.Name))
+                        .Where(id => !string.IsNullOrEmpty(id))
+                        .Distinct()
+                        .ToList();
 
+                    if (carrierIds.Any())
+                    {
+                        var groupStats = await apiService.FetchDurationStatisticsForCarrierIdsAsync(carrierIds, isAsos);
+                        foreach (var kvp in groupStats)
+                        {
+                            dmStatsDict[kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+
+                // Process all alerts and assign statistics
                 foreach (var alert in AlertItems)
                 {
-                    var carrier = AlertService.ExtractCarrierFromTitle(alert.Name);
-                    if (!string.IsNullOrEmpty(carrier) && statsDict.TryGetValue(carrier, out var stats) && stats.HasData)
+                    bool isDmAlert = alert.Name?.Contains("DM Allocation", StringComparison.OrdinalIgnoreCase) == true;
+                    CarrierDurationStatistics? stats = null;
+
+                    if (isDmAlert)
+                    {
+                        // For DM alerts, use carrierId
+                        var carrierId = AlertService.ExtractCarrierIdFromAlert(alert.Name);
+                        if (!string.IsNullOrEmpty(carrierId) && dmStatsDict.TryGetValue(carrierId, out var dmStats) && dmStats.HasData)
+                        {
+                            stats = dmStats;
+                        }
+                    }
+                    else
+                    {
+                        // For MPM alerts, use carrierName
+                        var carrier = AlertService.ExtractCarrierFromTitle(alert.Name);
+                        if (!string.IsNullOrEmpty(carrier) && mpmStatsDict.TryGetValue(carrier, out var mpmStats) && mpmStats.HasData)
+                        {
+                            stats = mpmStats;
+                        }
+                    }
+
+                    if (stats != null)
                     {
                         alert.ProposedThreshold = AlertService.CalculateSuggestedThreshold(stats);
                     }
@@ -161,7 +222,9 @@ namespace SupportTool
                         }
                     }
                 }
-                ShowToast("Success", "Proposed times fetched from New Relic.", InfoBarSeverity.Success, 4);
+
+                int totalFetched = AlertItems.Count(a => a.ProposedThreshold.HasValue);
+                ShowToast("Success", $"Proposed times fetched from New Relic for {totalFetched} alert(s).", InfoBarSeverity.Success, 4);
             }
             catch (Exception ex)
             {
