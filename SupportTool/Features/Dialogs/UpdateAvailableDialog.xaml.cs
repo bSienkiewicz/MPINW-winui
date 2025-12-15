@@ -20,9 +20,11 @@ namespace SupportTool.Features.Dialogs
 
         private void CheckForMajorUpdate()
         {
-            if (UpdateInfo.CurrentVersion.Major < UpdateInfo.Version.Major ||
-                (UpdateInfo.CurrentVersion.Major == UpdateInfo.Version.Major && 
-                 UpdateInfo.CurrentVersion.Minor < UpdateInfo.Version.Minor))
+            bool isMajorUpdate = UpdateInfo.CurrentVersion.Major < UpdateInfo.Version.Major;
+            bool isMinorUpdateByTwoOrMore = UpdateInfo.CurrentVersion.Major == UpdateInfo.Version.Major && 
+                                            (UpdateInfo.Version.Minor - UpdateInfo.CurrentVersion.Minor >= 2);
+
+            if (isMajorUpdate || isMinorUpdateByTwoOrMore)
             {
                 MajorUpdateWarning.IsOpen = true;
             }
